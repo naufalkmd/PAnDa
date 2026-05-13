@@ -1,25 +1,37 @@
 # PAnDa
 
-PAnDa is the public-facing research repository for `Parallel-block Adaptive Contrast DoLa`, extracted from the broader `KeelNetV2` workspace into a cleaner, reproducibility-oriented layout.
+PAnDa is a public research repository for **Parallel-block Adaptive Contrast DoLa** and related decoding baselines. It packages the current evaluator, benchmark runners, saved development artifacts, and paper notes into a cleaner layout extracted from a larger internal workspace.
 
-## Status
+The repo is built for **re-running decoder comparisons and inspecting the imported artifacts**, not as a polished benchmark suite with publication-final claims.
 
-- This repo currently reflects the imported Stage 12 PAnDa development artifact on `TruthfulQA sanity-10`.
-- Historical `stage*` labels are intentionally preserved inside the imported code and metadata so they still match the original saved experiments.
-- This is a cleaned research release, not a full mirror of the internal working directory.
+## What PAnDa does
 
-## What is included
+PAnDa keeps two fixed contrast regimes inside the same block-parallel decoding pass:
 
-- `src/panda/eval.py`: the imported evaluation driver that contains the current PAnDa and baseline decoding logic.
-- `scripts/`: lightweight entry points for rerunning the imported development presets and plotting saved summaries.
-- `configs/`: provenance metadata snapshots for the imported baseline and PAnDa runs.
-- `results/dev/`: saved metadata, summaries, pairwise summaries, and raw predictions for the imported baseline comparison and current PAnDa artifact.
-- `paper/`: the current PAnDa paper draft and bibliography.
-- `docs/`: method, reproduction, and limitation notes for the cleaned repo.
+- a safer low-alpha view
+- a stronger truth-seeking high-alpha view
 
-## Quick Start
+Instead of generating two full answers and reranking them afterward, PAnDa compares those views locally inside each speculative block, detects the first meaningful divergence point, and only applies truth-biased arbitration from that point onward.
 
-Create an environment and install the package from the repository root:
+The current evaluator also includes these comparison decoders:
+
+- `greedy`
+- `dola`
+- `fixed_alpha_dola`
+- `tbasco`
+- `panda`
+
+TBASCo is the fixed-alpha low/high rerank baseline included for comparison.
+
+## Repository status
+
+- This repository is a cleaned public release of the imported research artifact, not a full mirror of the original `KeelNetV2` workspace.
+- The strongest checked-in PAnDa evidence is still a **development TruthfulQA sanity artifact**, not a publication-final benchmark package.
+- Historical `stage*` names remain in some saved metadata and directories for provenance compatibility, even though the public-facing preset names are now `panda` and `tbasco`.
+
+## Install
+
+Run from the repository root:
 
 ```bash
 python -m venv .venv
@@ -27,7 +39,7 @@ python -m venv .venv
 ./.venv/bin/python -m pip install -e .
 ```
 
-If the selected model is gated or not cached locally, set one of:
+If the selected model is gated or not already cached locally, export one of:
 
 ```bash
 export HF_TOKEN=...
@@ -35,60 +47,154 @@ export HF_TOKEN=...
 export HUGGINGFACE_HUB_TOKEN=...
 ```
 
-Run the imported PAnDa development preset:
+## Quick start
+
+Re-run the checked-in PAnDa preset:
 
 ```bash
-./.venv/bin/python scripts/run_truthfulqa.py
+./scripts/run_panda_truthfulqa.py
 ```
 
-Run the imported alpha-switch baseline preset:
+Re-run the checked-in TBASCo preset:
 
 ```bash
-./.venv/bin/python scripts/run_alpha_switch_baseline.py
+./scripts/run_tbasco_truthfulqa.py
 ```
 
-Generate an overview plot from a saved summary:
+Those wrappers:
+
+- apply `--comparison-preset panda` or `--comparison-preset tbasco`
+- run in `--mode sanity`
+- save outputs under `results/dev/...`
+- work from any current directory because they resolve the repo root themselves
+- accept the normal evaluator CLI flags after the preset defaults
+
+If the target Python environment is missing dependencies, bootstrap once from the script itself:
+
+```bash
+./scripts/run_panda_truthfulqa.py --bootstrap
+./scripts/run_tbasco_truthfulqa.py --bootstrap
+```
+
+If the executable bit is missing on your machine, enable it once:
+
+```bash
+chmod +x scripts/run_panda_truthfulqa.py scripts/run_tbasco_truthfulqa.py
+```
+
+If you do not override `--model-name`, both presets switch from the generic CLI default to the imported comparison model:
+
+```text
+HINT-lab/DeepSeek-R1-Distill-Qwen-1.5B-Self-Calibration
+```
+
+## Direct CLI usage
+
+After installing the package, you can run the evaluator directly:
+
+```bash
+./.venv/bin/python -m panda \
+  --comparison-preset panda \
+  --mode sanity \
+  --save-results \
+  --results-dir results/dev/panda_truthfulqa_sanity10
+```
+
+Example: run the broader default benchmark mix on a seeded subset:
+
+```bash
+./.venv/bin/python -m panda \
+  --mode subset \
+  --save-results \
+  --results-dir results/dev/subset_run
+```
+
+Useful flags:
+
+- `--comparison-preset {panda,tbasco}` to apply the public comparison presets
+- `--model-name ...` to choose a different Hugging Face causal LM
+- `--local-files-only` to avoid network fetches
+- `--include-halueval --halueval-root /path/to/halueval` to add local HaluEval data
+- `--include-alpacaeval` to export AlpacaEval-formatted generations
+- `--include-gsm8k-sequence` to run the longer GSM8K sequence path
+- `--skip-truthfulqa`, `--skip-strategyqa`, `--skip-gsm8k` to trim the benchmark set
+
+## Benchmarks and outputs
+
+The current code can evaluate or export:
+
+- `TruthfulQA` multiple choice
+- `StrategyQA`
+- `GSM8K`
+- `HaluEval` from a local dataset root
+- `AlpacaEval` exports
+
+Fresh runs written by the CLI use a decoder-specific artifact prefix. For example, the PAnDa preset writes:
+
+- `panda_full_eval_raw_predictions.csv`
+- `panda_full_eval_summary.csv`
+- `panda_full_eval_pairwise_summary.csv`
+- `panda_full_eval_metadata.json`
+
+The checked-in imported artifacts under `results/dev/stage*/` use the older unprefixed naming:
+
+- `raw_predictions.csv`
+- `summary.csv`
+- `pairwise_summary.csv`
+- `metadata.json`
+
+## Plotting results
+
+Plot an overview from a freshly generated PAnDa summary:
+
+```bash
+./.venv/bin/python scripts/plot_results.py \
+  results/dev/panda_truthfulqa_sanity10/panda_full_eval_summary.csv \
+  --output results/dev/panda_truthfulqa_sanity10/overview.png \
+  --title "PAnDa TruthfulQA sanity run"
+```
+
+Plot the checked-in imported artifact instead:
 
 ```bash
 ./.venv/bin/python scripts/plot_results.py \
   results/dev/stage12_panda_truthfulqa_sanity10/summary.csv \
   --output results/dev/stage12_panda_truthfulqa_sanity10/overview.png \
-  --title "PAnDa TruthfulQA sanity-10"
+  --title "Imported Stage 12 PAnDa artifact"
 ```
 
-## Layout
+## Repository layout
 
 ```text
 PAnDa/
-  configs/
-  docs/
-  paper/
-  results/
-  scripts/
-  src/panda/
+  paper/          Current paper draft and bibliography
+  results/        Checked-in development artifacts and new run outputs
+  scripts/        Preset runners and plotting helper
+  src/panda/      Evaluator, benchmark loaders, CLI, and decoder wrappers
 ```
 
-## Reproducibility Notes
+Key implementation files:
 
-- The imported preset expects the same model family used in the original metadata snapshots. See `configs/stage12_panda_sanity10.json`.
-- The evaluator reads `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN` when loading remote Hugging Face assets.
-- If your model and dataset assets are already cached, you can add `--local-files-only` to avoid network access.
-- The current repo tracks compact summaries and metadata, not the full internal cache tree or every exploratory run from `KeelNetV2`.
-- Some experiments may require locally cached Hugging Face assets or authentication, depending on the model you choose.
-- The current PAnDa artifact was historically developed under the internal codename `jaca`; public-facing exported labels in this repo use `PAnDa`.
+- `src/panda/evaluator.py`: model loading and decoder logic
+- `src/panda/evaluation.py`: benchmark scoring, summaries, and pairwise comparison helpers
+- `src/panda/entrypoint.py`: command-line driver
+- `src/panda/benchmarks.py`: dataset loaders
+- `src/panda/args.py`: CLI flags and public preset mapping
+
+## Reproducibility notes
+
+- The evaluator reads `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN` for remote Hugging Face access.
+- `--mode sanity` uses small seeded subsets; `--mode subset` uses larger seeded subsets; `--mode full` removes the default limit.
+- The repo tracks compact artifacts and provenance metadata, not the original cache tree or every exploratory run from the source workspace.
+- Exact reproduction can still depend on model availability, Hugging Face authentication, local dataset copies, and hardware comparable to the original environment.
 
 ## Paper
 
-Build the paper from the `paper/` directory with:
+Build the paper from `paper/` with:
 
 ```bash
+cd paper
 latexmk -pdf panda_note.tex
 ```
 
-The current `panda_note.tex` uses an inline boxed figure. The files under
-`paper/figures/` are kept as editable or archival assets and are not required
-for the current TeX build.
-
-## Current Caveat
-
-The saved PAnDa evidence in this repo is still a development artifact rather than a publication-final benchmark package. See `docs/limitations.md` before presenting the current results as a final claim.
+Further paper notes live in [`paper/README.md`](paper/README.md).

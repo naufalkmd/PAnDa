@@ -57,13 +57,16 @@ def plot_overview(summary_df, output_path, title):
 
     decoder_order = list(dict.fromkeys(summary_df["decoder_label"].tolist()))
     colors = {
+        "greedy": "#355070",
         "Greedy": "#355070",
+        "dola": "#6d597a",
         "DoLa": "#6d597a",
+        "fixed alpha dola": "#b56576",
         "DoLa-FixedAlpha": "#b56576",
-        "Token-quality Layer Arbitration": "#e56b6f",
-        "TriSLA": "#eaac8b",
+        "tbasco": "#e56b6f",
+        "TBASCo": "#e56b6f",
+        "panda": "#5f0f40",
         "PAnDa": "#5f0f40",
-        "JACA": "#5f0f40",
     }
 
     fig = plt.figure(figsize=(12, 7))
