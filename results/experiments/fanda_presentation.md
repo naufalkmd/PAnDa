@@ -44,6 +44,7 @@ The direct comparison includes:
 - `PAnDa`
 
 ![Core decoder quality vs latency](../figures/exp11_core_decoder_mc_latency.svg)
+(Settings: `Qwen/Qwen2.5-3B-Instruct` on `50` TruthfulQA multiple-choice questions; decoders = `greedy`, `top_k`, `top_p`, `dola`, and `PAnDa`; metrics = `mc1`, `mc2`, `mc3`, and decoding latency.)
 
 The performance of PAnDa motivated us to move toward a simpler decoding strategy, which we call FAnDa. To support this shift, we first present the empirical performance of FAnDa.
 
@@ -82,6 +83,7 @@ Method:
   - `relative-top filter on` vs `relative-top filter off`
 
 ![Exp13 factorial](../figures/exp13_logit_filter_factorial_summary.svg)
+(Settings: same model and `50`-question TruthfulQA subset; matched `2 x 2` over `raw logit` vs `logprobability` and `relative-top filter on` vs `off`.)
 
 Main reading:
 
@@ -110,6 +112,9 @@ Sources: [https://code.claude.com/docs/en/skills](https://code.claude.com/docs/e
 
 This is the main motivation for FAnDa: instead of reselecting the shallow-layer index at every token, we keep one anchor layer fixed throughout generation so each local decision is corrected against the same sequence-level reference.
 
+![FAnDa algorithm](../figures/fanda_algorithm_diagram.png)
+(Diagram: conceptual FAnDa workflow; choose one shallow anchor at initialization, keep it frozen across generation, and decode with raw-logit contrast.)
+
 ## Experiment 2: Persistence Quality Test on Short Answer Generation (MC)
 
 Experiment 2 tests this idea directly by varying how often the shallow-layer index is refreshed, from token-level reselection to a fully frozen anchor, and asking whether stronger persistence improves MC factuality
@@ -126,6 +131,7 @@ Method:
 - Evaluate with TruthfulQA MC metrics mc1, mc2, and mc3.
 
 ![Exp12 quality](../figures/exp12_state_persistence_quality.svg)
+(Settings: same model and anchored `50`-question TruthfulQA subset with seed `42`; decoders = `update1`, `update2`, `update4`, and `frozen`; metrics = `mc1`, `mc2`, and `mc3`.)
 
 Main reading:
 
@@ -136,6 +142,7 @@ Main reading:
 - so token-local reselection (implemented in DoLa) is the weakest endpoint in two of the three quality views, and never the best one
 
 ![Exp12 switch rate](../figures/exp12_state_persistence_switch_rate.svg)
+(Settings: same run as the quality panel; compares how often the selected shallow layer changes under `update1`, `update2`, `update4`, and `frozen`.)
 
 Main reading:
 
@@ -160,6 +167,7 @@ Method:
 This figure is the full manual evaluation summary of open-ended generation evaluated by GPT-5.4.
 
 ![Exp14 manual eval summary](../figures/exp14_manual_eval_summary.svg)
+(Settings: `250` open-ended answers from `update1`, `update2`, `update4`, `update8`, and `frozen`; manually scored by `GPT-5.4` with the `0 / 1 / 2` rubric.)
 
 Main reading:
 
@@ -184,6 +192,7 @@ This figure comes from the fully manual evaluation sheet from `Experiment 3`
 - black diamonds mark the mean x-value within each manual-score bucket
 
 ![Exp14 manual behavior](../figures/exp14_manual_behavior_answer_length.svg)
+(Settings: same `250`-answer manual-eval set; plots answer length and switch rate against the `0 / 1 / 2` manual score by decoder.)
 
 Main reading:
 
@@ -212,6 +221,7 @@ Method:
 - evaluated by GPT-5.4
 
 ![Exp15 human full verdict](../figures/exp15_human_full_verdict.svg)
+(Settings: `8` targeted long-generation questions selected from `Experiment 3`; direct `frozen` vs `update1` comparison judged by `GPT-5.4`.)
 
 Main reading:
 
@@ -280,6 +290,7 @@ That is the backbone of the decoder we want to keep.
 And the full package result is still strong:
 
 ![Core decoder quality vs latency with fanda](../figures/exp11_core_decoder_mc_latency_v2.svg)
+(Settings: exp11 decoder comparison on the same `50` TruthfulQA questions, with `FAnDa` inserted using the matched `frozen` result from exp12; metrics = `mc1`, `mc2`, `mc3`, and decoding latency.)
 
 - `FanDa`: `mc1 = 0.40`, `mc2 = 0.576`, `mc3 = 0.351`
 - `DoLa`: `mc1 = 0.28`, `mc2 = 0.528`, `mc3 = 0.273`
