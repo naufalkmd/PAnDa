@@ -49,3 +49,6 @@ archive/
 
 # Report build output
 paper/build/
+
+# Report PDFs built next to the source by an editor (the build script writes to paper/build/)
+paper/*.pdf
