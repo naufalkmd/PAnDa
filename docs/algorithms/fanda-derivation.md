@@ -1,11 +1,11 @@
 # Selection interval of the premature layer: what can and cannot be derived
 
-This note concerns the FAnDa variants in `results/experiments/` (not the `src/panda` CLI preset). They share one
+This note concerns the decoders in `results/experiments/` that share the score of per-question DoLa-static (not the `src/panda` CLI preset). They share one
 score and differ only in the **selection interval k**, how often the premature layer is re-selected:
 
 - raw-logit contrastive score (mature minus premature layer), no adaptive plausibility constraint;
 - premature layer chosen by maximum Jensen–Shannon divergence (JSD) at softmax temperature τ = 0.5;
-- re-selected every k tokens (k = 1, 2, 4, 8), or once at the first token of each answer option (k = ∞, FAnDa).
+- re-selected every k tokens (k = 1, 2, 4, 8), or once at the first answer token (k = ∞, per-question DoLa-static).
 
 Terms: [`../glossary.md`](../glossary.md). Code: `results/experiments/local_evaluator.py`
 (`EXP12_STATEFUL_FIXED_VIEW_DECODERS`, `compute_stateful_fixed_binary_view_step`), `src/panda/decoders/core.py`
@@ -70,8 +70,9 @@ They show when a longer interval gives **the same** decisions as per-step select
 longer interval is **better**: the reference they compare against is k = 1, so any deviation from it is, within
 this framework, neither good nor bad. Whether k > 1 is more truthful is an empirical question.
 
-One more property of the implementation matters here: each answer option is scored from a fresh state, so with
-k = ∞ the premature layer is selected separately for each option, at that option's first token.
+One more property of the implementation matters here: each answer option is scored from a fresh state, but the
+first answer token is scored from the prompt alone, which is the same for every option. With k = ∞ the premature
+layer is therefore the same for all options of a question; it is chosen from the question, not from an option.
 
 ## 4. Hypothesis (not derived, not measured): an interior optimum
 

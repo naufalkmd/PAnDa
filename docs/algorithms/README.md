@@ -8,10 +8,10 @@ Files:
 - [dola.md](dola.md)
 - [fixed-alpha-dola.md](fixed-alpha-dola.md)
 - [fanda-derivation.md](fanda-derivation.md)
-- [panda.md](panda.md)
+- [panda.md](panda.md) (PAnDa: dropped, kept for the record)
 
-`fanda-derivation.md` is a theoretical note on the selection interval of the premature layer for the FAnDa
-variants in `results/experiments/` (see exp12). Its statements are hypotheses: none of its quantities were
+`fanda-derivation.md` is a theoretical note on the selection interval of the premature layer for the decoders that share the
+score of per-question DoLa-static in `results/experiments/` (see exp12). Its statements are hypotheses: none of its quantities were
 measured. Terms: [`../glossary.md`](../glossary.md).
 
 ## Shared Runtime

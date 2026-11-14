@@ -4,7 +4,7 @@ Does the selection interval k matter more when the model generates a free-form a
 multiple-choice options? In exp12, k = 4 and k = ∞ were close, but teacher-forced options are only a few tokens
 long, so the two may differ at only a few steps.
 
-Decoders (same FAnDa score, different k): `exp14_update1`, `exp14_update2`, `exp14_update4`, `exp14_update8`,
+Decoders (the score of per-question DoLa-static, different k): `exp14_update1`, `exp14_update2`, `exp14_update4`, `exp14_update8`,
 `exp14_frozen` (k = 1, 2, 4, 8, ∞). Same 50 TruthfulQA questions, up to 64 new tokens.
 
 ## Evaluation

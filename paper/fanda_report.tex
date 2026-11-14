@@ -30,8 +30,8 @@
 \newcommand{\cha}[1]{\textsf{C#1}}
 
 %% ---- project names (one edit updates the whole report) ----
-\newcommand{\fanda}{FAnDa}
-\newcommand{\panda}{PAnDa}
+\newcommand{\method}{per-question DoLa-static}
+\newcommand{\Method}{Per-question DoLa-static}
 \newcommand{\mainmodel}{Qwen2.5-3B-Instruct}
 \newcommand{\JSD}{\operatorname{JSD}}
 \newcommand{\KL}{\operatorname{KL}}
@@ -76,17 +76,17 @@ exit). The premature layer is selected \emph{dynamically}: at every token, the c
 divergence from the mature layer is chosen, from a set of candidate layers that is itself chosen on a validation
 set. DoLa also describes a static variant, DoLa-static, that uses one premature layer chosen on a validation set
 for all inputs, and argues that dynamic selection avoids the per-task layer search~\citep{chuang2024dola}. DoLa
-keeps the adaptive plausibility constraint with $\alpha = 0.1$ and reports large gains on TruthfulQA for LLaMA
-models~\citep{chuang2024dola}. The method studied here, \fanda, lies between the two variants: it selects the
-premature layer by divergence for each answer, as dynamic DoLa does, but only once, and then keeps it fixed as
-DoLa-static does. It also removes the plausibility constraint (Section~\ref{sec:method}).
+uses the adaptive plausibility constraint with $\alpha = 0.1$ and reports large gains on TruthfulQA for LLaMA
+models~\citep{chuang2024dola}; its reference code applies the constraint in free generation but not in
+multiple-choice scoring (Section~\ref{sec:method-dola}). The method studied here lies between the two variants, and we name it after DoLa's own term:
+\emph{\method{}} selects the premature layer by divergence, as dynamic DoLa does, but only once per question, and
+then keeps it fixed, as DoLa-static does; unlike DoLa-static, the layer is chosen per question rather than on a
+validation set. It also removes the plausibility constraint (Section~\ref{sec:method}).
 
-\paragraph{Baselines from other decoding families.}
+\paragraph{Truncation baselines.}
 Top-$k$ and nucleus (top-$p$) truncation~\citep{holtzman2020curious} restrict sampling to the most likely tokens.
-Under likelihood-based multiple-choice scoring they act as truncated and renormalised scoring distributions, and
-we use them only as baselines. Jacobi (parallel) decoding refines a block of future tokens by fixed-point
-iteration~\citep{santilli2023accelerating}; the project's earlier method, \panda{}, uses it, and we report it as a
-baseline.
+Under likelihood-based multiple-choice scoring they act as truncated and renormalised scoring distributions; on
+the development set they scored like the base model, and we report them there only.
 
 \section{Method}
 \label{sec:method}
@@ -122,10 +122,22 @@ Jensen--Shannon divergence; its reference implementation, which our DoLa baselin
 $d(q_N, q_j) = \tfrac12[\KL(m \Vert q_N) + \KL(m \Vert q_j)]$ with $m = \tfrac12(q_N + q_j)$, averaged over the
 vocabulary. This places the mixture $m$ first in both terms, the reverse of the standard definition.
 
-\subsection{\fanda}
+\paragraph{Two configurations of DoLa.}
+DoLa's reference code uses different settings for free generation and for TruthfulQA multiple-choice
+scoring. For multiple choice, it applies no plausibility constraint, scores an option by the plain sum
+$\sum_t [\log q_N(y_t \mid x_{<t}) - \log q_{M_t}(y_t \mid x_{<t})]$ without renormalising, and draws the
+candidate layers from the second half of the network (layers 16, 18, \dots, 30 of the 32-layer LLaMA-7B, chosen
+on a validation set). Our development runs instead used the generation settings, Equations~\eqref{eq:dola-score}
+and~\eqref{eq:vhead} followed by renormalisation, with candidate layers from the first quarter of the network
+(blocks 1, 3, \dots, 9 of the 36 in \mainmodel{}), the same candidates as \method{}. We report both:
+\emph{DoLa (MC settings)}, which transfers the multiple-choice candidate layers to \mainmodel{} by relative depth
+(blocks 18, 20, \dots, 34), and \emph{DoLa (generation settings)}, the baseline \method{} was developed against.
+Neither candidate set was tuned for \mainmodel{}.
+
+\subsection{\Method}
 \label{sec:method-fanda}
 
-\fanda{} keeps the contrast between the mature and a premature layer and changes four settings of DoLa. Its score
+\Method{} keeps the contrast between the mature and a premature layer and changes four settings of DoLa. Its score
 for token $v$ when the answer so far is $x_{<t}$ is
 \begin{equation}
   s_t(v) = z^{(N)}_t(v) - z^{(L)}_t(v),
@@ -144,31 +156,34 @@ before the softmax, so its log-probability is close to $-1000$, and the option r
 tokens all lie inside $\Vhead$. Because $\Vhead$ depends only on the mature layer, the constraint thereby rejects
 any option that contains one token the mature layer finds unlikely relative to its top token, whatever the
 contrast says about the rest of the option. In free generation the same constraint only limits which token is
-chosen next. \fanda{} removes it. Its effect is measured in a $2 \times 2$ ablation (Table~\ref{tab:factorial}).
+chosen next. \Method{} removes it. DoLa's own multiple-choice evaluation also leaves it out
+(Section~\ref{sec:method-dola}), so this change matters relative to DoLa's generation settings, not relative to
+DoLa's multiple-choice settings. Its effect is measured in a $2 \times 2$ ablation (Table~\ref{tab:factorial}).
 We did not count how often a correct option contains a token outside $\Vhead$.
 
 \paragraph{Raw-logit difference.}
-\fanda{} subtracts raw logits instead of log-probabilities. Without the constraint this change has no effect:
+\Method{} subtracts raw logits instead of log-probabilities. Without the constraint this change has no effect:
 $\log q_N(v) - \log q_L(v) = z^{(N)}(v) - z^{(L)}(v) - c$, where $c$ is the same for every $v$ at a given step,
 and the softmax removes $c$. The two scores therefore give identical option scores, which the ablation confirms
 (Table~\ref{tab:factorial}). With the constraint the two differ, because the fixed value $-1000$ is then compared
 with scores on two different scales.
 
 \paragraph{Layer-selection divergence.}
-\fanda{} selects the premature layer with the standard Jensen--Shannon divergence at temperature $\tau = 0.5$,
+\Method{} selects the premature layer with the standard Jensen--Shannon divergence at temperature $\tau = 0.5$,
 whereas our DoLa baseline uses the reference implementation's divergence at $\tau = 1$
 (Section~\ref{sec:method-dola}). This setting was inherited from an earlier version of the code, and we did not
-test it separately. The comparison between DoLa and \fanda{} therefore includes this change.
+test it separately. The comparison between DoLa and \method{} therefore includes this change.
 \todo{after R3: replace the last two sentences with the result of the $\tau$ ablation, or keep them}
 
-\paragraph{Premature layer fixed for each answer option (\cha2).}
+\paragraph{Premature layer fixed for each question (\cha2).}
 With dynamic selection, the premature layer, and therefore the scoring function in Equation~\eqref{eq:dola-score},
 can change from one token to the next. On the development set, per-token selection changed the premature layer
-at 69\,\% of steps (Table~\ref{tab:interval}). \fanda{} selects the layer once, at the first token of the answer
-option, and keeps it for the remaining tokens. To separate this choice from the other three, we also evaluate the
-same score with the premature layer re-selected every $k$ tokens, for $k \in \{1, 2, 4, 8\}$; \fanda{} is
-$k = \infty$. With $k = 1$ the score still differs from DoLa in the other three settings. Each answer option is
-scored from a fresh state, so two options of the same question can use different premature layers. Appendix~\ref{app:stability}
+at 69\,\% of steps (Table~\ref{tab:interval}). \Method{} selects the layer once, at the first answer token, and keeps
+it for the remaining tokens. To separate this choice from the other three, we also evaluate the
+same score with the premature layer re-selected every $k$ tokens, for $k \in \{1, 2, 4, 8\}$; \method{} is
+$k = \infty$. With $k = 1$ the score still differs from DoLa in the other three settings. The first answer token is
+scored from the prompt alone, which is the same for every answer option, so all options of a question are scored
+with the same premature layer: the layer is chosen from the question. Appendix~\ref{app:stability}
 shows that a longer interval leaves the chosen tokens and the option ranking unchanged whenever the change in
 premature-layer logits stays below the decision margin. This explains when a longer interval makes no difference,
 not why it would help; whether it helps is tested empirically.
@@ -199,24 +214,12 @@ not why it would help; whether it helps is tested empirically.
   \draw[arr] (sc) -- (lp);
   \draw[arr] (lp) -- (sum);
 \end{tikzpicture}
-\caption{\fanda{} scoring of one answer option $y$ by teacher forcing. At each answer token, one forward pass
+\caption{\Method{} scoring of one answer option $y$ by teacher forcing. At each answer token, one forward pass
 gives the mature logits and the early-exit logits of the candidate layers. The premature layer $L$ is selected
 by Jensen--Shannon divergence only at the first answer token and then kept. There is no plausibility constraint.
 The option scores $S(y)$ give MC1, MC2 and MC3 (Section~\ref{sec:setup}).}
 \label{fig:pipeline}
 \end{figure}
-
-\subsection{\panda{} (baseline)}
-\label{sec:method-panda}
-
-\panda{}, the project's earlier method, applies contrastive decoding inside Jacobi-style blocks of four
-tokens~\citep{santilli2023accelerating}. For every position in a block it computes the greedy score
-$z^{(N)}$ and the contrastive score $z^{(N)} - z^{(M)}$, with the premature layer selected per position by the
-same divergence as in \fanda{} (standard Jensen--Shannon divergence, $\tau = 0.5$). Up to the first position where the two disagree (different top token and a
-Jensen--Shannon divergence above 0.05), it takes the greedy token. From that position on, it takes the
-contrastive token whenever the contrastive score's top-token probability is within 0.02 of the greedy score's.
-Under multiple-choice scoring, only the scores of the block's first position are used. \panda{} needs about twice
-the time per token of DoLa (Table~\ref{tab:main}); we report it as a baseline.
 
 \section{Experimental Setup}
 \label{sec:setup}

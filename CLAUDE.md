@@ -1,7 +1,10 @@
-# PAnDa / FAnDa
+# Per-question DoLa-static (formerly FAnDa)
 
-Research repository for FAnDa (a DoLa variant with a fixed premature layer) and PAnDa (the earlier block-wise
-method). **The GitHub repository is public**: never commit `archive/`, course material, model weights, datasets,
+Research repository for per-question DoLa-static (code name `fanda`, formerly FAnDa): DoLa with the premature
+layer chosen once per question and kept fixed. PAnDa, the earlier block-wise
+method the repository and the `panda` package are named after, was dropped (2026-11-14): keep its code (saved
+exploration runs use it), but leave it out of the report and the README's description.
+**The GitHub repository is public**: never commit `archive/`, course material, model weights, datasets,
 tokens or `.env`.
 
 ## Report
@@ -20,8 +23,8 @@ tokens or `.env`.
   (one row per question, `example_idx`) and `*_metadata.json`. `python scripts/summarise_runs.py` prints them all.
 - `docs/experiment_log.md`: every experiment, its result and the known issues. Update it after each new run.
 - **Terms:** prose (report, README, docs, commit messages) uses standard machine-learning terms only, never project
-  vocabulary (anchor, jitter, persistence, view, regime, arbitration, ...). FAnDa and PAnDa are labels, each
-  defined once next to its standard description.
+  vocabulary (anchor, jitter, persistence, view, regime, arbitration, ...). The method's name builds on DoLa's own term
+  DoLa-static; do not reintroduce "FAnDa" in prose except as the former name.
 - `docs/glossary.md`: code names and older-note words → standard terms. Do not rename identifiers: saved runs and figure JSON depend
   on them. Watch out: `fanda` means re-selection every 4 tokens in exp7–exp10 and a fixed layer in exp11/exp18.
 - The 50-question subset (seed 42) is the **development** set: every design choice was made on it.
@@ -29,12 +32,17 @@ tokens or `.env`.
 
 ## Environment
 
-- `.venv/` is a Linux environment (the GPU machine). On the Windows PC, run the plotting and summary scripts with
+- **GPU runs happen on this PC, in WSL Ubuntu** (RTX 5070, 12 GB), in `.venv` (a Linux venv on the Windows
+  drive, created by `bash scripts/setup_env.sh` from `requirements-lock.txt`; no system site-packages). Run in
+  `tmux`. Model and dataset caches are in WSL's `~/.cache/huggingface` (Qwen2.5-3B, Gemma 3 4B, Falcon 3 3B, the
+  HINT model, and the TruthfulQA arrow file are cached there).
+- The June 2026 runs used a `.venv` whose torch came from the system Python (version lost; package list in
+  `docs/environment_2026-06.txt`); that venv is in `archive/venv-2026-06-no-torch`. Pins in `requirements.txt` match
+  its versions, plus torch 2.9.1 + cu128.
+- On the Windows side, run the plotting and summary scripts with
   `uv run --no-project --with matplotlib --with pandas --with numpy python <script>`.
 - Run every script from the repository root (plot scripts use paths relative to it).
-- `pyproject.toml` dependencies are not pinned yet; pin them from the GPU machine's environment
-  (`pip freeze`) before the final reproduction runs. Reason: recent `huggingface_hub` versions reject the dataset
-  id `truthful_qa` (they need `namespace/name`, i.e. `truthfulqa/truthful_qa`), so an unpinned fresh install
-  cannot load TruthfulQA (seen 2026-11-14 on the PC).
+- Keep `huggingface_hub` < 1.0: newer versions reject the dataset id `truthful_qa` (they need `namespace/name`).
+- New runs record their environment in the metadata (`collect_environment` in `results/experiments/common.py`).
 - Exploration experiments (exp1–exp10) are to move to `results/experiments/exploration/` **after** the R1/R2
   reruns finish (the runners and plot scripts locate files by path).

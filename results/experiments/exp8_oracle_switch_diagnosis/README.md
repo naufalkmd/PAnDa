@@ -7,7 +7,7 @@ Compared decoders:
 
 - `pure_greedy`: greedy decoding (final-layer log-probabilities).
 - `fanda`: the contrastive score `final_logits - shallow_logits` at every token. In the saved run (2026-06-03)
-  the premature layer was re-selected every 4 tokens; the current code keeps it fixed per answer.
+  the premature layer was re-selected every 4 tokens; the current code keeps it fixed per question.
 - `pure_argmax_switchv2`: a rule-based switch with the same layer selection as `fanda`; it uses the contrastive
   score only when the two scores' top tokens differ.
 - `oracle_token_switch`: at each scored token, uses whichever score gives the correct token the higher

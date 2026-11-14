@@ -11,7 +11,7 @@ Decoders:
 - `fanda_greedy`: always the final-layer logits, through the same code path as `fanda` (the premature layer is
   still selected, but not used).
 - `fanda`: always the contrastive score. In the saved run (2026-06-03) the premature layer was re-selected every
-  4 tokens; the current code keeps it fixed per answer.
+  4 tokens; the current code keeps it fixed per question.
 - `pure_argmax_switch`: greedy when both scores have the same top token, the contrastive score otherwise.
 - `pure_argmax_switchv2`: the same rule, with the premature-layer selection of `fanda`.
 - `dola`: DoLa.

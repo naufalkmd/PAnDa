@@ -145,6 +145,16 @@ MATCHED_ALPHA_VALUES = {
     "matched_alpha_dola_0p95": 0.95,
 }
 
+# DoLa exactly as in its own TruthfulQA multiple-choice evaluation (github.com/voidism/DoLa, tfqa_mc_eval.py and
+# dola.py `lm_score`, checked 2026-11-14): no adaptive plausibility constraint (relative_top = 0.0), option score =
+# sum of log q_mature - log q_premature without renormalisation (post_softmax = False), DoLa's reference
+# divergence, and candidate premature layers in the second half of the network, every second layer (LLaMA-7B:
+# 16, 18, ..., 30 of 32). The `dola` decoder instead uses DoLa's generation settings (constraint on, renormalised)
+# and the evaluator's early candidate layers.
+DOLA_MC_REFERENCE_DECODERS = (
+    "dola_mc_reference",
+)
+
 EXPERIMENT_DECODER_LABELS = {
     "official_dola": "official_dola",
     "matched_alpha_dola_0p10": "matched_alpha_dola_0p10",
@@ -190,6 +200,7 @@ EXPERIMENT_DECODER_LABELS = {
     "guarded_argmax_switch": "guarded_argmax_switch",
     "sticky_contrast_switch": "sticky_contrast_switch",
     "contrast_margin_switch": "contrast_margin_switch",
+    "dola_mc_reference": "dola_mc_reference",
 }
 
 
@@ -532,6 +543,9 @@ class ExperimentEvaluator(Stage4Evaluator):
         if decoder_name in MATCHED_ALPHA_VALUES:
             return self._score_candidate_with_custom_step(prompt, choice_text, decoder_name)
 
+        if decoder_name in DOLA_MC_REFERENCE_DECODERS:
+            return self._score_candidate_with_custom_step(prompt, choice_text, decoder_name)
+
         if decoder_name in EXP2_DECODER_NAMES:
             return self._score_candidate_with_custom_step(prompt, choice_text, decoder_name)
 
@@ -684,6 +698,37 @@ class ExperimentEvaluator(Stage4Evaluator):
         if not candidate_metrics:
             raise ValueError("No candidate shallow layers were available for the matched exp13 comparison.")
         return max(candidate_metrics, key=lambda row: row["jsd_current"])
+
+    def dola_mc_reference_layers(self):
+        """Candidate premature layers of DoLa's TruthfulQA-MC setup, transferred by relative depth.
+
+        DoLa used hidden states 16, 18, ..., 30 of a 32-block LLaMA-7B (hidden state j = output of block j).
+        Here layer_logits[i] is the output of block i + 1, so blocks N/2, N/2 + 2, ..., N - 2 are indices
+        N/2 - 1, ..., N - 3 (Qwen2.5-3B, N = 36: blocks 18, 20, ..., 34).
+        """
+        num_blocks = int(self.mature_layer_index) + 1
+        return [block - 1 for block in range(num_blocks // 2, num_blocks - 1, 2)]
+
+    def build_dola_mc_reference_scores(self, final_logits, layer_logits):
+        candidates = [idx for idx in self.dola_mc_reference_layers() if 0 <= idx < len(layer_logits)]
+        if not candidates:
+            raise ValueError("No candidate premature layers for dola_mc_reference.")
+        divergences = {idx: self.official_dola_js_divergence(final_logits, layer_logits[idx]) for idx in candidates}
+        selected_layer = max(divergences, key=divergences.get)
+        # No plausibility constraint and no renormalisation, as in DoLa's multiple-choice evaluation.
+        scores = F.log_softmax(final_logits, dim=-1) - F.log_softmax(layer_logits[selected_layer], dim=-1)
+        trace_row = {
+            "step": None,
+            "selected_layer": int(selected_layer),
+            "divergence": float(divergences[selected_layer]),
+            "margin": None,
+            "instability": None,
+            "alpha": None,
+            "ablation_mode": "dola_mc_reference",
+            "jsd_current": float(divergences[selected_layer]),
+            "selection_score": float(divergences[selected_layer]),
+        }
+        return scores, trace_row
 
     def build_exp13_factorial_scores(self, final_logits, layer_logits, decoder_name):
         variant = EXP13_FACTORIAL_DECODERS[decoder_name]
@@ -887,6 +932,12 @@ class ExperimentEvaluator(Stage4Evaluator):
                 decoder_name,
             )
             return scores, scores_are_logprobs, trace_row, 1, None
+
+        if decoder_name in DOLA_MC_REFERENCE_DECODERS:
+            layer_logits, final_logits = self.forward_with_layer_logits(generated)
+            scores, trace_row = self.build_dola_mc_reference_scores(final_logits, layer_logits)
+            # True: the caller sums these scores directly, without a log-softmax (DoLa's post_softmax = False).
+            return scores, True, trace_row, 1, None
 
         if decoder_name in EXP14_OPEN_FACTUAL_DECODERS:
             variant = EXP14_OPEN_FACTUAL_DECODERS[decoder_name]

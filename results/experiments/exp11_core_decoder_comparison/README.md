@@ -1,6 +1,6 @@
 # Experiment 11: Main decoder comparison
 
-The baselines, DoLa, FAnDa and PAnDa in one TruthfulQA multiple-choice run, scored by teacher forcing:
+The baselines, DoLa, per-question DoLa-static and PAnDa in one TruthfulQA multiple-choice run, scored by teacher forcing:
 
 - `pure_greedy`: greedy decoding (final-layer log-probabilities).
 - `top_k`: final-layer distribution truncated to the top k tokens and renormalised. If the scored token falls
@@ -8,11 +8,11 @@ The baselines, DoLa, FAnDa and PAnDa in one TruthfulQA multiple-choice run, scor
 - `top_p`: final-layer nucleus (top-p) distribution with cumulative mass p, renormalised, with the same fallback.
 - `top_p_backoff`: older name for the same nucleus baseline, kept so older runs can be compared (opt-in).
 - `dola`: DoLa (dynamic premature-layer selection, log-probability difference, adaptive plausibility constraint).
-- `fanda`: FAnDa, the raw-logit difference `final_logits - shallow_logits` with the premature layer selected once
-  per answer.
+- `fanda`: per-question DoLa-static, the raw-logit difference `final_logits - shallow_logits` with the premature layer selected once
+  per question (at the first answer token).
 - `panda_switch`: PAnDa (Jacobi blocks, choosing between greedy and contrastive scores).
 
-Questions: how does FAnDa compare with the truncation baselines and DoLa, and does PAnDa add anything over the
+Questions: how does per-question DoLa-static compare with the truncation baselines and DoLa, and does PAnDa add anything over the
 same baselines?
 
 Defaults:
@@ -21,8 +21,8 @@ Defaults:
 - `panda_switch`: `jacobi_window_size=4`, `jacobi_max_iters=2`.
 - `top_p_backoff` is added only with `--include-top-p-backoff`.
 
-Run rows: `run_01_default` (the 50-question development set), `run_02_full` (all 817 questions; run with
-`--mode full --truthfulqa-limit all`, or `bash scripts/run_report_reruns.sh r2`).
+Run row: `run_01_default` (the 50-question development set). The full-dataset evaluation of these
+decoders is in exp19 (`exp19_heldout_full`).
 
 Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 

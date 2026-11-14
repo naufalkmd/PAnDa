@@ -1,3 +1,2 @@
 run_id,notes,seed,shallow_bucket
 run_01_default,mechanism_study_for_selected_layer_persistence_under_matched_fanda_variants,42,
-run_02_full,held_out_evaluation_on_all_817_truthfulqa_questions_run_with_mode_full_and_truthfulqa_limit_all,42,

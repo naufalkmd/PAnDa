@@ -7,7 +7,7 @@ Compared decoders:
 
 - `fanda`: the contrastive score `final_logits - shallow_logits` at every token, one token at a time. In the
   saved runs (2026-06-03) the premature layer was re-selected every 4 tokens; the current code keeps it fixed
-  per answer (see `docs/glossary.md`).
+  per question (see `docs/glossary.md`).
 - `panda_switch`: PAnDa (Jacobi blocks, choosing between greedy and contrastive scores).
 - `panda_switch_update4`: PAnDa, but one premature layer (selected by JSD) is shared by all positions in the
   block and re-selected only every 4 scored tokens.

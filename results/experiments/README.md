@@ -8,13 +8,13 @@ Results and known issues for every experiment: [`docs/experiment_log.md`](../../
 Code names → standard terms: [`docs/glossary.md`](../../docs/glossary.md). All runs: TruthfulQA multiple choice
 (MC1/MC2/MC3) with `Qwen/Qwen2.5-3B-Instruct`, on the same 50 questions (the development set) unless noted.
 
-*Selection interval k*: the premature layer is re-selected every k tokens (k = ∞: once per answer).
+*Selection interval k*: the premature layer is re-selected every k tokens (k = ∞: once, at the first answer token, so once per question).
 
 ## Experiments used in the report
 
 | Folder | Question | Decoders |
 |---|---|---|
-| `exp11_core_decoder_comparison/` | Main comparison | `pure_greedy`, `top_k`, `top_p`, `dola`, `fanda`, `panda_switch` |
+| `exp11_core_decoder_comparison/` | Main comparison (its `panda_switch` row is the dropped PAnDa method) | `pure_greedy`, `top_k`, `top_p`, `dola`, `fanda`, `panda_switch` |
 | `exp12_state_persistence_diagnostics/` | Selection interval k ∈ {1, 2, 4, ∞} | `fanda_update1`, `_update2`, `_update4`, `fanda_frozen` |
 | `exp13_logit_filter_factorial/` | 2 × 2: log-probability vs. raw-logit difference × adaptive plausibility constraint | `exp13_logprob_top`, `_logprob_no_top`, `_logit_top`, `_logit_no_top` |
 | `exp14_openended_factuality/` | Open-ended generation, k ∈ {1, 2, 4, 8, ∞} (automatic reference overlap; LLM-assigned labels) | `exp14_update{1,2,4,8}`, `exp14_frozen` |
@@ -22,6 +22,10 @@ Code names → standard terms: [`docs/glossary.md`](../../docs/glossary.md). All
 | `exp16_mc_persistence_seed_sweep/` | Selection interval across random subsets | `fanda_update{1,2,4,8}`, `fanda_frozen` |
 | `exp17_openended_dola_trace/` | Token-level premature-layer traces of open-ended answers | `exp14_update1` |
 | `exp18_cross_model_transfer/` | Transfer to Gemma 3 4B, Falcon 3 3B, HINT self-calibrated Qwen 1.5B | `pure_greedy`, `dola`, `fanda` |
+| `exp19_heldout_full/` | **Held-out evaluation on all 817 questions** (main comparison, factorial, k = 1, 4, ∞ in one run) | `pure_greedy`, `dola`, `fanda_frozen`, `exp13_logprob_top`, `_logprob_no_top`, `_logit_top`, `fanda_update1`, `_update4` |
+
+exp11–exp18 ran on the 50-question development set (exp16 adds other random subsets); exp19 is the only run with
+questions that no design choice was made on.
 
 ## Exploration (not in the report's main text)
 

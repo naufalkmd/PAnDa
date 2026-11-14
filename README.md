@@ -1,19 +1,21 @@
-# PAnDa / FAnDa: contrastive layer decoding experiments
+# Per-question DoLa-static: contrastive layer decoding with a premature layer chosen per question
 
-Research code for **FAnDa**, a simplification of DoLa (contrastive layer decoding, Chuang et al., 2024) for
-truthful question answering, and for **PAnDa**, the earlier block-wise method it grew out of. The repository is
-named after PAnDa; the current results and the report are about FAnDa.
+Research code for **per-question DoLa-static**, a variant of DoLa (decoding by contrasting layers, Chuang et al.,
+2024), evaluated on TruthfulQA multiple choice. DoLa-static is DoLa's own name for its variant with one fixed
+premature layer chosen on a validation set; here the fixed layer is chosen separately for each question.
+The method was called FAnDa in the June 2026 course version; code identifiers still use `fanda`.
 
-**FAnDa** differs from DoLa in four settings:
+It differs from DoLa in four settings:
 
 - no adaptive plausibility constraint (DoLa's "relative-top" filter);
 - the raw-logit difference `z_mature − z_premature` instead of the log-probability difference;
 - the premature layer is chosen by Jensen–Shannon divergence at temperature 0.5 (DoLa uses 1);
-- the premature layer is chosen **once per answer** and then kept fixed, instead of being re-selected at every token.
+- the premature layer is chosen **once per question** (at the first answer token, where every answer option has
+  the same input) and then kept fixed, instead of being re-selected at every token.
 
-**PAnDa** (Parallel-block Adaptive Contrast DoLa) applies contrastive decoding inside Jacobi-style blocks of
-4 tokens. It takes tokens from the final layer up to the first position where the final-layer and contrastive
-distributions disagree, then chooses between the two scores token by token. It is kept as a baseline.
+**History.** The repository and the Python package (`panda`) are named after PAnDa, an earlier block-wise
+variant that was dropped. Its code stays because saved exploration runs used it (see
+[`docs/algorithms/panda.md`](docs/algorithms/panda.md)); it is not part of the results.
 
 **Status.** This is a development-stage research repository, not a benchmark package. Most results come
 from one 50-question TruthfulQA subset, which was also used to develop the method. See
@@ -22,15 +24,24 @@ Code names are explained in [`docs/glossary.md`](docs/glossary.md).
 
 ## Install
 
-Run from the repository root:
+Linux or WSL with Python 3.12 and an NVIDIA GPU (CUDA 12.8 driver). From the repository root:
 
 ```bash
-python -m venv .venv
-./.venv/bin/python -m pip install -U pip
-./.venv/bin/python -m pip install -e .
+bash scripts/setup_env.sh
 ```
 
-For gated models, or models not cached locally, export `HF_TOKEN` (or `HUGGINGFACE_HUB_TOKEN`).
+This creates `.venv` from `requirements-lock.txt`, the exact versions of every package (PyTorch 2.9.1 with
+CUDA 12.8, transformers 4.57.6, datasets 4.8.5, huggingface_hub 0.36.2), and installs this package without
+changing them. `requirements.txt` lists the direct dependencies; `bash scripts/setup_env.sh --lock` re-resolves it
+and rewrites the lock file. Keep `huggingface_hub` below 1.0: newer versions reject the dataset id `truthful_qa`.
+
+For gated models (Gemma 3), or models not cached locally, export `HF_TOKEN` (or `HUGGINGFACE_HUB_TOKEN`).
+
+**Reproducibility.** Scoring is deterministic given the model weights: there is no sampling, and the question
+subsets come from fixed seeds (42 for the development set). Each run's metadata records the git commit, package
+versions, GPU, model precision, candidate layers and the SHA-256 of the TruthfulQA file used (`environment` in
+`*_metadata.json`). Different GPUs or library versions can still change the last digits of a score, and
+occasionally a close ranking between two answer options.
 
 ## Run an experiment
 
@@ -50,25 +61,13 @@ Print the scores of every saved run:
 python scripts/summarise_runs.py
 ```
 
-## Evaluator CLI
+## Older evaluator CLI
 
-The package also has a general evaluator (TruthfulQA multiple choice, MC1/MC2/MC3) with the decoders
-`greedy`, `dola`, `fixed_alpha_dola_low`, `fixed_alpha_dola`, `fixed_alpha_dola_high` and `panda`:
-
-```bash
-./.venv/bin/python -m panda \
-  --comparison-preset panda \
-  --mode sanity \
-  --save-results \
-  --results-dir results/dev/panda_truthfulqa_sanity10
-```
-
-- `--mode sanity` / `subset` / `full`: small seeded subset, larger seeded subset, or all questions.
-- `--model-name`: any Hugging Face causal LM.
-- `--truthfulqa-limit N`: override the subset size.
-- `--local-files-only`: no network access.
-
-`scripts/run_panda_truthfulqa.py` wraps the PAnDa preset (`--bootstrap` installs missing dependencies).
+The experiments above use the runners in `results/experiments/`. The package also has an older general evaluator
+(`python -m panda`, TruthfulQA multiple choice) with the decoders `greedy`, `dola`, `fixed_alpha_dola_low`,
+`fixed_alpha_dola`, `fixed_alpha_dola_high` and `panda`. It is not used for the results; `--mode sanity` /
+`subset` / `full` choose the question subset, `--model-name` the model, `--local-files-only` disables downloads.
+`scripts/run_panda_truthfulqa.py` and `scripts/_quick_run.py` are wrappers for its dropped PAnDa preset.
 
 ## Figures
 
@@ -85,7 +84,7 @@ PAnDa/
   src/panda/            Evaluator, decoders, benchmark loaders, CLI
   results/experiments/  One folder per experiment: runner, run matrix, README, saved runs
   results/figures/      Generated figures and their data (JSON)
-  results/dev/          Early PAnDa sanity runs (historical "stage" names)
+  results/dev/          Early sanity runs of the dropped PAnDa method (historical "stage" names)
   scripts/              Run wrappers and scripts/summarise_runs.py
   scripts/plots/        Figure scripts
   paper/                Report source; paper/course_version_2026_06/ is the June 2026 course version
@@ -95,7 +94,7 @@ PAnDa/
 Key implementation files:
 
 - `src/panda/decoders/core.py`: premature-layer selection, DoLa scores, contrastive scores
-- `results/experiments/local_evaluator.py`: the experiment decoders (FAnDa variants, the factorial, rule-based switches)
+- `results/experiments/local_evaluator.py`: the experiment decoders (per-question DoLa-static and its selection-interval variants, the factorial, rule-based switches)
 - `src/panda/evaluation.py`: MC1/MC2/MC3 scoring and summaries
 
 ## Reproducibility notes

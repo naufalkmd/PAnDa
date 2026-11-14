@@ -5,7 +5,7 @@ Does a contrastive weight set per token by a rule beat a fixed weight of 1?
 Compared decoders:
 
 - `fanda`: `scores = final_logits - shallow_logits` at every token. In the saved runs (2026-06-03) the
-  premature layer was re-selected every 4 tokens; the current code keeps it fixed per answer.
+  premature layer was re-selected every 4 tokens; the current code keeps it fixed per question.
 - `adaptive_lambda_contrast`: the same layer selection, with `scores = final_logits - lambda_t * shallow_logits`.
   `lambda_t` rises with the normalised entropy of the final-layer distribution and falls when the greedy
   score's top-token probability exceeds the contrastive score's; it is clipped to `[lambda_min, 1.0]`.

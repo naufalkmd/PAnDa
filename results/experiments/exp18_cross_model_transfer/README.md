@@ -1,11 +1,11 @@
 # Experiment 18: Transfer to other models
 
-Does the ranking greedy vs. DoLa vs. FAnDa from Qwen2.5-3B-Instruct hold on other models, with the same
+Does the ranking greedy vs. DoLa vs. Per-question DoLa-static from Qwen2.5-3B-Instruct hold on other models, with the same
 50 TruthfulQA multiple-choice questions?
 
 ## Design
 
-- Decoders: `pure_greedy`, `dola`, `fanda` (FAnDa, premature layer selected once per answer).
+- Decoders: `pure_greedy`, `dola`, `fanda` (per-question DoLa-static, premature layer selected once per question).
 - Metrics: MC2 first, then MC1 and MC3.
 - Questions: by default the same 50 dataset indices as `exp11_core_decoder_comparison/run_01_default`.
 - One run-matrix row per model; each writes to `runs/<run_id>/`. The DeepSeek-R1-Distill-Llama row is disabled

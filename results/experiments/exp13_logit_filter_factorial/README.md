@@ -1,6 +1,6 @@
 # Experiment 13: Score difference × plausibility constraint (2 × 2 factorial)
 
-An ablation of two of the changes from DoLa to FAnDa. Earlier baselines (exp4) suggested that a raw-logit
+An ablation of two of the changes from DoLa to per-question DoLa-static. Earlier baselines (exp4) suggested that a raw-logit
 contrastive score beats DoLa here, but they changed two things at once:
 
 - raw-logit difference instead of DoLa's log-probability difference;
@@ -20,7 +20,7 @@ cells here use **DoLa's own layer selection** (JSD at every token) and differ on
 | `exp13_logit_no_top` | raw-logit difference | off |
 
 The third change, the selection interval, is ablated in exp12. The fourth, the JSD temperature (τ = 0.5 in
-FAnDa, 1 in DoLa), is not ablated anywhere yet.
+Per-question DoLa-static, 1 in DoLa), is not ablated anywhere yet.
 
 How to read it: a main effect of the score shows as a gain from raw logits with the constraint both on and off;
 a main effect of the constraint, as a gain from removing it with either score; an interaction, as a gain only
@@ -31,8 +31,8 @@ from the raw logits only by a per-step constant (their saved results are identic
 
 Outputs: raw predictions, summary, pairwise summary, metadata, progress logs.
 
-Run rows: `run_01_default` (the 50-question development set), `run_02_full` (all 817 questions; run with
-`--mode full --truthfulqa-limit all`, or `bash scripts/run_report_reruns.sh r2`).
+Run row: `run_01_default` (the 50-question development set). The full-dataset evaluation of these
+decoders is in exp19 (`exp19_heldout_full`).
 
 Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 

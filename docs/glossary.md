@@ -1,8 +1,9 @@
 # Glossary: code names → standard terms
 
 **Rule.** Prose (report, README, docs) uses standard machine-learning terms only. Where a method has no standard
-name, it is described with standard parts. The two method names, FAnDa and PAnDa, are labels: each is defined
-once next to its standard description and is never used to explain anything.
+name, it is described with standard parts. The method is named with DoLa's own term: **per-question DoLa-static**
+(formerly FAnDa) is DoLa-static with the fixed premature layer chosen per question instead of on a validation set. PAnDa, an earlier method, was dropped; its name
+appears only in code and in the history notes.
 
 Code identifiers (decoder names, experiment folders, CSV columns) are **not renamed**, because saved runs,
 plots and figure JSON depend on them. This file maps them to the standard terms.
@@ -33,26 +34,27 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 
 | Label | Standard description (write this first) |
 |---|---|
-| FAnDa | DoLa with four changes: no adaptive plausibility constraint; raw-logit difference instead of log-probability difference; premature layer chosen by JSD at τ = 0.5 instead of 1; premature layer **selected at the first token of each answer and kept fixed** instead of selected at every token |
-| PAnDa | Contrastive decoding inside Jacobi-style blocks of 4 tokens. Up to the first position where the final-layer and contrastive distributions disagree (different top token and JSD above a threshold), tokens come from the final layer. From that position on, each token comes from the contrastive score if its top-token probability is within a fixed margin of the final layer's (`panda_truth_bias`), otherwise from the final layer |
+| Per-question DoLa-static (formerly FAnDa; code name `fanda`) | DoLa with four changes: no adaptive plausibility constraint; raw-logit difference instead of log-probability difference; premature layer chosen by JSD at τ = 0.5 instead of 1; premature layer **selected once, at the first answer token, and kept fixed** instead of selected at every token. The first answer token has the same input (the prompt) for every option, so the layer is the same for all options of a question |
+| PAnDa (dropped) | Contrastive decoding inside Jacobi-style blocks of 4 tokens. Up to the first position where the final-layer and contrastive distributions disagree (different top token and JSD above a threshold), tokens come from the final layer. From that position on, each token comes from the contrastive score if its top-token probability is within a fixed margin of the final layer's (`panda_truth_bias`), otherwise from the final layer |
 
 ## Code names
 
 | Code name | Standard description | Note |
 |---|---|---|
-| `pure_greedy`, `greedy` | Greedy decoding (final-layer log-probabilities) | |
-| `dola`, `official_dola` | DoLa: dynamic premature-layer selection (JSD, τ = 1, mature layer excluded), log-probability difference, adaptive plausibility constraint | |
+| `pure_greedy`, `greedy` | Base model (no contrast): the final-layer log-likelihood of each option. DoLa calls it the baseline | Named "greedy" in the code; under multiple-choice scoring nothing is decoded, so the report says "base model" |
+| `dola`, `official_dola` | **DoLa (generation settings)**: dynamic premature-layer selection by DoLa's reference divergence (τ = 1), log-probability difference renormalised, adaptive plausibility constraint, candidate layers in the first quarter | The baseline of the development runs. Not DoLa's multiple-choice configuration (see `dola_mc_reference`) |
+| `dola_mc_reference` | **DoLa (MC settings)**, as in DoLa's own TruthfulQA-MC evaluation: no plausibility constraint, option score = sum of log q_N − log q_M without renormalisation, candidate layers in the second half (blocks N/2, N/2 + 2, …, N − 2) | Added 2026-11-14 for exp19 |
 | `relative_top` | Adaptive plausibility constraint | `relative_top_value` is the score given to masked tokens |
-| `fanda` (exp11, exp18) | FAnDa: premature layer selected once per answer | |
-| `fanda` (saved runs of exp5–exp10) | FAnDa with the premature layer re-selected every 4 tokens | These runs (committed 2026-06-03) predate commit `efec350` (2026-06-04), which made `fanda` a fixed layer. Their numbers equal `fanda_update4`; rerunning them now would use the fixed layer |
-| `fanda_update{k}`, `exp14_update{k}`, `always_contrast_update{k}` | FAnDa scoring with the premature layer re-selected every k tokens ("selection interval k") | k = 1 is **not** DoLa: τ = 0.5 and no plausibility constraint |
-| `fanda_frozen`, `exp14_frozen`, `always_contrast_frozen` | FAnDa scoring with the premature layer selected once, at the first token of the answer | `update_every = 10**9` |
+| `fanda` (exp11, exp18) | Per-question DoLa-static: premature layer selected once per question | |
+| `fanda` (saved runs of exp5–exp10) | Per-question DoLa-static with the premature layer re-selected every 4 tokens | These runs (committed 2026-06-03) predate commit `efec350` (2026-06-04), which made `fanda` a fixed layer. Their numbers equal `fanda_update4`; rerunning them now would use the fixed layer |
+| `fanda_update{k}`, `exp14_update{k}`, `always_contrast_update{k}` | Per-question DoLa-static scoring with the premature layer re-selected every k tokens ("selection interval k") | k = 1 is **not** DoLa: τ = 0.5 and no plausibility constraint |
+| `fanda_frozen`, `exp14_frozen`, `always_contrast_frozen` | Per-question DoLa-static scoring with the premature layer selected once, at the first answer token (so once per question) | `update_every = 10**9` |
 | `fanda_greedy` | Greedy decoding through the same code path (no contrast) | |
 | `exp13_{logprob,logit}_{top,no_top}` | 2 × 2 factorial: log-probability vs. raw-logit difference × plausibility constraint on vs. off, with DoLa's layer selection | Without the constraint both differences rank tokens identically: log-softmax shifts all logits by the same constant |
 | `fixed_alpha_dola{_low,,_high}` | Raw-logit contrastive score z_mature − α · z_premature with α = 0.0, 0.5, 1.0, premature layer re-selected every 4 tokens | α = 0 is greedy decoding; α = 1 equals `fanda_update4` (`src/panda/config.py`) |
 | `matched_alpha_dola_0p{10,50,95}` | DoLa's log-probability score with the premature term weighted by α = 0.10, 0.50, 0.95 | exp1 |
 | `top_k`, `top_p` | Top-k / nucleus truncation of the final-layer distribution, scored by likelihood | |
-| `panda`, `panda_switch` | PAnDa | |
+| `panda`, `panda_switch` | PAnDa (dropped; exploration only) | Not in the report's results |
 | `*_switch*`, `ema_risk_switch` | Rule-based switch between greedy and contrastive scores at each token | EMA = exponential moving average of a divergence |
 | `adaptive_lambda_contrast` | Contrastive score with a per-token weight set by a rule | |
 | `oracle_token_switch` | Oracle switch: picks, per token, whichever score ranks the correct token higher | |

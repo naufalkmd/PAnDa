@@ -1,7 +1,7 @@
 # Experiment 12: Selection interval of the premature layer
 
-An ablation of one of the changes from DoLa to FAnDa: how often the premature layer is re-selected. The four
-decoders share the FAnDa score (raw-logit difference, no adaptive plausibility constraint, layer selection by
+An ablation of one of the changes from DoLa to per-question DoLa-static: how often the premature layer is re-selected. The four
+decoders share the score of per-question DoLa-static (raw-logit difference, no adaptive plausibility constraint, layer selection by
 JSD at τ = 0.5) and differ only in the selection interval k:
 
 | Decoder | Premature layer re-selected |
@@ -9,7 +9,7 @@ JSD at τ = 0.5) and differ only in the selection interval k:
 | `fanda_update1` | at every token (k = 1) |
 | `fanda_update2` | every 2 tokens (k = 2) |
 | `fanda_update4` | every 4 tokens (k = 4; the default before commit `efec350`) |
-| `fanda_frozen` | once, at the first token of each answer option (k = ∞; FAnDa) |
+| `fanda_frozen` | once, at the first answer token, which is the same for every option of a question (k = ∞; per-question DoLa-static) |
 
 k = 1 is **not** DoLa: DoLa uses JSD at τ = 1 and the plausibility constraint (exp13 isolates those).
 
@@ -42,8 +42,8 @@ Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 ## Run
 
-Run rows: `run_01_default` (the 50-question development set), `run_02_full` (all 817 questions; run with
-`--mode full --truthfulqa-limit all`, or `bash scripts/run_report_reruns.sh r2`).
+Run row: `run_01_default` (the 50-question development set). The full-dataset evaluation of these
+decoders is in exp19 (`exp19_heldout_full`).
 
 ```bash
 ./.venv/bin/python results/experiments/exp12_state_persistence_diagnostics/run_experiment.py \

@@ -27,6 +27,90 @@ from panda.utils import make_sampling_rng, resolve_limit
 SUMMARY_GROUP_COLUMNS = ["benchmark", "metric_name", "decoder", "decoder_label"]
 
 
+def collect_environment(evaluator):
+    """Record what a rerun needs to reproduce a run: code version, packages, GPU, model settings, data file.
+
+    Only reads state; every part is optional, so a missing attribute or tool can never stop a run.
+    """
+    import hashlib
+    import platform
+    import subprocess
+
+    env = {"recorded_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+
+    def attempt(key, fn):
+        try:
+            env[key] = fn()
+        except Exception as exc:  # noqa: BLE001 - recording must never fail a run
+            env[key] = f"unavailable: {type(exc).__name__}"
+
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=PROJECT_ROOT, capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    attempt("git_commit", lambda: git("rev-parse", "HEAD"))
+    attempt("git_uncommitted_changes", lambda: bool(git("status", "--porcelain", "--untracked-files=no")))
+    attempt("python", platform.python_version)
+    attempt("platform", platform.platform)
+
+    def package_versions():
+        from importlib.metadata import version
+
+        names = ["torch", "transformers", "datasets", "huggingface_hub", "accelerate", "tokenizers",
+                 "safetensors", "numpy", "pandas"]
+        result = {}
+        for name in names:
+            try:
+                result[name] = version(name)
+            except Exception:  # noqa: BLE001
+                result[name] = None
+        return result
+
+    attempt("packages", package_versions)
+
+    def gpu():
+        import torch
+
+        info = {"cuda_available": torch.cuda.is_available(), "torch_cuda": torch.version.cuda,
+                "cudnn": torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else None}
+        if torch.cuda.is_available():
+            info["devices"] = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
+        return info
+
+    attempt("gpu", gpu)
+
+    def model_settings():
+        cfg = getattr(evaluator, "cfg", None)
+        bucket = getattr(evaluator, "default_bucket", None)
+        return {
+            "model_name": getattr(getattr(evaluator, "args", None), "model_name", None),
+            "dtype": str(getattr(evaluator, "dtype", None)),
+            "device": getattr(evaluator, "device", None),
+            "use_chat_template": getattr(evaluator, "use_chat_template", None),
+            "mature_layer_index": getattr(evaluator, "mature_layer_index", None),
+            # Indices into hidden_states[1:]: index i is the output of transformer block i + 1.
+            "candidate_premature_layers": list(bucket) if bucket is not None else None,
+            "layer_selection_temperature_tau": getattr(cfg, "tau", None),
+            "default_update_every": getattr(cfg, "update_every", None),
+            "dola_relative_top": getattr(evaluator, "dola_relative_top", None),
+        }
+
+    attempt("model_settings", model_settings)
+
+    def dataset_file():
+        from panda.benchmarks import _find_truthfulqa_arrow_cache
+
+        path = _find_truthfulqa_arrow_cache()
+        if path is None:
+            return {"cached_arrow_file": None}
+        digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        return {"cached_arrow_file": Path(path).name, "sha256": digest}
+
+    attempt("truthfulqa_file", dataset_file)
+    return env
+
+
 def _write_progress_snapshot(path, payload):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -379,6 +463,8 @@ def run_truthfulqa_suite_on_rows(
             "truthfulqa_limit": truthfulqa_limit,
             "truthfulqa_metrics": ["mc1", "mc2", "mc3"],
             "latency_measurement": "wall_clock_seconds_with_cuda_synchronize",
+            "evaluation_seconds": elapsed,
+            "environment": collect_environment(evaluator),
         }
     )
     save_experiment_outputs(results_df, summary_df, pairwise_df, metadata, Path(results_dir), artifact_prefix)
