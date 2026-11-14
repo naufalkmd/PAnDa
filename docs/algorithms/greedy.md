@@ -71,7 +71,7 @@ Shared runtime behavior still applies:
 
 ## What It Is Not
 
-- No shallow-layer contrast
+- No premature-layer contrast
 - No dynamic layer selection
 - No pairwise reranking
-- No block-local arbitration
+- No Jacobi blocks and no choice between scores

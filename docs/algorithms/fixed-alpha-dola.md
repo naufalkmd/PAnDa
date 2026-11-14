@@ -2,7 +2,7 @@
 
 ## What It Does
 
-`fixed_alpha_dola_low`, `fixed_alpha_dola`, and `fixed_alpha_dola_high` keep DoLa-style dynamic shallow-layer selection, but replace the standard DoLa contrast rule with direct fixed-alpha shallow-logit subtraction:
+`fixed_alpha_dola_low`, `fixed_alpha_dola`, and `fixed_alpha_dola_high` keep DoLa-style dynamic premature-layer selection, but replace the standard DoLa contrast rule with direct fixed-alpha premature-layer logit subtraction:
 
 ```text
 new_logits = final_logits - alpha * shallow_logits
@@ -17,7 +17,7 @@ Relevant code:
 ## Generation Pseudocode
 
 ```text
-# Initialize the dynamic shallow-layer state once.
+# Initialize the dynamic premature-layer state once.
 state.selected_layer = shallow_bucket[0]
 state.step = 0
 
@@ -25,18 +25,18 @@ state.step = 0
 generated = prepare_prompt(prompt)
 
 repeat until max_new_tokens or EOS:
-    # Get final-layer logits plus candidate shallow-layer logits.
+    # Get final-layer logits plus candidate premature-layer logits.
     layer_logits, final_logits = forward_with_layer_logits(generated)
 
     # Turn the final logits into probabilities for layer selection.
     p_final = softmax(final_logits / tau)
 
     if step % update_every == 0:
-        # Periodically refresh the shallow layer by choosing the one
+        # Periodically refresh the premature layer by choosing the one
         # that disagrees most with the final distribution.
         state.selected_layer = argmax over shallow_bucket of JSD(p_final, softmax(layer_logits[layer] / tau))
 
-    # Read the currently selected shallow layer.
+    # Read the currently selected premature layer.
     shallow_logits = layer_logits[state.selected_layer]
 
     # Pick the fixed alpha attached to this decoder preset and clamp it
@@ -89,8 +89,8 @@ return total_logprob
 | `alpha_min` | `0.0` | lower clamp |
 | `alpha_max` | `1.0` | upper clamp for the fixed-alpha presets |
 | `tau` | `0.5` | used for layer selection and instability terms |
-| `update_every` | `4` | dynamic shallow layer is refreshed every 4 steps |
-| Shallow bucket | default `range(0, max(1, num_layers // 4), 2)` | early even-numbered layers |
+| `update_every` | `4` | dynamic premature layer is refreshed every 4 steps |
+| Candidate premature layers | default `range(0, max(1, num_layers // 4), 2)` | early even-numbered layers |
 
 ## Extra Trace Quantities Recorded
 

@@ -2,15 +2,14 @@
 
 ## What It Does
 
-`panda` is the repo's block-local arbitration decoder.
+`panda` (PAnDa) applies contrastive decoding inside Jacobi-style blocks. It produces one sequence (it does not
+generate two answers and rerank them):
 
-It keeps one evolving trajectory and works inside a speculative block:
-
-1. build a greedy view and a contrast-subtracted view for the same block
-2. detect the first meaningful local disagreement
-3. arbitrate locally from that point onward
-4. refine the block with Jacobi-style updates
-5. commit the stable prefix and continue
+1. compute the greedy score (final-layer logits) and the contrastive score for every position of the block
+2. find the first position where the two disagree (different top token and JSD above a threshold)
+3. from that position on, choose between the two scores token by token
+4. refine the block by Jacobi iteration
+5. commit the converged prefix and continue
 
 Relevant code:
 
@@ -52,35 +51,35 @@ for iteration in 0 .. jacobi_max_iters - 1:
     input_ids = generated + buffer
     layer_logits, final_logits = forward_with_window_layer_logits(input_ids, window_size)
 
-    # Choose one shallow layer per block position using maximum JSD.
-    selected_layers = choose one shallow layer per position by max JSD
+    # Choose one premature layer per block position using maximum JSD.
+    selected_layers = choose one premature layer per position by max JSD
 
     for each position in the block:
-        # Read the shallow view chosen for this position.
+        # Premature-layer logits for this position.
         shallow_logits = layer_logits[selected_layer][position]
 
-        # Build the two local views for the same position.
+        # The two scores for this position.
         greedy_scores = final_logits[position]
         contrast_scores = final_logits[position] - shallow_logits
 
-        # Each regime proposes its own top token.
+        # Each score proposes its own top token.
         greedy_token = argmax(greedy_scores)
         contrast_token = argmax(contrast_scores)
 
         # Only mark a real disagreement if the top tokens differ
-        # and the two regime distributions are far enough apart.
+        # and the two distributions are far enough apart (JSD).
         if greedy_token != contrast_token and JSD(greedy_scores, contrast_scores) >= panda_divergence_threshold:
             mark this position as a disagreement
 
-    # Arbitration starts only from the earliest meaningful disagreement.
+    # The choice between scores starts at the earliest disagreement.
     first_divergence = earliest marked disagreement position
 
     for each position in the block:
-        # Prefix positions before the first divergence just keep the greedy view.
+        # Positions before the first disagreement keep the greedy score.
         arbitration_active = position >= first_divergence
 
-        # After arbitration activates, switch to the contrast-subtracted view only if
-        # its top-1 confidence beats the greedy view by the truth-bias rule.
+        # From there on, use the contrastive score if its top-token probability is within
+        # panda_truth_bias of the greedy score's top-token probability.
         if arbitration_active and top1_confidence(contrast_scores) > top1_confidence(greedy_scores) - panda_truth_bias:
             choose contrast_scores / contrast_token
         else:
@@ -141,28 +140,31 @@ return total_logprob
 | `panda_truth_bias` | `0.02` |
 | `panda_early_agreement_shortcut` | `False` |
 
-### Binary Views Used Inside PAnDa
+### The Two Scores Inside PAnDa
 
-PAnDa uses a fixed binary rule rather than a tuned alpha sweep:
+PAnDa uses two fixed scores (contrastive weight 0 and 1), not a tuned weight:
 
 | Setting | Value |
 | --- | --- |
-| Greedy view | `final_logits` |
-| Contrast-subtracted view | `final_logits - shallow_logits` |
+| Greedy score | `final_logits` |
+| Contrastive score | `final_logits - shallow_logits` |
 
 ### Shared Layer-Selection Settings
 
 | Setting | Value |
 | --- | --- |
-| Shallow bucket | default `range(0, max(1, num_layers // 4), 2)` |
-| Per-position layer rule | max JSD between final logits and candidate shallow layer logits |
+| Candidate premature layers | default `range(0, max(1, num_layers // 4), 2)` |
+| Per-position layer rule | max JSD between final logits and candidate premature layer logits |
 | Buffer init | repeat last token across the block |
 | Commit fallback | commit at least 1 token |
 
 ## Short Summary
 
-PAnDa is best described as:
+PAnDa, in standard terms:
 
 ```text
-shared greedy/contrast block views + local disagreement detection + truth-biased arbitration + stable-prefix commit
+Jacobi decoding over blocks of 4 tokens
++ greedy and contrastive scores at every block position
++ from the first disagreement on, a per-token choice between the two scores (top-token probability margin)
++ commit the converged prefix
 ```

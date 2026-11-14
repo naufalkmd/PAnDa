@@ -15,18 +15,18 @@ new_scores = final_logits - alpha * shallow_logits
 So it takes:
 
 - the model's final-layer next-token scores
-- the selected shallow-layer next-token scores
+- the selected premature-layer next-token scores
 
-and subtracts a scaled version of the shallow scores from the final scores.
+and subtracts a scaled version of the premature-layer logits from the final-layer logits.
 
 ## Why This Exists
 
-The shallow layer can push some tokens strongly even when the final layer is more refined.
+The premature layer can push some tokens strongly even when the final layer is more refined.
 
 Fixed-alpha DoLa says:
 
 - keep the final layer as the main signal
-- suppress shallow influence by a chosen amount `alpha`
+- weight the premature-layer term by a chosen `alpha`
 
 If `alpha` is:
 
@@ -41,7 +41,7 @@ Suppose the prompt is:
 What is the capital of Australia?
 ```
 
-At the current next-token position, assume the selected shallow layer and the final layer give these raw logits:
+At the current next-token position, assume the selected premature layer and the final layer give these raw logits:
 
 | Token | Final logit | Shallow logit |
 | --- | ---: | ---: |
@@ -74,7 +74,7 @@ to:
 This is the whole mechanism:
 
 - `Sydney` started slightly ahead
-- but its shallow-layer support was much stronger
+- but its premature-layer support was much stronger
 - subtracting `alpha * shallow_logits` penalized it more
 - `Canberra` became the new top token
 
@@ -84,8 +84,8 @@ This is the whole mechanism:
 1. Start from the current generated prefix.
 2. Run a forward pass and collect:
    - final logits
-   - candidate shallow-layer logits
-3. Choose one shallow layer by maximum JSD disagreement.
+   - candidate premature-layer logits
+3. Choose one premature layer by maximum JSD disagreement.
 4. Compute:
    new_scores = final_logits - alpha * shallow_logits
 5. Pick the argmax token from new_scores.
@@ -98,9 +98,9 @@ This is the whole mechanism:
 ### Dynamic
 
 - the current prefix
-- the selected shallow layer
+- the selected premature layer
 - the final logits
-- the shallow logits
+- the premature-layer logits
 
 ### Fixed
 
@@ -109,7 +109,7 @@ This is the whole mechanism:
 
 That is why it is called **fixed-alpha** DoLa:
 
-- the shallow layer can still change
+- the premature layer can still change
 - but the contrast strength does not change token by token
 
 ## Repo-Specific Hyperparameters
@@ -123,7 +123,7 @@ These are the relevant current repo settings:
 | `alpha_max` | `1.0` |
 | `tau` | `0.5` |
 | `update_every` | `4` |
-| Default shallow bucket | `range(0, max(1, num_layers // 4), 2)` |
+| Default candidate premature layers | `range(0, max(1, num_layers // 4), 2)` |
 
 See:
 
@@ -150,7 +150,7 @@ new_scores = final_logits - alpha * shallow_logits
 So the main difference is:
 
 - standard DoLa: indirect normalized contrast rule
-- fixed-alpha DoLa: direct tunable shallow-logit penalty
+- fixed-alpha DoLa: direct tunable premature-layer logit penalty
 
 ## When To Use This Note
 
