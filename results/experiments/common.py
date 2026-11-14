@@ -94,6 +94,8 @@ def collect_environment(evaluator):
             "layer_selection_temperature_tau": getattr(cfg, "tau", None),
             "default_update_every": getattr(cfg, "update_every", None),
             "dola_relative_top": getattr(evaluator, "dola_relative_top", None),
+            # True: one forward pass per scored option (results/experiments/local_evaluator.py); False: one per token.
+            "single_pass_teacher_forcing": getattr(evaluator, "single_pass_teacher_forcing", None),
         }
 
     attempt("model_settings", model_settings)

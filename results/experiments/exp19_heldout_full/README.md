@@ -27,14 +27,14 @@ check that the new environment reproduces the old results.
 | `fanda_update1` | Score of per-question DoLa-static, premature layer re-selected every token (k = 1) | interval |
 | `fanda_update4` | Score of per-question DoLa-static, re-selected every 4 tokens (k = 4) | interval |
 
-Left out to save time (about 14 h on the June hardware): the raw-logit, no-constraint factorial cell (identical to
+Left out to keep the run small: the raw-logit, no-constraint factorial cell (identical to
 the log-probability one without the constraint, by construction), k = 2, top-k and top-p (equal to greedy on the
 development set), and PAnDa (about 2× the time of DoLa). These stay as development-set results only.
 
 ## Run rows
 
-- `run_01_qwen25_3b_full`: Qwen2.5-3B-Instruct (R2, about 19 h on the June hardware).
-- `run_02_gemma3_4b_full`: Gemma 3 4B (optional R4, about 27 h).
+- `run_01_qwen25_3b_full`: Qwen2.5-3B-Instruct (R2, about 4.5 h on the RTX 5070).
+- `run_02_gemma3_4b_full`: Gemma 3 4B (optional R4, about 6 h).
 
 The model is read from the row's `model_name`. A row that already has results is never overwritten.
 

@@ -102,9 +102,9 @@ On this PC, in WSL (Ubuntu), from the repository root, after `bash scripts/setup
 argument runs one; extra arguments such as `--local-files-only` are passed on). Times are estimated from the June
 runs' per-question speed.
 
-- [ ] **R1 (~3 h): more random 50-question subsets for exp16**: seeds 202, 303, 404, and seed 101 again under the
+- [ ] **R1 (~35 min): more random 50-question subsets for exp16**: seeds 202, 303, 404, and seed 101 again under the
   current code (`run_06_seed_101_rerun`).
-- [ ] **R2 (~17 h): exp19, held-out evaluation on all 817 questions** with Qwen2.5-3B, one run with greedy, DoLa,
+- [ ] **R2 (~4.5 h): exp19, held-out evaluation on all 817 questions** with Qwen2.5-3B, one run with greedy, DoLa,
   per-question DoLa-static, three factorial cells and k = 1, 4 (replaces the earlier plan of full runs of exp11/12/13, ~31 h; see
   `results/experiments/exp19_heldout_full/README.md` for what was left out and why). Held-out scores = the 767
   questions outside the development set, matched by question text (`example_idx` is the position in the subset, not
@@ -113,7 +113,7 @@ runs' per-question speed.
 - [ ] **R3 (optional, needs a small code change): isolate τ.** Add one decoder to `local_evaluator.py`:
   premature layer selected once per question and raw-logit difference, but selection by DoLa's divergence at τ = 1.
   Without it, the report must say that the divergence, τ and the selection interval changed together.
-- [ ] **R4 (optional, ~24 h): exp19 on Gemma 3 4B** (`run_02_gemma3_4b_full`). Run it only if R2 shows a held-out
+- [ ] **R4 (optional, ~6 h): exp19 on Gemma 3 4B** (`run_02_gemma3_4b_full`). Run it only if R2 shows a held-out
   difference worth testing on a second model; Gemma is the model where the development-set gain of per-question DoLa-static was largest
   (MC2 vs greedy, p = 0.017 unadjusted).
 - [ ] **R5 (decision, no GPU): open-ended correctness labels.** Either the authors review the 250 rows labelled by

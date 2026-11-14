@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -202,6 +203,35 @@ EXPERIMENT_DECODER_LABELS = {
     "contrast_margin_switch": "contrast_margin_switch",
     "dola_mc_reference": "dola_mc_reference",
 }
+
+
+class _LazyLayerLogits(Sequence):
+    """Early-exit logits of every block at one cached position, computed only for the layers that are read.
+
+    Decoders index the list by layer (`layer_logits[i]`, `len(layer_logits)`); most read only the 5-8 candidate
+    layers, so projecting all blocks through the output head at every step is wasted work. Each value is computed
+    exactly as in `forward_with_layer_logits` (final norm, then output head, then float32).
+    """
+
+    def __init__(self, cache, offset):
+        self._cache = cache
+        self._offset = offset
+        self._computed = {}
+
+    def __len__(self):
+        return len(self._cache["hidden"])
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self[i] for i in range(*index.indices(len(self)))]
+        index = range(len(self))[index]  # bounds check and negative indices, like a list
+        if index not in self._computed:
+            cache, offset = self._cache, self._offset
+            hidden = cache["hidden"][index][:, offset : offset + 1, :]
+            with torch.no_grad():
+                logits = cache["lm_head"](cache["apply_final_norm"](cache["base_model"], hidden))[:, -1, :].float()
+            self._computed[index] = logits
+        return self._computed[index]
 
 
 class ExperimentEvaluator(Stage4Evaluator):
@@ -500,7 +530,77 @@ class ExperimentEvaluator(Stage4Evaluator):
         self.cd_amateur_model = amateur_model
         self.cd_amateur_input_device = next(amateur_model.parameters()).device
 
+    # ---- single-pass teacher forcing ------------------------------------------------------------------------
+    # Scoring an answer option y by teacher forcing evaluates the model on every prefix prompt + y_<t. The code
+    # used to rerun the full model on each prefix (one forward pass per answer token). The model is causal, so one
+    # forward pass over prompt + y gives the same hidden states at every position; the per-token decoder logic then
+    # reads them from that pass. Identical in exact arithmetic; in bf16, different matrix shapes can change the last
+    # digits. Only an input that is a prefix of the cached sequence is served from the cache; anything else
+    # (PAnDa blocks, truncation baselines, generation) runs the original code. Disable with PANDA_SINGLE_PASS_TF=0.
+
+    @property
+    def single_pass_teacher_forcing(self):
+        import os
+
+        return os.environ.get("PANDA_SINGLE_PASS_TF", "1") != "0"
+
+    def _prime_teacher_forcing_cache(self, prompt, choice_text):
+        from panda.core import apply_final_norm, get_base_model
+
+        prompt_ids = self.prepare_prompt(prompt)
+        option_ids = torch.tensor([self.candidate_to_ids(choice_text)], device=prompt_ids.device)
+        full_ids = torch.cat([prompt_ids, option_ids], dim=-1)
+        start = int(prompt_ids.shape[1]) - 1  # position whose output scores the first option token
+        with torch.no_grad():
+            outputs = self.model(input_ids=full_ids, output_hidden_states=True, use_cache=False, return_dict=True)
+        self._tf_cache = {
+            "input_ids": full_ids,
+            "start": start,
+            # hidden_states[1:]: output of every transformer block, kept only for the positions that are scored
+            "hidden": [h[:, start:, :] for h in outputs.hidden_states[1:]],
+            "final_logits": outputs.logits[:, start:, :],
+            "base_model": get_base_model(self.model),
+            "lm_head": self.model.get_output_embeddings(),
+            "apply_final_norm": apply_final_norm,
+        }
+
+    def _teacher_forcing_position(self, input_ids):
+        cache = getattr(self, "_tf_cache", None)
+        if cache is None:
+            return None
+        length = int(input_ids.shape[1])
+        full_ids = cache["input_ids"]
+        if length - 1 < cache["start"] or length > full_ids.shape[1]:
+            return None
+        if input_ids.device != full_ids.device or not torch.equal(input_ids, full_ids[:, :length]):
+            return None
+        return length - 1 - cache["start"]
+
+    def forward_with_layer_logits(self, input_ids):
+        offset = self._teacher_forcing_position(input_ids)
+        if offset is None:
+            return super().forward_with_layer_logits(input_ids)
+        cache = self._tf_cache
+        final_logits = cache["final_logits"][:, offset, :].float()
+        return _LazyLayerLogits(cache, offset), final_logits
+
+    def decoder_step_logits(self, decoder_name, generated, decoder_state=None):
+        if decoder_name == "greedy":
+            offset = self._teacher_forcing_position(generated)
+            if offset is not None:
+                return self._tf_cache["final_logits"][:, offset, :].float(), decoder_state, None, False
+        return super().decoder_step_logits(decoder_name, generated, decoder_state)
+
     def score_candidate_with_decoder(self, prompt, decoder_name, choice_text):
+        if not self.single_pass_teacher_forcing:
+            return self._score_candidate_with_decoder_impl(prompt, decoder_name, choice_text)
+        self._prime_teacher_forcing_cache(prompt, choice_text)
+        try:
+            return self._score_candidate_with_decoder_impl(prompt, decoder_name, choice_text)
+        finally:
+            self._tf_cache = None
+
+    def _score_candidate_with_decoder_impl(self, prompt, decoder_name, choice_text):
         if decoder_name == "official_dola":
             total_logprob, trace, runtime = super().score_candidate_with_decoder(prompt, "dola", choice_text)
             for row in trace:

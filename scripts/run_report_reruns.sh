@@ -2,10 +2,10 @@
 # Reruns for the report (docs/report_checklist.md, part E). Run from the repository root, in WSL, after
 # `bash scripts/setup_env.sh`:
 #   bash scripts/run_report_reruns.sh            # R1 then R2
-#   bash scripts/run_report_reruns.sh r1         # R1: exp16 seeds 202, 303, 404 and a rerun of seed 101 (~3 h)
-#   bash scripts/run_report_reruns.sh r2         # R2: exp19 held-out run, Qwen2.5-3B, all 817 questions (~19 h)
-#   bash scripts/run_report_reruns.sh r4         # R4 (optional): exp19 on Gemma 3 4B (~27 h)
-# Times are estimates from the June runs' per-question speed; the RTX 5070 may differ.
+#   bash scripts/run_report_reruns.sh r1         # R1: exp16 seeds 202, 303, 404 and a rerun of seed 101 (~35 min)
+#   bash scripts/run_report_reruns.sh r2         # R2: exp19 held-out run, Qwen2.5-3B, all 817 questions (~4.5 h)
+#   bash scripts/run_report_reruns.sh r4         # R4 (optional): exp19 on Gemma 3 4B (~6 h)
+# Times measured on the RTX 5070 with single-pass teacher forcing (results/experiments/local_evaluator.py).
 # Extra arguments after the first are passed to every run, e.g. --local-files-only.
 # Outputs go to results/experiments/<exp>/runs/<run_id>/. exp19 refuses to overwrite a finished run.
 set -euo pipefail

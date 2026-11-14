@@ -38,7 +38,10 @@ and rewrites the lock file. Keep `huggingface_hub` below 1.0: newer versions rej
 For gated models (Gemma 3), or models not cached locally, export `HF_TOKEN` (or `HUGGINGFACE_HUB_TOKEN`).
 
 **Reproducibility.** Scoring is deterministic given the model weights: there is no sampling, and the question
-subsets come from fixed seeds (42 for the development set). Each run's metadata records the git commit, package
+subsets come from fixed seeds (42 for the development set). Each answer option is scored with one forward pass
+(single-pass teacher forcing); on the worst-case option of a test it matched a float32 reference within 0.003
+nats, whereas the earlier one-pass-per-token scoring in bf16 was off by up to 2.7 nats (`PANDA_SINGLE_PASS_TF=0`
+restores it). Each run's metadata records the git commit, package
 versions, GPU, model precision, candidate layers and the SHA-256 of the TruthfulQA file used (`environment` in
 `*_metadata.json`). Different GPUs or library versions can still change the last digits of a score, and
 occasionally a close ranking between two answer options.
@@ -67,7 +70,6 @@ The experiments above use the runners in `results/experiments/`. The package als
 (`python -m panda`, TruthfulQA multiple choice) with the decoders `greedy`, `dola`, `fixed_alpha_dola_low`,
 `fixed_alpha_dola`, `fixed_alpha_dola_high` and `panda`. It is not used for the results; `--mode sanity` /
 `subset` / `full` choose the question subset, `--model-name` the model, `--local-files-only` disables downloads.
-`scripts/run_panda_truthfulqa.py` and `scripts/_quick_run.py` are wrappers for its dropped PAnDa preset.
 
 ## Figures
 
