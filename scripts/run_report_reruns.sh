@@ -11,8 +11,13 @@
 set -euo pipefail
 
 PY="${PYTHON:-./.venv/bin/python}"
-WHICH="${1:-all}"
-shift || true
+# The first argument is the stage (all, r1, r2, r4); if it is an option (starts with "-") or missing, the stage
+# is "all" and every argument is passed on to the runs.
+WHICH="all"
+if [ $# -gt 0 ] && [[ "$1" != -* ]]; then
+  WHICH="$1"
+  shift
+fi
 EXP=results/experiments
 
 r1() {
