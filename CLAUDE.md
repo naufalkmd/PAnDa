@@ -19,7 +19,10 @@ tokens or `.env`.
 - Results are read only from `results/experiments/<exp>/runs/<run>/*_summary.csv`, `*_raw_predictions.csv`
   (one row per question, `example_idx`) and `*_metadata.json`. `python scripts/summarise_runs.py` prints them all.
 - `docs/experiment_log.md`: every experiment, its result and the known issues. Update it after each new run.
-- `docs/glossary.md`: code names → standard terms. Do not rename identifiers: saved runs and figure JSON depend
+- **Terms:** prose (report, README, docs, commit messages) uses standard machine-learning terms only, never project
+  vocabulary (anchor, jitter, persistence, view, regime, arbitration, ...). FAnDa and PAnDa are labels, each
+  defined once next to its standard description.
+- `docs/glossary.md`: code names and older-note words → standard terms. Do not rename identifiers: saved runs and figure JSON depend
   on them. Watch out: `fanda` means re-selection every 4 tokens in exp7–exp10 and a fixed layer in exp11/exp18.
 - The 50-question subset (seed 42) is the **development** set: every design choice was made on it.
 - exp14 "manual" scores were written by Codex (an LLM). Say so wherever they are used, unless a person reviews them.

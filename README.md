@@ -11,9 +11,9 @@ named after PAnDa; the current results and the report are about FAnDa.
 - the premature layer is chosen by Jensen–Shannon divergence at temperature 0.5 (DoLa uses 1);
 - the premature layer is chosen **once per answer** and then kept fixed, instead of being re-selected at every token.
 
-**PAnDa** (Parallel-block Adaptive Contrast DoLa) keeps a low- and a high-contrast view inside one
-speculative-block decoding pass and switches to the high-contrast view from their first divergence point. It is
-kept as a baseline.
+**PAnDa** (Parallel-block Adaptive Contrast DoLa) applies contrastive decoding inside Jacobi-style blocks of
+4 tokens. It takes tokens from the final layer up to the first position where the final-layer and contrastive
+distributions disagree, then chooses between the two scores token by token. It is kept as a baseline.
 
 **Status.** This is a development-stage research repository, not a benchmark package. Most results come
 from one 50-question TruthfulQA subset, which was also used to develop the method. See
@@ -94,8 +94,8 @@ PAnDa/
 
 Key implementation files:
 
-- `src/panda/decoders/core.py`: layer selection, DoLa scores, contrast views
-- `results/experiments/local_evaluator.py`: the experiment decoders (FAnDa family, factorial, switches)
+- `src/panda/decoders/core.py`: premature-layer selection, DoLa scores, contrastive scores
+- `results/experiments/local_evaluator.py`: the experiment decoders (FAnDa variants, the factorial, rule-based switches)
 - `src/panda/evaluation.py`: MC1/MC2/MC3 scoring and summaries
 
 ## Reproducibility notes

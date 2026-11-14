@@ -25,16 +25,20 @@ Last updated: 2026-11-14.
 
 Full table: [`glossary.md`](glossary.md). The ones the text needs most:
 
-| In our code and log | In the report |
+Rule: standard machine-learning terms only, no project vocabulary. FAnDa and PAnDa are labels, each defined
+once next to its standard description. The full mapping, including the older notes' words, is in the glossary.
+
+| In our code and older notes | In the report |
 |---|---|
-| `relative_top` filter | adaptive plausibility constraint |
-| anchor, shallow layer | premature layer (DoLa's term); final layer = mature layer |
-| `update1`, `update4`, `frozen` | premature layer re-selected every token / every 4 tokens / once per answer |
-| `fanda` (exp11, exp18) | FAnDa = all four changes (see README) |
-| `fanda` (exp7–10) | FAnDa with re-selection every 4 tokens: name it so, or leave it out |
-| `panda_switch` | PAnDa (block-wise arbitration), the earlier method |
-| jitter | premature-layer switching (switch rate) |
-| "manual evaluation" (exp14) | LLM-assigned 0/1/2 scores (Codex), unless the authors review them |
+| `relative_top` filter | adaptive plausibility constraint (Li et al., 2023) |
+| anchor, shallow layer | premature layer; the final layer is the mature layer (Chuang et al., 2024) |
+| `update1`, `update4`, `frozen`; persistence | selection interval k = 1, 4, ∞ (the premature layer is re-selected every k tokens) |
+| `fanda` (exp11, exp18) | FAnDa, defined once as DoLa with the four changes |
+| `fanda` (exp7–10) | FAnDa with k = 4 |
+| `panda_switch` | PAnDa, defined once as contrastive decoding inside Jacobi-style blocks |
+| jitter, `switch_rate` | fraction of steps at which the premature layer changes |
+| view, regime, arbitration, always-contrast | score / distribution; setting; choosing between two scores; contrastive scoring at every step |
+| "manual evaluation" (exp14) | correctness labels assigned by an LLM (Codex), unless the authors review them |
 
 ---
 
@@ -44,10 +48,10 @@ Full table: [`glossary.md`](glossary.md). The ones the text needs most:
 
 - **C1. The plausibility constraint can remove the correct answer's tokens.** Fact: DoLa 0.28 → 0.38 MC1 when only
   the constraint is removed (exp13).
-- **C2. Per-token layer re-selection changes the contrast at every step.** Fact: switch rate 0.69 with per-token
-  re-selection (exp12).
+- **C2. Dynamic premature-layer selection changes the contrastive score from token to token.** Fact: with
+  selection at every token, the premature layer changes at 69 % of steps (exp12).
 - **C3. The evidence is small and noisy.** Fact: SE ≈ 0.07 on MC1 with 50 questions; DoLa scores 0.26–0.28 on the
-  same questions across runs; the exp12 ranking did not replicate on a fresh subset (exp16, seed 101).
+  same questions across runs; the exp12 ranking did not replicate on a second random subset (exp16, seed 101).
 - **C4. The contrast between layers differs between models.** Fact: FAnDa leads on Gemma 3 4B and trails greedy on HINT 1.5B (exp18).
 
 | § | Section | Holds | Source |
@@ -55,13 +59,13 @@ Full table: [`glossary.md`](glossary.md). The ones the text needs most:
 | — | Abstract | Task; C1–C4; the four changes; headline result **on the held-out set** with its test; the transfer and open-ended findings, stated at their strength | after reruns |
 | 1 | Introduction | Hallucination and decoding-time methods; C1–C4 with their facts; what the report contributes (plain statements, section pointers) | exp13, exp12, exp16, exp18 |
 | 2 | Related work | Contrastive decoding and the plausibility constraint; DoLa (dynamic and static premature layer); TruthfulQA; speculative (Jacobi) decoding for PAnDa; how FAnDa differs from each | citations, part G |
-| 3 | Method | DoLa recap in DoLa's notation; the four changes, one `\paragraph` each: problem → change → evidence (C1, C2); re-selection interval k; per-answer selection; PAnDa in brief; a TikZ pipeline figure | code: `src/panda/decoders/core.py`, `local_evaluator.py` |
+| 3 | Method | DoLa recap in DoLa's notation; the four changes, one `\paragraph` each: problem → change → evidence (C1, C2); selection interval k; selection once per answer option; PAnDa in brief; a TikZ pipeline figure | code: `src/panda/decoders/core.py`, `local_evaluator.py` |
 | 4 | Experimental setup | TruthfulQA MC (817 questions); the 50-question development subset (seed 42) and what it was used for; fresh subsets (seeds 101–404); the held-out set; MC1/MC2/MC3; paired tests; models and the candidate-layer bucket; hardware; latency | run metadata JSON |
-| 5 | Results | T1 core comparison; T2 2 × 2 factorial + τ; T3 re-selection interval across subsets (mean ± sd); T4 transfer; latency | part D |
+| 5 | Results | T1 core comparison; T2 2 × 2 factorial + τ; T3 selection interval k across subsets (mean ± sd); T4 transfer; latency | part D |
 | 6 | Analysis | Switching rules that did not work (exp6–10, one compact table); open-ended generation (exp14 automatic overlap; LLM or human scores, scorer stated); one case study from exp15/exp17 | exp6–10, exp14, exp15, exp17 |
 | 7 | Limitations | One benchmark, MC scoring, ≤ 4B models, the development subset, the LLM judge, τ and the fixed layer changed together (unless R3 runs) | — |
 | 8 | Conclusion | What each change contributed, in order of effect; what remains; two next steps | — |
-| A | Appendix | Reproduction: commit, commands, run times, hardware; the full re-selection table; the exp1–exp10 history | — |
+| A | Appendix | Reproduction: commit, commands, run times, hardware; the full selection-interval table; the exp1–exp10 history | — |
 
 ---
 
@@ -74,7 +78,7 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 | T1 core comparison (dev subset) | `exp11.../run_01_default` | [ ] exp11 has its own DoLa (0.26) and `fanda` (fixed layer); use these, not exp4/exp12 |
 | T1 core comparison (held-out) | new run R2 | [ ] waits for R2 |
 | T2 factorial | `exp13.../run_01_default` (+ R3 for τ) | [ ] the two no-constraint cells are identical by construction: say so |
-| T3 re-selection interval | `exp16.../run_01`–`run_05` | [ ] seeds 202/303/404 wait for R1 |
+| T3 selection interval k | `exp16.../run_01`–`run_05` | [ ] seeds 202/303/404 wait for R1 |
 | T4 transfer | `exp18.../run_01, run_02, run_04` | [ ] all baselines exist; fill the table |
 | Paired tests | new `scripts/paired_tests.py` on `*_raw_predictions.csv` (`example_idx`) | [ ] to write: exact McNemar on MC1; paired bootstrap (10,000 resamples, fixed seed) on MC2/MC3 |
 | Switching rules (appendix) | exp6–exp10 summaries | [ ] |
@@ -85,28 +89,23 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 
 ## E. Reruns (GPU)
 
-Run from the repository root with the project environment. Add `--local-files-only` if the model is cached.
+On the GPU machine, from the repository root: `bash scripts/run_report_reruns.sh` runs R1 then R2
+(`r1` or `r2` as the first argument runs one; extra arguments such as `--local-files-only` are passed on).
 
-- [ ] **R1: the missing fresh subsets of exp16** (seeds 202, 303, 404 are already in its run matrix):
-  ```bash
-  python results/experiments/exp16_mc_persistence_seed_sweep/run_experiment.py --run-id run_03_seed_202 --mode subset --truthfulqa-limit 50
-  python results/experiments/exp16_mc_persistence_seed_sweep/run_experiment.py --run-id run_04_seed_303 --mode subset --truthfulqa-limit 50
-  python results/experiments/exp16_mc_persistence_seed_sweep/run_experiment.py --run-id run_05_seed_404 --mode subset --truthfulqa-limit 50
-  ```
-  Check `--run-id` with `--list` first. About 5 decoders × 50 questions each.
-- [ ] **R2: held-out evaluation on all 817 questions.** Add a `run_02_full` row to the run matrices of exp11, exp12 and
-  exp13 (copy `run_01_default`, so the dev runs are kept), then run each with
-  `--run-id run_02_full --mode full --truthfulqa-limit all`. The runners default to `--truthfulqa-limit 50`, so
-  `--mode full` alone still runs 50 questions (`resolve_limit` in `src/panda/utils.py`). The report then gives held-out scores on the
-  767 questions outside the dev subset (filter by `example_idx`), with paired tests. This is the most important run:
-  it is the only one where no choice was made on the evaluation data.
+- [ ] **R1: three more random 50-question subsets for exp16** (seeds 202, 303, 404; rows already in its run matrix).
+- [ ] **R2: held-out evaluation on all 817 questions** for exp11, exp12 and exp13 (`run_02_full` rows added
+  2026-11-14). The script passes `--mode full --truthfulqa-limit all`: the runners default to 50 questions even
+  with `--mode full` (`resolve_limit` in `src/panda/utils.py`). The report then gives held-out scores on the 767
+  questions outside the development set, matched **by question text** (check whether `example_idx` is the dataset
+  index or the position in the subset before using it), with paired tests. This is the most important run: the only
+  one where no design choice was made on the evaluation data.
 - [ ] **R3 (optional, needs a small code change): isolate τ.** Add one decoder to `local_evaluator.py`:
-  fixed layer and raw-logit score, but layer selection with DoLa's τ = 1 JSD. Without it, the report must say
-  that τ and the fixed layer changed together.
+  premature layer selected once per answer and raw-logit difference, but selection by JSD at τ = 1 (as in DoLa).
+  Without it, the report must say that τ and the selection interval changed together.
 - [ ] **R4 (optional): exp18 on all questions** (`--mode full --truthfulqa-limit all`, new run rows), if R2 shows a held-out gain worth testing across models.
-- [ ] **R5 (decision, no GPU): open-ended scores.** Either the authors review the 250 Codex-scored rows (the sheet
-  has `review_status` and `reviewer` columns), or the report states that an LLM (Codex) scored them.
-  The exp15 prefix sheet (80 rows) is unreviewed: review it or drop it.
+- [ ] **R5 (decision, no GPU): open-ended correctness labels.** Either the authors review the 250 rows labelled by
+  Codex (the sheet has `review_status` and `reviewer` columns), or the report states that an LLM assigned them.
+  The exp15 prefix sheet (80 rows) has no labels: label it or drop it.
 
 ---
 
