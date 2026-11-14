@@ -1,0 +1,179 @@
+% Every entry was written from the publisher's or archive's own record (verified 2026-11-14):
+% ACL Anthology .bib, OpenReview _bibtex/venue, Crossref, the arXiv API, or the Hugging Face model card.
+% The claim each entry supports was checked in the paper text; see docs/report_checklist.md, part G.
+
+% --- Methods -----------------------------------------------------------------------------------------
+
+% ICLR 2024 poster (OpenReview Th6NyL07na). Supports: dynamic premature-layer selection by maximum JSD over a
+% candidate set J; buckets of J chosen on a validation set; DoLa-static (one layer chosen on a validation set);
+% the adaptive plausibility constraint with alpha = 0.1, taken from Li et al.
+@inproceedings{chuang2024dola,
+  title     = {{DoLa}: Decoding by Contrasting Layers Improves Factuality in Large Language Models},
+  author    = {Chuang, Yung-Sung and Xie, Yujia and Luo, Hongyin and Kim, Yoon and Glass, James and He, Pengcheng},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=Th6NyL07na}
+}
+
+% ACL Anthology 2023.acl-long.687. Supports: contrastive decoding (expert minus amateur model); the adaptive
+% plausibility constraint V_head = {x : p_EXP(x) >= alpha * max_w p_EXP(w)}, alpha = 0.1.
+@inproceedings{li2023contrastive,
+  title     = {Contrastive Decoding: Open-ended Text Generation as Optimization},
+  author    = {Li, Xiang Lisa and Holtzman, Ari and Fried, Daniel and Liang, Percy and Eisner, Jason and Hashimoto, Tatsunori and Zettlemoyer, Luke and Lewis, Mike},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {12286--12312},
+  year      = {2023},
+  address   = {Toronto, Canada},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2023.acl-long.687},
+  url       = {https://aclanthology.org/2023.acl-long.687/}
+}
+
+% OpenReview rygGQyrFvH, ICLR 2020. Supports: nucleus (top-p) sampling; the top-k / top-p baselines.
+@inproceedings{holtzman2020curious,
+  title     = {The Curious Case of Neural Text Degeneration},
+  author    = {Holtzman, Ari and Buys, Jan and Du, Li and Forbes, Maxwell and Choi, Yejin},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2020},
+  url       = {https://openreview.net/forum?id=rygGQyrFvH}
+}
+
+% ACL Anthology 2023.acl-long.689. Supports: Jacobi (parallel) decoding of a block of tokens, used by PAnDa.
+@inproceedings{santilli2023accelerating,
+  title     = {Accelerating Transformer Inference for Translation via Parallel Decoding},
+  author    = {Santilli, Andrea and Severino, Silvio and Postolache, Emilian and Maiorca, Valentino and Mancusi, Michele and Marin, Riccardo and Rodol{\`a}, Emanuele},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {12336--12355},
+  year      = {2023},
+  address   = {Toronto, Canada},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2023.acl-long.689},
+  url       = {https://aclanthology.org/2023.acl-long.689/}
+}
+
+% --- Benchmark -----------------------------------------------------------------------------------------
+
+% ACL Anthology 2022.acl-long.229. Supports: TruthfulQA, 817 questions, MC1/MC2 multiple-choice scoring.
+@inproceedings{lin2022truthfulqa,
+  title     = {{TruthfulQA}: Measuring How Models Mimic Human Falsehoods},
+  author    = {Lin, Stephanie and Hilton, Jacob and Evans, Owain},
+  booktitle = {Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {3214--3252},
+  year      = {2022},
+  address   = {Dublin, Ireland},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2022.acl-long.229},
+  url       = {https://aclanthology.org/2022.acl-long.229/}
+}
+
+% --- Statistics ----------------------------------------------------------------------------------------
+
+% Crossref 10.1007/BF02295996. Supports: McNemar's test for paired binary outcomes.
+@article{mcnemar1947note,
+  title   = {Note on the Sampling Error of the Difference Between Correlated Proportions or Percentages},
+  author  = {McNemar, Quinn},
+  journal = {Psychometrika},
+  volume  = {12},
+  number  = {2},
+  pages   = {153--157},
+  year    = {1947},
+  doi     = {10.1007/BF02295996}
+}
+
+% ACL Anthology D12-1091. Supports: the paired bootstrap test for NLP evaluation.
+@inproceedings{bergkirkpatrick2012empirical,
+  title     = {An Empirical Investigation of Statistical Significance in {NLP}},
+  author    = {Berg-Kirkpatrick, Taylor and Burkett, David and Klein, Dan},
+  booktitle = {Proceedings of the 2012 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning},
+  pages     = {995--1005},
+  year      = {2012},
+  address   = {Jeju Island, Korea},
+  publisher = {Association for Computational Linguistics},
+  url       = {https://aclanthology.org/D12-1091/}
+}
+
+% ACL Anthology P18-1128. Supports: choosing significance tests in NLP (McNemar for paired binary outcomes,
+% bootstrap for other metrics).
+@inproceedings{dror2018hitchhiker,
+  title     = {The Hitchhiker's Guide to Testing Statistical Significance in Natural Language Processing},
+  author    = {Dror, Rotem and Baumer, Gili and Shlomov, Segev and Reichart, Roi},
+  booktitle = {Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {1383--1392},
+  year      = {2018},
+  address   = {Melbourne, Australia},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/P18-1128},
+  url       = {https://aclanthology.org/P18-1128/}
+}
+
+% --- Models --------------------------------------------------------------------------------------------
+
+% arXiv 2412.15115 (first listed author: "Qwen"). Supports: Qwen2.5-3B-Instruct, the main model.
+@misc{qwen2024qwen25,
+  title         = {Qwen2.5 Technical Report},
+  author        = {{Qwen Team} and Yang, An and Yang, Baosong and Zhang, Beichen and Hui, Binyuan and Zheng, Bo and Yu, Bowen and others},
+  year          = {2024},
+  eprint        = {2412.15115},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2412.15115}
+}
+
+% arXiv 2503.19786. Supports: Gemma 3 4B (transfer experiment).
+@misc{gemmateam2025gemma3,
+  title         = {Gemma 3 Technical Report},
+  author        = {{Gemma Team} and Kamath, Aishwarya and Ferret, Johan and Pathak, Shreya and Vieillard, Nino and Merhej, Ramona and Perrin, Sarah and Matejovicova, Tatiana and others},
+  year          = {2025},
+  eprint        = {2503.19786},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2503.19786}
+}
+
+% No paper: Hugging Face model card (created 2024-12-14). Supports: Falcon 3 3B Instruct (transfer experiment).
+@misc{tii2024falcon3,
+  title        = {{Falcon3-3B-Instruct}},
+  author       = {{Technology Innovation Institute}},
+  year         = {2024},
+  howpublished = {Hugging Face model card},
+  url          = {https://huggingface.co/tiiuae/Falcon3-3B-Instruct}
+}
+
+% arXiv 2503.00031, linked from the model card of HINT-lab/DeepSeek-R1-Distill-Qwen-1.5B-Self-Calibration.
+% Supports: the self-calibrated 1.5B model (transfer experiment).
+@misc{huang2025efficient,
+  title         = {Efficient Test-Time Scaling via Self-Calibration},
+  author        = {Huang, Chengsong and Huang, Langlin and Leng, Jixuan and Liu, Jiacheng and Huang, Jiaxin},
+  year          = {2025},
+  eprint        = {2503.00031},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2503.00031}
+}
+
+% Crossref 10.1038/s41586-025-09422-z (194 authors). Supports: DeepSeek-R1-Distill-Qwen-1.5B, the base of the
+% self-calibrated model. Cite only if the base model is named.
+@article{guo2025deepseekr1,
+  title   = {{DeepSeek-R1} incentivizes reasoning in {LLMs} through reinforcement learning},
+  author  = {Guo, Daya and Yang, Dejian and Zhang, Haowei and others},
+  journal = {Nature},
+  volume  = {645},
+  number  = {8081},
+  pages   = {633--638},
+  year    = {2025},
+  doi     = {10.1038/s41586-025-09422-z}
+}
+
+% --- Context (optional) --------------------------------------------------------------------------------
+
+% Crossref 10.1145/3703155. Supports: one sentence of context on hallucination, if the introduction needs it.
+@article{huang2025survey,
+  title   = {A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions},
+  author  = {Huang, Lei and Yu, Weijiang and Ma, Weitao and Zhong, Weihong and Feng, Zhangyin and Wang, Haotian and Chen, Qianglong and Peng, Weihua and Feng, Xiaocheng and Qin, Bing and Liu, Ting},
+  journal = {ACM Transactions on Information Systems},
+  volume  = {43},
+  number  = {2},
+  pages   = {1--55},
+  year    = {2025},
+  doi     = {10.1145/3703155}
+}

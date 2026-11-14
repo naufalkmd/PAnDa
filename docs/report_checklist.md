@@ -117,22 +117,50 @@ On the GPU machine, from the repository root: `bash scripts/run_report_reruns.sh
 ## F. Still to fill in
 
 - [ ] Everything in part E.
-- [ ] Hardware (GPU model) for each run: check the run metadata JSON; the exp16 seed-101 run was about 8× slower per step.
-- [ ] Candidate premature-layer bucket per model (`default_bucket` in `src/panda/evaluator.py`, saved in the metadata).
+- [ ] Hardware and versions: the run metadata records **no** GPU model, torch/transformers versions or candidate
+  layers. On the GPU machine, note `nvidia-smi --query-gpu=name --format=csv` and keep the `pip freeze` output.
+  The exp16 seed-101 run was about 8× slower per step (different hardware).
+- [x] Candidate premature layers (default `range(0, num_layers // 4, 2)` over `hidden_states[1:]`, i.e. outputs of
+  blocks 1, 3, 5, ...; from the public configs): Qwen2.5-3B (36 blocks) → blocks 1, 3, 5, 7, 9; Falcon 3 3B (22) →
+  1, 3, 5; HINT Qwen 1.5B (28) → 1, 3, 5, 7. [ ] Gemma 3 4B: config is gated, read `num_hidden_layers` on the GPU machine.
+- [x] Prompt: the question followed by "Answer with one of the provided answer options only." The options are
+  **not** shown in the prompt (each is scored separately), so the instruction refers to options the model never
+  sees. Mention it in the setup; it is the same for every decoder.
+- [x] Option score: sum of token log-probabilities (no length normalisation). MC1 = best true option above best
+  false (MC1 option set); MC2 = normalised probability mass on true options; MC3 = fraction of true options above
+  the best false option (MC2 option set), as in DoLa's evaluation (`src/panda/evaluation.py`).
+
+## Draft status
+
+- [x] §2 Related work and §3 Method drafted (2026-11-14). Method facts checked in the code: early exit = final norm +
+  output head on each block's hidden state; DoLa's divergence as in its reference implementation,
+  ½[KL(m‖q_N) + KL(m‖q_j)] (mixture first, checked in the DoLa repository); FAnDa's = standard JSD at τ = 0.5; the
+  −1000 mask value and its effect on option scores; PAnDa's rule (top-token probability margin 0.02, JSD threshold 0.05).
+- [ ] §2/§3 cite tables `tab:factorial`, `tab:interval`, `tab:main` that the Results section will define.
+- [ ] Abstract, §1, §4–§8 wait for R1/R2 (§4 Setup can be drafted now except hardware).
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
 ---
 
 ## G. Citations to verify (look each up, then write the BibTeX from the record)
 
-- [ ] DoLa: Chuang et al., "DoLa: Decoding by Contrasting Layers Improves Factuality in Large Language Models", ICLR 2024 (dynamic and static premature layer).
-- [ ] Contrastive decoding and the adaptive plausibility constraint: Li et al., ACL 2023.
-- [ ] TruthfulQA: Lin et al., ACL 2022.
-- [ ] Nucleus sampling: Holtzman et al., ICLR 2020 (top-p baseline).
-- [ ] Jacobi / parallel decoding, for PAnDa: Santilli et al., ACL 2023.
-- [ ] Models: Qwen2.5 technical report; Gemma 3 technical report; Falcon 3 (model card or report); HINT self-calibration model (the paper behind `HINT-lab/DeepSeek-R1-Distill-Qwen-1.5B-Self-Calibration`).
-- [ ] Hallucination survey (one), only if the introduction needs it.
-- [ ] Do **not** carry over the course version's citations of the Transformer and Qwen2.5 papers as support for the design intuition.
+All verified 2026-11-14 and written to `paper/references.bib` from the publisher's or archive's own record
+(ACL Anthology, OpenReview, Crossref, arXiv API, Hugging Face). Each entry's comment says what it supports.
+
+- [x] DoLa, ICLR 2024 (`chuang2024dola`). Checked in the PDF: dynamic selection by max JSD over candidate set J;
+  buckets of J chosen on a validation set; DoLa-static = one layer chosen on a validation set; adaptive
+  plausibility constraint α = 0.1 from Li et al.
+- [x] Contrastive decoding, ACL 2023 (`li2023contrastive`). Checked: V_head = {x : p_EXP(x) ≥ α max p_EXP}, α = 0.1.
+- [x] TruthfulQA, ACL 2022 (`lin2022truthfulqa`).
+- [x] Nucleus sampling, ICLR 2020 (`holtzman2020curious`).
+- [x] Jacobi / parallel decoding, ACL 2023 (`santilli2023accelerating`).
+- [x] Significance tests: McNemar 1947 (`mcnemar1947note`); paired bootstrap, Berg-Kirkpatrick et al. 2012
+  (`bergkirkpatrick2012empirical`); test choice, Dror et al. 2018 (`dror2018hitchhiker`).
+- [x] Models: Qwen2.5 report (`qwen2024qwen25`); Gemma 3 report (`gemmateam2025gemma3`); Falcon 3 has no paper,
+  so its model card (`tii2024falcon3`); HINT model → arXiv 2503.00031 (`huang2025efficient`); its base model,
+  DeepSeek-R1 in Nature 2025 (`guo2025deepseekr1`), only if named.
+- [x] Hallucination survey, ACM TOIS 2025 (`huang2025survey`), optional.
+- [x] Not carried over: the course version's citations of the Transformer and Qwen2.5 papers as support for the design intuition.
 
 ---
 

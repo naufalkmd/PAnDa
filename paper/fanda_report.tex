@@ -29,6 +29,14 @@
 \newcommand{\verify}{\textcolor{red}{\textsuperscript{[verify]}}}
 \newcommand{\cha}[1]{\textsf{C#1}}
 
+%% ---- project names (one edit updates the whole report) ----
+\newcommand{\fanda}{FAnDa}
+\newcommand{\panda}{PAnDa}
+\newcommand{\mainmodel}{Qwen2.5-3B-Instruct}
+\newcommand{\JSD}{\operatorname{JSD}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\Vhead}{\mathcal{V}_{\mathrm{head}}}
+
 \title{\todo{title: see docs/report\_checklist.md, part A}}
 \author{Muhammad Naufal \quad Jeong Edon \quad Muhammad Aliff\\\small Korea University}
 \date{}
@@ -52,8 +60,166 @@ baseline; main finding.}
 statements with section pointers}
 
 \section{Related Work}
+\label{sec:related}
+
+\paragraph{Contrastive decoding.}
+Contrastive decoding scores each candidate token by the difference between the log-probabilities of a large
+(expert) and a small (amateur) language model, so that tokens favoured only by the weaker model are
+down-weighted~\citep{li2023contrastive}. Because the difference can reward tokens that both models find
+implausible, it is combined with an \emph{adaptive plausibility constraint}: only tokens whose expert probability
+is at least $\alpha$ times the expert's top probability are kept, with $\alpha = 0.1$~\citep{li2023contrastive}.
+
+\paragraph{Contrasting layers of one model.}
+DoLa applies the same idea inside a single model~\citep{chuang2024dola}. The final (\emph{mature}) layer is
+contrasted with an earlier (\emph{premature}) layer whose hidden state is passed through the output head (early
+exit). The premature layer is selected \emph{dynamically}: at every token, the candidate layer with the largest
+divergence from the mature layer is chosen, from a set of candidate layers that is itself chosen on a validation
+set. DoLa also describes a static variant, DoLa-static, that uses one premature layer chosen on a validation set
+for all inputs, and argues that dynamic selection avoids the per-task layer search~\citep{chuang2024dola}. DoLa
+keeps the adaptive plausibility constraint with $\alpha = 0.1$ and reports large gains on TruthfulQA for LLaMA
+models~\citep{chuang2024dola}. The method studied here, \fanda, lies between the two variants: it selects the
+premature layer by divergence for each answer, as dynamic DoLa does, but only once, and then keeps it fixed as
+DoLa-static does. It also removes the plausibility constraint (Section~\ref{sec:method}).
+
+\paragraph{Baselines from other decoding families.}
+Top-$k$ and nucleus (top-$p$) truncation~\citep{holtzman2020curious} restrict sampling to the most likely tokens.
+Under likelihood-based multiple-choice scoring they act as truncated and renormalised scoring distributions, and
+we use them only as baselines. Jacobi (parallel) decoding refines a block of future tokens by fixed-point
+iteration~\citep{santilli2023accelerating}; the project's earlier method, \panda{}, uses it, and we report it as a
+baseline.
+
 \section{Method}
+\label{sec:method}
+
+\subsection{DoLa}
+\label{sec:method-dola}
+
+Let $x_{<t}$ be the prompt followed by the first $t-1$ answer tokens, $h^{(j)}_t$ the hidden state after
+transformer block $j$ at the last position, and $\phi$ the model's final normalisation followed by its output
+head. The early-exit logits of block $j$ are $z^{(j)}_t = \phi(h^{(j)}_t)$ and its next-token distribution is
+$q_j(\cdot \mid x_{<t}) = \operatorname{softmax}(z^{(j)}_t)$; block $N$ is the mature layer. DoLa selects the
+premature layer
+\begin{equation}
+  M_t = \arg\max_{j \in \mathcal{J}} d\bigl(q_N(\cdot \mid x_{<t}),\, q_j(\cdot \mid x_{<t})\bigr)
+  \label{eq:dola-select}
+\end{equation}
+from the candidate layers $\mathcal{J}$ and scores token $v$ by
+\begin{equation}
+  F_t(v) =
+  \begin{cases}
+    \log q_N(v \mid x_{<t}) - \log q_{M_t}(v \mid x_{<t}) & \text{if } v \in \Vhead(x_{<t}),\\
+    -1000 & \text{otherwise,}
+  \end{cases}
+  \label{eq:dola-score}
+\end{equation}
+where the adaptive plausibility constraint keeps the set
+\begin{equation}
+  \Vhead(x_{<t}) = \bigl\{v : q_N(v \mid x_{<t}) \ge \alpha \max_w q_N(w \mid x_{<t})\bigr\},
+  \label{eq:vhead}
+\end{equation}
+with $\alpha = 0.1$. The next-token distribution is $\operatorname{softmax}(F_t)$. The DoLa paper calls $d$ the
+Jensen--Shannon divergence; its reference implementation, which our DoLa baseline reproduces, computes
+$d(q_N, q_j) = \tfrac12[\KL(m \Vert q_N) + \KL(m \Vert q_j)]$ with $m = \tfrac12(q_N + q_j)$, averaged over the
+vocabulary. This places the mixture $m$ first in both terms, the reverse of the standard definition.
+
+\subsection{\fanda}
+\label{sec:method-fanda}
+
+\fanda{} keeps the contrast between the mature and a premature layer and changes four settings of DoLa. Its score
+for token $v$ when the answer so far is $x_{<t}$ is
+\begin{equation}
+  s_t(v) = z^{(N)}_t(v) - z^{(L)}_t(v),
+  \qquad
+  L = \arg\max_{j \in \mathcal{J}} \JSD\bigl(\operatorname{softmax}(z^{(N)}_1/\tau),\, \operatorname{softmax}(z^{(j)}_1/\tau)\bigr),
+  \label{eq:fanda}
+\end{equation}
+where the subscript 1 denotes the first token of the answer, $\JSD(p, q) = \tfrac12[\KL(p \Vert m) + \KL(q \Vert m)]$
+is the standard Jensen--Shannon divergence, and $\tau = 0.5$. The next-token distribution is
+$\operatorname{softmax}(s_t)$. Figure~\ref{fig:pipeline} shows the computation for one answer option.
+
+\paragraph{No plausibility constraint (\cha1).}
+Under likelihood-based multiple-choice scoring, the answer option's tokens are fixed in advance and only their
+log-probabilities are read. With the constraint, an option token outside $\Vhead$ receives the score $-1000$
+before the softmax, so its log-probability is close to $-1000$, and the option ranks below every option whose
+tokens all lie inside $\Vhead$. Because $\Vhead$ depends only on the mature layer, the constraint thereby rejects
+any option that contains one token the mature layer finds unlikely relative to its top token, whatever the
+contrast says about the rest of the option. In free generation the same constraint only limits which token is
+chosen next. \fanda{} removes it. Its effect is measured in a $2 \times 2$ ablation (Table~\ref{tab:factorial}).
+We did not count how often a correct option contains a token outside $\Vhead$.
+
+\paragraph{Raw-logit difference.}
+\fanda{} subtracts raw logits instead of log-probabilities. Without the constraint this change has no effect:
+$\log q_N(v) - \log q_L(v) = z^{(N)}(v) - z^{(L)}(v) - c$, where $c$ is the same for every $v$ at a given step,
+and the softmax removes $c$. The two scores therefore give identical option scores, which the ablation confirms
+(Table~\ref{tab:factorial}). With the constraint the two differ, because the fixed value $-1000$ is then compared
+with scores on two different scales.
+
+\paragraph{Layer-selection divergence.}
+\fanda{} selects the premature layer with the standard Jensen--Shannon divergence at temperature $\tau = 0.5$,
+whereas our DoLa baseline uses the reference implementation's divergence at $\tau = 1$
+(Section~\ref{sec:method-dola}). This setting was inherited from an earlier version of the code, and we did not
+test it separately. The comparison between DoLa and \fanda{} therefore includes this change.
+\todo{after R3: replace the last two sentences with the result of the $\tau$ ablation, or keep them}
+
+\paragraph{Premature layer fixed for each answer option (\cha2).}
+With dynamic selection, the premature layer, and therefore the scoring function in Equation~\eqref{eq:dola-score},
+can change from one token to the next. On the development set, per-token selection changed the premature layer
+at 69\,\% of steps (Table~\ref{tab:interval}). \fanda{} selects the layer once, at the first token of the answer
+option, and keeps it for the remaining tokens. To separate this choice from the other three, we also evaluate the
+same score with the premature layer re-selected every $k$ tokens, for $k \in \{1, 2, 4, 8\}$; \fanda{} is
+$k = \infty$. With $k = 1$ the score still differs from DoLa in the other three settings. Each answer option is
+scored from a fresh state, so two options of the same question can use different premature layers. Appendix~\ref{app:stability}
+shows that a longer interval leaves the chosen tokens and the option ranking unchanged whenever the change in
+premature-layer logits stays below the decision margin. This explains when a longer interval makes no difference,
+not why it would help; whether it helps is tested empirically.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=8mm and 6mm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\small, inner sep=4pt,
+              minimum height=10mm, minimum width=24mm},
+  arr/.style={-{Stealth[length=2mm]}}]
+  % row 1: the per-token path
+  \node[box, minimum width=20mm] (in) {prompt $+$\\answer $y_{<t}$};
+  \node[box, minimum width=16mm, right=of in] (fw) {forward\\pass};
+  \node[box, right=of fw] (mat) {mature logits\\$z^{(N)}_t$};
+  \node[box, right=12mm of mat] (sc) {contrastive score\\$s_t = z^{(N)}_t - z^{(L)}_t$};
+  \node[box, right=of sc] (lp) {$\log p(y_t) =$\\$\log\operatorname{softmax}(s_t)[y_t]$};
+  % row 2: premature-layer selection and the option score
+  \node[box, below=of mat] (ee) {early-exit logits\\$z^{(j)}_t,\ j \in \mathcal{J}$};
+  \node[box, below=of sc, fill=black!5] (sel) {at $t = 1$ only:\\$L = \arg\max_j \JSD_\tau$};
+  \node[box, below=of lp] (sum) {option score\\$S(y) = \sum_t \log p(y_t)$};
+  \draw[arr] (in) -- (fw);
+  \draw[arr] (fw) -- (mat);
+  \draw[arr] (fw) |- (ee);
+  \draw[arr] (mat) -- (sc);
+  \draw[arr] (ee) -- (sel);
+  \draw[arr] (sel) -- node[right, font=\scriptsize, align=left] {$L$ kept\\for $t > 1$} (sc);
+  \draw[arr] (sc) -- (lp);
+  \draw[arr] (lp) -- (sum);
+\end{tikzpicture}
+\caption{\fanda{} scoring of one answer option $y$ by teacher forcing. At each answer token, one forward pass
+gives the mature logits and the early-exit logits of the candidate layers. The premature layer $L$ is selected
+by Jensen--Shannon divergence only at the first answer token and then kept. There is no plausibility constraint.
+The option scores $S(y)$ give MC1, MC2 and MC3 (Section~\ref{sec:setup}).}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{\panda{} (baseline)}
+\label{sec:method-panda}
+
+\panda{}, the project's earlier method, applies contrastive decoding inside Jacobi-style blocks of four
+tokens~\citep{santilli2023accelerating}. For every position in a block it computes the greedy score
+$z^{(N)}$ and the contrastive score $z^{(N)} - z^{(M)}$, with the premature layer selected per position by the
+same divergence as in \fanda{} (standard Jensen--Shannon divergence, $\tau = 0.5$). Up to the first position where the two disagree (different top token and a
+Jensen--Shannon divergence above 0.05), it takes the greedy token. From that position on, it takes the
+contrastive token whenever the contrastive score's top-token probability is within 0.02 of the greedy score's.
+Under multiple-choice scoring, only the scores of the block's first position are used. \panda{} needs about twice
+the time per token of DoLa (Table~\ref{tab:main}); we report it as a baseline.
+
 \section{Experimental Setup}
+\label{sec:setup}
 \section{Results}
 \section{Analysis}
 \section{Limitations}
@@ -65,5 +231,27 @@ statements with section pointers}
 \appendix
 \section{Reproduction}
 \todo{repository, commit, run command, run time}
+
+\section{When a longer selection interval changes nothing}
+\label{app:stability}
+
+This appendix states when re-selecting the premature layer less often leaves the decisions unchanged. It does not
+show that a longer interval is better: the reference is per-token selection ($k = 1$) itself.
+
+Let $L^\star_t$ be the layer that per-token selection would choose at step $t$ and $L^k_t$ the layer in use with
+interval $k$. Write $g^\star_t = z^{(N)}_t - z^{(L^\star_t)}_t$ and $g^k_t = z^{(N)}_t - z^{(L^k_t)}_t$. Their
+difference $e^k_t = g^k_t - g^\star_t = z^{(L^\star_t)}_t - z^{(L^k_t)}_t$ does not depend on the mature layer.
+
+\paragraph{Next token.} Let $a = \arg\max_v g^\star_t(v)$ be unique, with margin
+$m_t = g^\star_t(a) - \max_{v \ne a} g^\star_t(v)$. If $2\lVert e^k_t \rVert_\infty < m_t$, then
+$\arg\max_v g^k_t(v) = a$, since $g^k_t(a) - g^k_t(v) \ge m_t - 2\lVert e^k_t \rVert_\infty > 0$ for every $v \ne a$.
+
+\paragraph{Option ranking.} For any vectors $x, x'$ and index $i$,
+$\lvert \log\operatorname{softmax}(x)_i - \log\operatorname{softmax}(x')_i \rvert \le 2 \lVert x - x' \rVert_\infty$,
+because $\log\operatorname{softmax}(x)_i = x_i - \operatorname{logsumexp}(x)$ and both terms are 1-Lipschitz in
+$\lVert\cdot\rVert_\infty$. Summing over the tokens of an option $y$ gives
+$\lvert S_k(y) - S_\star(y) \rvert \le 2 \sum_t \lVert e^k_t \rVert_\infty$. Hence, if
+$S_\star(y) - S_\star(y') > 2 \sum_t \lVert e^k_t(y) \rVert_\infty + 2 \sum_t \lVert e^k_t(y') \rVert_\infty$, the
+interval-$k$ decoder ranks option $y$ above $y'$, as per-token selection does.
 
 \end{document}
