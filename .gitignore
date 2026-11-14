@@ -42,3 +42,10 @@ results/tmp/
 *.out
 *.synctex.gz
 *.toc
+*.brf
+
+# Local archive of earlier project versions (kept on disk, not published)
+archive/
+
+# Report build output
+paper/build/

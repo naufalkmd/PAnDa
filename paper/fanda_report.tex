@@ -1,0 +1,69 @@
+%% arXiv-style technical report (write-report skill).
+%% Portfolio report, arXiv style, one column, no page limit (aim for 10-12 pages plus appendix).
+%% Build: latexmk -pdf -outdir=build fanda_report.tex   (latexmkrc in this folder)
+%% Outline, sources and open items: docs/report_checklist.md. Terms: docs/glossary.md.
+%% Style: each paragraph = what we did -> why (one sentence) -> at most one number, with a pointer to the table.
+%% Statistics live in the tables. \todo{...} and \verify print in red and must be gone before submission.
+%% Two columns: add "twocolumn" to the class options; use figure*/table* for full-width floats (see structure.md).
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage[hidelinks]{hyperref}
+
+%% ---- report macros (assets/report_macros.tex) ----
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,arrows.meta,backgrounds,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\verify}{\textcolor{red}{\textsuperscript{[verify]}}}
+\newcommand{\cha}[1]{\textsf{C#1}}
+
+\title{\todo{title: see docs/report\_checklist.md, part A}}
+\author{Muhammad Naufal \quad Jeong Edon \quad Muhammad Aliff\\\small Korea University}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\todo{task in one sentence; the challenges; the approach, one clause per component; headline number against the
+baseline; main finding.}
+\end{abstract}
+
+\section{Introduction}
+\todo{task and metric}
+
+\begin{itemize}
+\item[\cha1] \textbf{\todo{challenge}.} \todo{one fact that shows it is real}
+\end{itemize}
+
+\todo{approach in one paragraph, each component mapped to its challenge; then what this report contributes, as plain
+statements with section pointers}
+
+\section{Related Work}
+\section{Method}
+\section{Experimental Setup}
+\section{Results}
+\section{Analysis}
+\section{Limitations}
+\section{Conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\section{Reproduction}
+\todo{repository, commit, run command, run time}
+
+\end{document}

@@ -1,32 +1,24 @@
-# PAnDa
+# PAnDa / FAnDa: contrastive layer decoding experiments
 
-PAnDa is a public research repository for **Parallel-block Adaptive Contrast DoLa** and related decoding baselines. It packages the current evaluator, benchmark runners, saved development artifacts, and paper notes into a compact public layout.
+Research code for **FAnDa**, a simplification of DoLa (contrastive layer decoding, Chuang et al., 2024) for
+truthful question answering, and for **PAnDa**, the earlier block-wise method it grew out of. The repository is
+named after PAnDa; the current results and the report are about FAnDa.
 
-The repo is built for **re-running decoder comparisons and inspecting saved development artifacts**, not as a polished benchmark suite with publication-final claims.
+**FAnDa** differs from DoLa in four settings:
 
-## What PAnDa does
+- no adaptive plausibility constraint (DoLa's "relative-top" filter);
+- the raw-logit difference `z_mature − z_premature` instead of the log-probability difference;
+- the premature layer is chosen by Jensen–Shannon divergence at temperature 0.5 (DoLa uses 1);
+- the premature layer is chosen **once per answer** and then kept fixed, instead of being re-selected at every token.
 
-PAnDa keeps two fixed contrast regimes inside the same block-parallel decoding pass:
+**PAnDa** (Parallel-block Adaptive Contrast DoLa) keeps a low- and a high-contrast view inside one
+speculative-block decoding pass and switches to the high-contrast view from their first divergence point. It is
+kept as a baseline.
 
-- a safer low-alpha view
-- a stronger truth-seeking high-alpha view
-
-Instead of generating two full answers and reranking them afterward, PAnDa compares those views locally inside each speculative block, detects the first meaningful divergence point, and only applies truth-biased arbitration from that point onward.
-
-The current evaluator also includes these comparison decoders:
-
-- `greedy`
-- `dola`
-- `fixed_alpha_dola_low`
-- `fixed_alpha_dola`
-- `fixed_alpha_dola_high`
-- `panda`
-
-## Repository status
-
-- This repository is a cleaned public research release, not a full historical workspace mirror.
-- The strongest checked-in PAnDa evidence is still a **development TruthfulQA sanity artifact**, not a publication-final benchmark package.
-- Historical `stage*` names remain in some saved metadata and directories for provenance compatibility, even though the active public preset name is `panda`.
+**Status.** This is a development-stage research repository, not a benchmark package. Most results come
+from one 50-question TruthfulQA subset, which was also used to develop the method. See
+[`docs/experiment_log.md`](docs/experiment_log.md) for every experiment, its result and its known issues.
+Code names are explained in [`docs/glossary.md`](docs/glossary.md).
 
 ## Install
 
@@ -38,58 +30,30 @@ python -m venv .venv
 ./.venv/bin/python -m pip install -e .
 ```
 
-If the selected model is gated or not already cached locally, export one of:
+For gated models, or models not cached locally, export `HF_TOKEN` (or `HUGGINGFACE_HUB_TOKEN`).
+
+## Run an experiment
+
+Each experiment in `results/experiments/expN_*/` has a `run_experiment.py`, a `run_matrix.csv` (one row per
+run), a README, and its saved outputs in `runs/`. For example, the layer re-selection sweep:
 
 ```bash
-export HF_TOKEN=...
-# or
-export HUGGINGFACE_HUB_TOKEN=...
+./.venv/bin/python results/experiments/exp16_mc_persistence_seed_sweep/run_experiment.py \
+  --model-name Qwen/Qwen2.5-3B-Instruct \
+  --mode subset \
+  --truthfulqa-limit 50
 ```
 
-## Quick start
-
-Re-run the checked-in PAnDa preset:
+Print the scores of every saved run:
 
 ```bash
-./scripts/run_panda_truthfulqa.py
+python scripts/summarise_runs.py
 ```
 
-Run the same preset on the shared 3B backbone used by the isolated experiments:
+## Evaluator CLI
 
-```bash
-./scripts/run_panda_truthfulqa.py \
-  --model-name Qwen/Qwen2.5-3B-Instruct
-```
-
-That wrapper:
-
-- apply `--comparison-preset panda`
-- run in `--mode sanity`
-- save outputs under `results/dev/...`
-- work from any current directory because they resolve the repo root themselves
-- accept the normal evaluator CLI flags after the preset defaults
-
-If the target Python environment is missing dependencies, bootstrap once from the script itself:
-
-```bash
-./scripts/run_panda_truthfulqa.py --bootstrap
-```
-
-If the executable bit is missing on your machine, enable it once:
-
-```bash
-chmod +x scripts/run_panda_truthfulqa.py
-```
-
-If you do not override `--model-name`, the public PAnDa preset switches from the generic CLI default to the saved comparison model:
-
-```text
-HINT-lab/DeepSeek-R1-Distill-Qwen-1.5B-Self-Calibration
-```
-
-## Direct CLI usage
-
-After installing the package, you can run the evaluator directly:
+The package also has a general evaluator (TruthfulQA multiple choice, MC1/MC2/MC3) with the decoders
+`greedy`, `dola`, `fixed_alpha_dola_low`, `fixed_alpha_dola`, `fixed_alpha_dola_high` and `panda`:
 
 ```bash
 ./.venv/bin/python -m panda \
@@ -99,99 +63,49 @@ After installing the package, you can run the evaluator directly:
   --results-dir results/dev/panda_truthfulqa_sanity10
 ```
 
-Example: run a larger TruthfulQA subset:
+- `--mode sanity` / `subset` / `full`: small seeded subset, larger seeded subset, or all questions.
+- `--model-name`: any Hugging Face causal LM.
+- `--truthfulqa-limit N`: override the subset size.
+- `--local-files-only`: no network access.
+
+`scripts/run_panda_truthfulqa.py` wraps the PAnDa preset (`--bootstrap` installs missing dependencies).
+
+## Figures
+
+Plot scripts live in `scripts/plots/` and write to `results/figures/`. Run them from the repository root, for example:
 
 ```bash
-./.venv/bin/python -m panda \
-  --model-name Qwen/Qwen2.5-3B-Instruct \
-  --mode subset \
-  --save-results \
-  --results-dir results/dev/truthfulqa_subset_run
-```
-
-Useful flags:
-
-- `--comparison-preset panda` to apply the public PAnDa preset
-- `--model-name ...` to choose a different Hugging Face causal LM
-- `--local-files-only` to avoid network fetches
-- `--truthfulqa-limit 50` to override the seeded sample size
-
-The fixed-alpha DoLa comparison set is hardcoded to `0.1`, `0.5`, and `0.95`. PAnDa uses the `0.1` and `0.95` regimes internally.
-
-## Benchmarks and outputs
-
-The current public CLI evaluates `TruthfulQA` multiple choice and reports:
-
-- `mc1`
-- `mc2`
-- `mc3`
-
-Fresh runs written by the CLI use a decoder-specific artifact prefix. For example, the PAnDa preset writes:
-
-- `panda_full_eval_raw_predictions.csv`
-- `panda_full_eval_summary.csv`
-- `panda_full_eval_pairwise_summary.csv`
-- `panda_full_eval_metadata.json`
-
-The checked-in historical artifacts under `results/dev/stage*/` use the older unprefixed naming:
-
-- `raw_predictions.csv`
-- `summary.csv`
-- `pairwise_summary.csv`
-- `metadata.json`
-
-## Plotting results
-
-Plot an overview from a freshly generated PAnDa summary:
-
-```bash
-./.venv/bin/python scripts/plot_results.py \
-  results/dev/panda_truthfulqa_sanity10/panda_full_eval_summary.csv \
-  --output results/dev/panda_truthfulqa_sanity10/overview.png \
-  --title "PAnDa TruthfulQA sanity run"
-```
-
-Plot the checked-in historical artifact instead:
-
-```bash
-./.venv/bin/python scripts/plot_results.py \
-  results/dev/stage12_panda_truthfulqa_sanity10/summary.csv \
-  --output results/dev/stage12_panda_truthfulqa_sanity10/overview.png \
-  --title "Historical Stage 12 PAnDa artifact"
+python scripts/plots/plot_exp13_logit_filter_factorial.py
 ```
 
 ## Repository layout
 
 ```text
 PAnDa/
-  paper/          Current paper draft and bibliography
-  results/        Checked-in development artifacts and new run outputs
-  scripts/        Preset runners and plotting helper
-  src/panda/      Evaluator, benchmark loaders, CLI, and decoder wrappers
+  src/panda/            Evaluator, decoders, benchmark loaders, CLI
+  results/experiments/  One folder per experiment: runner, run matrix, README, saved runs
+  results/figures/      Generated figures and their data (JSON)
+  results/dev/          Early PAnDa sanity runs (historical "stage" names)
+  scripts/              Run wrappers and scripts/summarise_runs.py
+  scripts/plots/        Figure scripts
+  paper/                Report source; paper/course_version_2026_06/ is the June 2026 course version
+  docs/                 Algorithm notes, glossary, experiment log, presentation
 ```
 
 Key implementation files:
 
-- `src/panda/evaluator.py`: model loading and decoder logic
-- `src/panda/evaluation.py`: benchmark scoring, summaries, and pairwise comparison helpers
-- `src/panda/entrypoint.py`: command-line driver
-- `src/panda/benchmarks.py`: dataset loaders
-- `src/panda/args.py`: CLI flags and public preset mapping
+- `src/panda/decoders/core.py`: layer selection, DoLa scores, contrast views
+- `results/experiments/local_evaluator.py`: the experiment decoders (FAnDa family, factorial, switches)
+- `src/panda/evaluation.py`: MC1/MC2/MC3 scoring and summaries
 
 ## Reproducibility notes
 
-- The evaluator reads `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN` for remote Hugging Face access.
-- `--mode sanity` uses small seeded subsets; `--mode subset` uses larger seeded subsets; `--mode full` removes the default limit.
-- The repo tracks compact artifacts and provenance metadata, not every exploratory run or cache file from earlier internal work.
-- Exact reproduction can still depend on model availability, Hugging Face authentication, local dataset copies, and hardware comparable to the original environment.
+- Fixed seeds: the default subset is seed 42; exp16 adds fresh subsets with seeds 101–404.
+- Exact reproduction depends on model availability, the Hugging Face dataset version and the GPU. Official DoLa
+  scores 0.26–0.28 MC1 on the same 50 questions across runs.
+- The saved runs are compact artifacts (summaries, raw predictions, metadata), not every exploratory run.
 
-## Paper
+## Authors
 
-Build the paper from `paper/` with:
-
-```bash
-cd paper
-latexmk -pdf panda_note.tex
-```
-
-Further paper notes live in [`paper/README.md`](paper/README.md).
+Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University). The work started as a course project
+(COSE474, spring 2026).

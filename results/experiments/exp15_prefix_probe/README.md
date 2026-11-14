@@ -96,7 +96,7 @@ Possible patterns:
 Optional plot after the run:
 
 ```bash
-./.venv/bin/python scripts/plot_exp15_prefix_probe.py
+./.venv/bin/python scripts/plots/plot_exp15_prefix_probe.py
 ```
 
 This creates:
