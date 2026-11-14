@@ -42,6 +42,37 @@ exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is withi
 | exp17 | Token-level traces of high- and low-scoring k = 1 open-ended answers | Traces and figure only | `exp17...` | Possibly a figure |
 | exp18 | Transfer to other models (same 50 questions) | Gemma 3 4B: greedy 0.28/0.432/0.248, DoLa 0.28/0.490/0.272, FAnDa 0.30/0.587/0.284. Falcon 3 3B: greedy 0.26/0.406/0.231, DoLa 0.22/0.442/0.214, FAnDa 0.26/0.478/0.228. HINT self-calibrated Qwen 1.5B: greedy 0.30/0.428/0.247, DoLa 0.24/0.404/0.208, FAnDa 0.24/0.413/0.206 | `exp18.../run_0{1,2,4}_*` | Yes, all baselines present |
 
+## Paired tests on the development set (2026-11-14)
+
+`python scripts/paired_tests.py RUN_DIR --pairs A:B ...` (exact McNemar on MC1; paired bootstrap, 10,000 resamples,
+seed 0, on all three). n = 50 in every row; p-values are **not** adjusted for multiple comparisons unless noted.
+
+| Comparison (run) | MC1 diff (b/c, p McNemar) | MC2 diff (p) | MC3 diff (p) |
+|---|---|---|---|
+| FAnDa − DoLa (exp11) | +0.140 (9/2, 0.065) | +0.031 (0.58) | +0.096 (0.005) |
+| FAnDa − greedy (exp11) | +0.060 (4/1, 0.375) | +0.026 (0.48) | +0.057 (0.07) |
+| DoLa − greedy (exp11) | −0.080 (3/7, 0.344) | −0.004 (0.94) | −0.039 (0.31) |
+| PAnDa − greedy (exp11) | 0.000 (3/3, 1.0) | +0.032 (0.30) | +0.017 (0.57) |
+| Constraint off − on, log-prob (exp13) | +0.100 (7/2, 0.180) | −0.000 (0.98) | +0.056 (0.12) |
+| Raw-logit − log-prob, constraint on (exp13) | +0.020 (2/1, 1.0) | −0.008 (0.45) | +0.027 (0.13) |
+| k = ∞ − k = 1 (exp12) | +0.060 (4/1, 0.375) | +0.026 (0.46) | +0.071 (< 0.001) |
+| k = ∞ − k = 4 (exp12) | 0.000 (0/0, 1.0) | −0.016 (0.33) | +0.013 (0.42) |
+| k = ∞ − k = 1 (exp16, seed 101) | 0.000 (1/1, 1.0) | −0.016 (0.53) | +0.033 (0.09) |
+| FAnDa − greedy, Gemma 3 4B (exp18) | +0.020 (5/4, 1.0) | +0.155 (0.017) | +0.036 (0.36) |
+| FAnDa − DoLa, Gemma 3 4B (exp18) | +0.020 (2/1, 1.0) | +0.097 (0.09) | +0.012 (0.62) |
+| FAnDa − greedy, Falcon 3 3B (exp18) | 0.000 (4/4, 1.0) | +0.073 (0.22) | −0.003 (0.92) |
+| FAnDa − greedy, HINT Qwen 1.5B (exp18) | −0.060 (3/6, 0.508) | −0.015 (0.72) | −0.041 (0.33) |
+
+Reading, on the development set only:
+
+- FAnDa beats DoLa on MC3 (p = 0.005) and, less clearly, on MC1 (McNemar p = 0.065). It does **not** beat
+  greedy decoding on any metric for Qwen2.5-3B, and DoLa does not beat greedy either.
+- Removing the plausibility constraint gives the largest single MC1 change (+0.10), but it is not significant at n = 50.
+- The selection-interval effect is significant only on MC3 (k = 1 vs. longer intervals), and not on seed 101.
+- The only significant cross-model gain is FAnDa over greedy on Gemma 3 4B MC2 (p = 0.017, unadjusted).
+- With this many comparisons, an unadjusted p ≈ 0.02–0.07 is weak evidence. The held-out run (R2, n = 767)
+  is what can settle the FAnDa vs. DoLa and FAnDa vs. greedy questions.
+
 ## Known issues (fix in the report, or rerun)
 
 1. **The course report's main table mixes runs.** Its FAnDa row is from exp12 (k = ∞), its DoLa row from exp4/exp13

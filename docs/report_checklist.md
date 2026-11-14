@@ -47,7 +47,12 @@ once next to its standard description. The full mapping, including the older not
 **Challenges** (the spine: each method choice answers one, each result is labelled with one):
 
 - **C1. The plausibility constraint can remove the correct answer's tokens.** Fact: DoLa 0.28 → 0.38 MC1 when only
-  the constraint is removed (exp13).
+  the constraint is removed (exp13), the largest single change, but not significant at n = 50 (McNemar p = 0.18).
+
+**Development-set tests change the framing** (`experiment_log.md`, paired tests): FAnDa beats DoLa on MC3
+(p = 0.005) and weakly on MC1 (p = 0.065), but neither FAnDa nor DoLa beats **greedy decoding** on Qwen2.5-3B.
+Unless R2 shows otherwise, the report's claim is "FAnDa repairs DoLa's loss against greedy", not "FAnDa improves
+truthfulness over standard decoding".
 - **C2. Dynamic premature-layer selection changes the contrastive score from token to token.** Fact: with
   selection at every token, the premature layer changes at 69 % of steps (exp12).
 - **C3. The evidence is small and noisy.** Fact: SE ≈ 0.07 on MC1 with 50 questions; DoLa scores 0.26–0.28 on the
@@ -80,7 +85,7 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 | T2 factorial | `exp13.../run_01_default` (+ R3 for τ) | [ ] the two no-constraint cells are identical by construction: say so |
 | T3 selection interval k | `exp16.../run_01`–`run_05` | [ ] seeds 202/303/404 wait for R1 |
 | T4 transfer | `exp18.../run_01, run_02, run_04` | [ ] all baselines exist; fill the table |
-| Paired tests | new `scripts/paired_tests.py` on `*_raw_predictions.csv` (`example_idx`) | [ ] to write: exact McNemar on MC1; paired bootstrap (10,000 resamples, fixed seed) on MC2/MC3 |
+| Paired tests | `scripts/paired_tests.py` on `*_raw_predictions.csv` (questions matched by text; `--exclude-questions-of` for held-out; `--holm`) | [x] written and run on the development set (results in `experiment_log.md`); [ ] rerun on R1/R2 |
 | Switching rules (appendix) | exp6–exp10 summaries | [ ] |
 | Open-ended | `exp14.../run_01_default_summary.csv` (automatic); `*_manual_eval.csv` (`reviewer = codex`) | [ ] decision R5 |
 | Pipeline figure | TikZ, drawn from the code | [ ] |
