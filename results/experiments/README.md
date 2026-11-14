@@ -1,77 +1,50 @@
 # Experiments
 
-This folder is intentionally self-contained.
+Each folder holds one experiment: `run_experiment.py`, `run_matrix.csv` (one row per run), a README, and its saved
+outputs in `runs/<run_id>/`. The runners import `src/panda` and the shared code here (`common.py`,
+`local_evaluator.py`). Run them from the repository root.
 
-- All experiment-specific code lives under `results/experiments/`.
-- The scripts here import `src/panda`, but they do not require edits outside this folder.
-- Deleting `results/experiments/` removes the local experiment runners, matrices, logs, and outputs together.
+Results and known issues for every experiment: [`docs/experiment_log.md`](../../docs/experiment_log.md).
+Code names → standard terms: [`docs/glossary.md`](../../docs/glossary.md). All runs: TruthfulQA multiple choice
+(MC1/MC2/MC3) with `Qwen/Qwen2.5-3B-Instruct`, on the same 50 questions (the development set) unless noted.
 
-Current experiments:
+*Selection interval k*: the premature layer is re-selected every k tokens (k = ∞: once per answer).
 
-- `exp1_contrast_strength/`
-  - Tests whether matched-alpha contrast strength over the shallow view changes TruthfulQA results.
-  - Decoders: `official_dola`, `matched_alpha_dola_0p10`, `matched_alpha_dola_0p50`, `matched_alpha_dola_0p95`
+## Experiments used in the report
 
-- `exp2_horizon_arbitration/`
-  - Tests whether longer-horizon disagreement resolution helps in a simplified no-block PAnDa.
-  - Decoders: `simple_panda_h1`, `simple_panda_h2`
+| Folder | Question | Decoders |
+|---|---|---|
+| `exp11_core_decoder_comparison/` | Main comparison | `pure_greedy`, `top_k`, `top_p`, `dola`, `fanda`, `panda_switch` |
+| `exp12_state_persistence_diagnostics/` | Selection interval k ∈ {1, 2, 4, ∞} | `fanda_update1`, `_update2`, `_update4`, `fanda_frozen` |
+| `exp13_logit_filter_factorial/` | 2 × 2: log-probability vs. raw-logit difference × adaptive plausibility constraint | `exp13_logprob_top`, `_logprob_no_top`, `_logit_top`, `_logit_no_top` |
+| `exp14_openended_factuality/` | Open-ended generation, k ∈ {1, 2, 4, 8, ∞} (automatic reference overlap; LLM-assigned labels) | `exp14_update{1,2,4,8}`, `exp14_frozen` |
+| `exp15_prefix_probe/` | Case study: answer prefixes, k = ∞ vs. k = 1 | `exp14_frozen`, `exp14_update1` |
+| `exp16_mc_persistence_seed_sweep/` | Selection interval across random subsets | `fanda_update{1,2,4,8}`, `fanda_frozen` |
+| `exp17_openended_dola_trace/` | Token-level premature-layer traces of open-ended answers | `exp14_update1` |
+| `exp18_cross_model_transfer/` | Transfer to Gemma 3 4B, Falcon 3 3B, HINT self-calibrated Qwen 1.5B | `pure_greedy`, `dola`, `fanda` |
 
-- `exp4_family_baselines/`
-  - Tests the repo-native decoder families before alpha-specific interpretation.
-  - Decoders: `top_k`, `top_p`, `dola`, `fixed_alpha_dola_low`, `fixed_alpha_dola`, `fixed_alpha_dola_high`
+## Exploration (not in the report's main text)
 
-- `exp5_block_ablation/`
-  - Tests whether block refinement or slower carried-layer refresh still helps after `fanda` became the strongest fixed baseline.
-  - Decoders: `fanda`, `panda_switch`, `panda_switch_update4`, `panda_fandas`
+Design alternatives that the final method does not use. They are kept for the record and summarised in one
+sentence (and the appendix) of the report. In their saved runs (2026-06-03), `fanda` re-selected the premature
+layer every 4 tokens.
 
-- `exp6_switch_variants/`
-  - Tests four single-pass switch rules for choosing between the greedy view and the contrast-subtracted view without speculative blocks.
-  - Decoders: `pure_argmax_switch`, `guarded_argmax_switch`, `sticky_contrast_switch`, `contrast_margin_switch`
+| Folder | Question |
+|---|---|
+| `exp1_contrast_strength/` | Weighting the premature-layer term in DoLa (α = 0.10, 0.50, 0.95) |
+| `exp2_horizon_arbitration/` | Look-ahead depth when choosing between greedy and contrastive scores |
+| `exp4_family_baselines/` | Baselines, including raw-logit contrast with α = 0, 0.5, 1 |
+| `exp5_block_ablation/` | Jacobi blocks on top of contrastive decoding |
+| `exp6_switch_variants/` | Four rule-based switches between greedy and contrastive scores |
+| `exp7_switch_vs_fixed_regimes/` | A switch vs. always greedy and always contrastive |
+| `exp8_oracle_switch_diagnosis/` | Oracle switch (upper bound for any switch rule) |
+| `exp9_adaptive_lambda_contrast/` | Contrastive weight set per token by a rule |
+| `exp10_ema_risk_switch/` | Switch gated by an exponential moving average |
 
-- `exp7_switch_vs_fixed_regimes/`
-  - Tests whether a simple switch rule beats the two fixed binary endpoints while staying competitive with `dola`.
-  - Decoders: `pure_greedy`, `fanda_greedy`, `fanda`, `pure_argmax_switch`, `pure_argmax_switchv2`, `dola`
+`exp3` does not exist (the number was skipped).
 
-- `exp8_oracle_switch_diagnosis/`
-  - Tests whether switch underperformance comes from a weak practical gate or from fixed contrast already being the stronger regime.
-  - Decoders: `pure_greedy`, `fanda`, `pure_argmax_switchv2`, `oracle_token_switch`, `dola`
+## Rerunning
 
-- `exp9_adaptive_lambda_contrast/`
-  - Tests whether a conservative adaptive contrast strength can beat fixed always-contrast without returning to hard switching.
-  - Decoders: `fanda`, `adaptive_lambda_contrast`
-
-- `exp10_ema_risk_switch/`
-  - Tests whether a single-pass EMA risk gate can beat matched always-contrast while keeping the same contrast view.
-  - Decoders: `fanda`, `ema_risk_switch`
-
-- `exp11_core_decoder_comparison/`
-  - Compares pure greedy, truncation baselines, DoLa, always-contrast, and the original `panda_switch` in one direct benchmark.
-  - Decoders: `pure_greedy`, `top_k`, `top_p`, `dola`, `fanda`, `panda_switch`
-
-- `exp12_state_persistence_diagnostics/`
-  - Tests the selected-layer persistence theory behind `fanda` using matched variants that differ only in layer refresh schedule.
-  - Decoders: `fanda_update1`, `fanda_update2`, `fanda_update4`, `fanda_frozen`
-
-- `exp13_logit_filter_factorial/`
-  - Tests a matched `update1` 2x2 that isolates score space (`logprob` vs `raw-logit`) and the relative-top filter (`on` vs `off`).
-  - Decoders: `exp13_logprob_top`, `exp13_logprob_no_top`, `exp13_logit_top`, `exp13_logit_no_top`
-
-- `exp14_openended_factuality/`
-  - Tests whether longer open-ended generations expose a stronger selected-layer refresh tradeoff than short multiple-choice answer scoring.
-  - Decoders: `exp14_update1`, `exp14_update2`, `exp14_update4`, `exp14_update8`, `exp14_frozen`
-
-- `exp15_prefix_probe/`
-  - Tests where `exp14_frozen` and `exp14_update1` begin to diverge by scoring prefixes of the same long generation on targeted disagreement questions.
-  - Decoders: `exp14_frozen`, `exp14_update1`
-
-- `exp16_mc_persistence_seed_sweep/`
-  - Tests whether the MC ranking of `update1`, `update2`, `update4`, `update8`, and `frozen` stays stable across one anchor subset plus four fresh random TruthfulQA subsets.
-  - Decoders: `fanda_update1`, `fanda_update2`, `fanda_update4`, `fanda_update8`, `fanda_frozen`
-
-- `exp17_openended_dola_trace/`
-  - Replays selected `exp14_update1` open-ended answers and dumps true token-level traces, using the `exp14` codex manual-eval sheet to pick strong (`manual_score_0_2=2`) and weak (`manual_score_0_2=0`) cases.
-  - Decoders: `exp14_update1`
-
-- `exp18_cross_model_transfer/`
-  - Tests whether the core `pure_greedy` vs `dola` vs `fanda` ranking transfers across models while reusing the locked `50`-question subset from `exp11`.
-  - Decoders: `pure_greedy`, `dola`, `fanda`
+- Reruns for the report: `bash scripts/run_report_reruns.sh` (see `docs/report_checklist.md`, part E).
+- Print the scores of every saved run: `python scripts/summarise_runs.py`.
+- `--mode full` alone still uses 50 questions; add `--truthfulqa-limit all` for the full dataset.

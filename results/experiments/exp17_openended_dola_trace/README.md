@@ -1,28 +1,25 @@
-# exp17_openended_dola_trace
+# Experiment 17: Token-level premature-layer traces of open-ended answers
 
-This experiment replays a small set of `exp14_update1` open-ended generations and
-dumps real token-level selected-layer traces for plotting.
+Regenerates a few exp14 open-ended answers with the premature layer re-selected at every token
+(`exp14_update1`) and records which premature layer was selected at each token, for plotting.
 
-Selection source:
+Case selection:
 
-- `results/experiments/exp14_openended_factuality/runs/run_01_default/run_01_default_manual_eval.csv`
-- decoder filter: `exp14_update1`
-- strong group: `manual_score_0_2 = 2`
-- weak group: `manual_score_0_2 = 0`
-- ranking within each group: `proxy_oref_margin`
+- source: `results/experiments/exp14_openended_factuality/runs/run_01_default/run_01_default_manual_eval.csv`;
+- decoder: `exp14_update1`;
+- high-scoring cases: `manual_score_0_2 = 2`; low-scoring cases: `manual_score_0_2 = 0`;
+- order within each group: `proxy_oref_margin` (automatic reference-overlap margin).
 
-Why this exists:
+**Note:** the 0/1/2 labels used for selection were assigned by an LLM (Codex), not by a person
+(`reviewer = codex` in the source sheet).
 
-- `exp14` saved full answers and summary metrics, but not per-token traces.
-- `exp17` reuses the already reviewed open-ended answers to choose a focused set of
-  cases, then reruns only those prompts to capture the real generation-time trace.
+exp14 saved the answers and summary metrics but no per-token traces, so exp17 reruns only the selected prompts.
 
-Main artifacts:
+Outputs:
 
-- `run_01_default_selected_cases.csv`
-  - one row per selected question with the source manual-eval label, the saved
-    source answer, the regenerated answer, and trace summaries
-- `run_01_default_token_trace.csv`
-  - one row per generated token with `selected_layer`, `token_step`, and token text
-- `run_01_default_metadata.json`
-  - experiment metadata and source-manual-eval provenance
+- `run_01_default_selected_cases.csv`: one row per selected question, with the source label, the saved answer,
+  the regenerated answer and trace summaries;
+- `run_01_default_token_trace.csv`: one row per generated token, with `selected_layer`, `token_step` and the token;
+- `run_01_default_metadata.json`: metadata and the source of the labels.
+
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).

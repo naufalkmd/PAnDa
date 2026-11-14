@@ -1,40 +1,19 @@
-# Experiment 4: Family Baselines
+# Experiment 4: Baselines
 
-This experiment compares the repo-native decoder families before any alpha-specific
-interpretation:
+Compares the baseline decoders before any contrastive weight is tuned. All are scored by teacher forcing
+(likelihood-based multiple-choice scoring):
 
-- `top_k`
-  - teacher-forced scoring under the final-layer distribution truncated to the top `k`
-    tokens, then renormalized
-- `top_p`
-  - teacher-forced scoring under the final-layer nucleus distribution with cumulative
-    mass `p`, then renormalized
-- `dola`
-  - official DoLa log-prob contrast rule with relative-top filtering
-- `fixed_alpha_dola_low`
-  - previous successful raw-logit fixed-alpha family, now evaluated at `alpha=0.0`
-- `fixed_alpha_dola`
-  - same raw-logit fixed-alpha family at `alpha=0.5`
-- `fixed_alpha_dola_high`
-  - same raw-logit fixed-alpha family at `alpha=1.0`
+- `top_k`: final-layer distribution truncated to the top k tokens and renormalised (`--top-k-value`, default 50).
+- `top_p`: final-layer nucleus (top-p) distribution with cumulative mass p, renormalised (`--top-p-value`, default 0.9).
+- `dola`: DoLa (log-probability difference, adaptive plausibility constraint).
+- `fixed_alpha_dola_low`, `fixed_alpha_dola`, `fixed_alpha_dola_high`: raw-logit contrastive score
+  z_mature − α · z_premature with α = 0.0, 0.5, 1.0, premature layer re-selected every 4 tokens.
+  α = 0 is greedy decoding.
 
-This intentionally uses the repo's built-in fixed-alpha decoders directly.
+`top_k` and `top_p` here are truncated-distribution scoring baselines, not sampling. Their exp4 scores
+(0.04 and 0.00 MC1) are unusable; use exp11's (see `docs/experiment_log.md`, issue 5).
 
-`top_k` and `top_p` are also adapted to this teacher-forced evaluator:
-
-- `top_k` uses `--top-k-value` (default `50`)
-- `top_p` uses `--top-p-value` (default `0.9`)
-
-These are truncated-distribution scoring baselines, not stochastic free-generation runs.
-
-Decoder set:
-
-- `top_k`
-- `top_p`
-- `dola`
-- `fixed_alpha_dola_low`
-- `fixed_alpha_dola`
-- `fixed_alpha_dola_high`
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 

@@ -1,16 +1,12 @@
-# Experiment 1: Contrast Strength
+# Experiment 1: Contrastive weight
 
-This experiment isolates the first motivation:
+Does weighting the premature-layer term change DoLa's TruthfulQA results?
 
-- official DoLa as the baseline
-- matched-alpha DoLa variants that keep the official DoLa structure, but scale the shallow log-prob view by `alpha`
+- `official_dola`: DoLa (dynamic premature-layer selection, log-probability difference, adaptive plausibility constraint).
+- `matched_alpha_dola_0p10`, `_0p50`, `_0p95`: the same score with the premature layer's log-probabilities
+  weighted by α = 0.10, 0.50, 0.95.
 
-Decoder set:
-
-- `official_dola`
-- `matched_alpha_dola_0p10`
-- `matched_alpha_dola_0p50`
-- `matched_alpha_dola_0p95`
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 

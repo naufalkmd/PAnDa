@@ -1,76 +1,41 @@
-# exp16_mc_persistence_seed_sweep
+# Experiment 16: Selection interval across random subsets
 
-`exp16` is a one-experiment MC robustness sweep over selected-layer persistence schedules.
-
-The question is:
-
-- if we keep the TruthfulQA subset size at `50`, does the ranking of
-  `update1`, `update2`, `update4`, `update8`, and `frozen`
-  stay stable across different sampled subsets?
-
-This experiment keeps the evaluator fixed and only changes:
-
-- the selected-layer refresh schedule
-- the sampled TruthfulQA subset
+Does the ranking of the selection intervals k = 1, 2, 4, 8, ∞ (exp12) hold on other random 50-question subsets
+of TruthfulQA? Only the interval and the subset change; the evaluator is fixed.
 
 ## Design
 
-- decoders:
-  - `fanda_update1`
-  - `fanda_update2`
-  - `fanda_update4`
-  - `fanda_update8`
-  - `fanda_frozen`
-- metric focus:
-  - primary: `mc2`
-  - secondary: `mc1`, `mc3`
-- subset size:
-  - `50` questions per run by default
+- Decoders: `fanda_update1`, `fanda_update2`, `fanda_update4`, `fanda_update8`, `fanda_frozen`.
+  The saved seed-101 run names them `always_contrast_update{k}` / `always_contrast_frozen`: it was produced by an
+  uncommitted code version from before the rename. Its metadata (`refresh_schedule`) records the same intervals,
+  but the scoring code itself cannot be checked. Rerun it under the current names if it ends up in the report.
+- Metrics: MC2 first, then MC1 and MC3.
+- 50 questions per run.
 
-The run matrix has five rows:
+Run rows:
 
-1. `run_01_anchor_subset`
-   - reuses the exact 50-question source-index sequence from
-     `exp12_state_persistence_diagnostics/run_01_default`
-2. `run_02_seed_101`
-3. `run_03_seed_202`
-4. `run_04_seed_303`
-5. `run_05_seed_404`
+1. `run_01_anchor_subset`: the same 50 dataset indices as `exp12_state_persistence_diagnostics/run_01_default`
+   (the development set);
+2. `run_02_seed_101` (done), `run_03_seed_202`, `run_04_seed_303`, `run_05_seed_404`: new random subsets.
+   Rows 3–5 are run by `bash scripts/run_report_reruns.sh r1`.
 
-The first row gives direct continuity with the earlier mechanism study.
-The other four rows test whether the MC ranking survives fresh random subsets.
+## Outputs
 
-## Main outputs
+`*_raw_predictions.csv`, `*_summary.csv`, `*_pairwise_summary.csv`, `*_metadata.json`, `progress.json`,
+`progress.ndjson`. The metadata of row 1 records the reused dataset indices and the source run.
 
-Each run writes the usual MC artifacts:
+## How to read it
 
-- `*_raw_predictions.csv`
-- `*_summary.csv`
-- `*_pairwise_summary.csv`
-- `*_metadata.json`
-- `progress.json`
-- `progress.ndjson`
+- one interval best on MC2 in nearly every subset: a stable choice;
+- k = 4 and k = ∞ close in every subset: a long interval helps, but the best one is not identified;
+- rankings that change from subset to subset: the subset, not the interval, drives the differences.
 
-The metadata for the anchor run records:
+The seed-101 subset already differs from the development set: there k = 1 and k = ∞ tie on MC1 (0.30) and
+k = 1 is best on MC2.
 
-- the anchor source indices
-- the reference experiment and run id
-- the path to the original `exp12` metadata file
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
-## How to interpret it
-
-Possible outcomes:
-
-- one decoder wins `mc2` across nearly every subset
-  - good evidence for a stable MC default
-
-- `update4` and `frozen` stay close across subsets
-  - MC supports stronger persistence but does not cleanly separate the best schedule
-
-- rankings move a lot from subset to subset
-  - subset sensitivity is itself the main result
-
-## Suggested run
+## Run
 
 ```bash
 ./.venv/bin/python results/experiments/exp16_mc_persistence_seed_sweep/run_experiment.py \

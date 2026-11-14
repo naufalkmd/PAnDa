@@ -33,4 +33,8 @@ tokens or `.env`.
   `uv run --no-project --with matplotlib --with pandas --with numpy python <script>`.
 - Run every script from the repository root (plot scripts use paths relative to it).
 - `pyproject.toml` dependencies are not pinned yet; pin them from the GPU machine's environment
-  (`pip freeze`) before the final reproduction runs.
+  (`pip freeze`) before the final reproduction runs. Reason: recent `huggingface_hub` versions reject the dataset
+  id `truthful_qa` (they need `namespace/name`, i.e. `truthfulqa/truthful_qa`), so an unpinned fresh install
+  cannot load TruthfulQA (seen 2026-11-14 on the PC).
+- Exploration experiments (exp1–exp10) are to move to `results/experiments/exploration/` **after** the R1/R2
+  reruns finish (the runners and plot scripts locate files by path).

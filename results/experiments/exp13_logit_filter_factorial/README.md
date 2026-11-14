@@ -1,87 +1,42 @@
-# Experiment 13: Logit/Filter Factorial
+# Experiment 13: Score difference × plausibility constraint (2 × 2 factorial)
 
-This experiment is a matched component ablation for the `fanda`
-story.
+An ablation of two of the changes from DoLa to FAnDa. Earlier baselines (exp4) suggested that a raw-logit
+contrastive score beats DoLa here, but they changed two things at once:
 
-The earlier family baselines already suggested that the raw-logit family was
-stronger than official DoLa on this TruthfulQA setup, but those comparisons did
-not fully isolate:
+- raw-logit difference instead of DoLa's log-probability difference;
+- no adaptive plausibility constraint.
 
-- direct raw-logit contrast vs official log-prob contrast
-- removal of the relative-top filter
+They also re-selected the premature layer every 4 tokens, while DoLa re-selects it at every token. So all four
+cells here use **DoLa's own layer selection** (JSD at every token) and differ only in:
 
-The main confound is that the existing fixed-alpha family uses carried
-`selected_layer` state with `update_every = 4`, while official DoLa reselects
-its layer every token. So `exp13` rebuilds the comparison as a matched `update1`
-factorial study.
+- the score: log-probability difference vs. raw-logit difference;
+- the adaptive plausibility constraint: on vs. off.
 
-All four cells in this experiment:
+| Decoder | Score | Constraint |
+|---|---|---|
+| `exp13_logprob_top` | log-probability difference | on (this is DoLa) |
+| `exp13_logprob_no_top` | log-probability difference | off |
+| `exp13_logit_top` | raw-logit difference | on |
+| `exp13_logit_no_top` | raw-logit difference | off |
 
-- use the same step-local JSD layer-selection rule as official DoLa
-- refresh `selected_layer` every token
-- differ only in:
-  - score space: `logprob` vs `raw-logit`
-  - relative-top filter: `on` vs `off`
+The third change, the selection interval, is ablated in exp12. The fourth, the JSD temperature (τ = 0.5 in
+FAnDa, 1 in DoLa), is not ablated anywhere yet.
 
-Decoder set:
+How to read it: a main effect of the score shows as a gain from raw logits with the constraint both on and off;
+a main effect of the constraint, as a gain from removing it with either score; an interaction, as a gain only
+in the raw-logit, no-constraint cell.
 
-- `exp13_logprob_top`
-  - official-style log-prob contrast with the relative-top filter enabled
+**Note:** without the constraint the two scores rank every token identically, because the log-softmax differs
+from the raw logits only by a per-step constant (their saved results are identical to 8 decimals).
 
-- `exp13_logprob_no_top`
-  - official-style log-prob contrast with the relative-top filter disabled
+Outputs: raw predictions, summary, pairwise summary, metadata, progress logs.
 
-- `exp13_logit_top`
-  - direct raw-logit contrast with the same relative-top filter applied
+Run rows: `run_01_default` (the 50-question development set), `run_02_full` (all 817 questions; run with
+`--mode full --truthfulqa-limit all`, or `bash scripts/run_report_reruns.sh r2`).
 
-- `exp13_logit_no_top`
-  - direct raw-logit contrast with no relative-top filter
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
-## Main Question
-
-Which part matters more for the gain over official DoLa:
-
-- switching from log-prob contrast to direct raw-logit contrast?
-- removing the relative-top filter?
-- or the interaction between them?
-
-## Why This Experiment Exists
-
-If we only compare official DoLa against `fanda`, we change too many
-things at once:
-
-- score space
-- relative-top filtering
-- persistence schedule
-
-`exp12` already isolates the persistence part. `exp13` is meant to isolate the
-other two.
-
-## How To Read It
-
-This is a 2x2 factorial.
-
-If `raw-logit` helps regardless of filter state, then the score-space main
-effect is likely important.
-
-If `no-filter` helps regardless of score space, then the relative-top removal
-main effect is likely important.
-
-If the biggest gain only appears in `raw-logit + no-filter`, then the story is
-mostly about the interaction between the two changes rather than either one in
-isolation.
-
-## Expected Outputs
-
-The same experiment artifacts as the other runners:
-
-- raw prediction CSV
-- summary CSV
-- pairwise summary CSV
-- metadata JSON
-- progress logs
-
-## Run Example
+Run example:
 
 ```bash
 ./.venv/bin/python results/experiments/exp13_logit_filter_factorial/run_experiment.py \

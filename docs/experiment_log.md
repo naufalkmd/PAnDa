@@ -21,7 +21,7 @@ exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is withi
 |---|---|---|---|
 | exp1 | Does a fixed contrastive weight α beat DoLa? | DoLa 0.28/0.528/0.273; α = 0.1: 0.34/0.525/0.306; α = 0.95: 0.30/0.527/0.280 | Background only |
 | exp2 | Does a two-token look-ahead help PAnDa's choice between scores (without blocks)? | one token 0.36/0.570/0.318; two tokens 0.34/0.534/0.300 at 1.8× the time per step | No |
-| exp4 | Baselines | α = 0.1: 0.34; α = 0.95: 0.40/0.576/0.351; DoLa 0.28; top-k 0.04, top-p 0.00 (scoring problem: see issue 5) | No |
+| exp4 | Baselines | Raw-logit contrast with α = 0 (= greedy): 0.34/0.531/0.307; α = 0.5: 0.36/0.565/0.315; α = 1: 0.40/0.576/0.351; DoLa 0.28; top-k 0.04, top-p 0.00 (scoring problem: see issue 5) | No |
 | exp5 | Do Jacobi blocks help on top of FAnDa (k = 4)? | n = 10 and n = 30 only; blocks never beat FAnDa (n = 30: 0.267 vs 0.367) at about 2× the time per step | One sentence |
 | exp6 | Four rule-based switches between greedy and contrastive scores | Best MC1 0.38 (`guarded_argmax_switch`); every MC2 ≤ 0.520 | One sentence |
 | exp7 | A switch vs. its two fixed settings (always greedy, always contrastive) | Contrastive at every step (FAnDa, k = 4) 0.40/0.576/0.351 best; greedy 0.34; best switch 0.38 | Yes (negative result) |
@@ -47,7 +47,8 @@ exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is withi
 1. **The course report's main table mixes runs.** Its FAnDa row is from exp12 (k = ∞), its DoLa row from exp4/exp13
    (0.28, not exp11's 0.26), and its top-k/top-p rows from exp4 (0.04/0.00), while exp11's own top-k/top-p equal
    greedy. Build every table from one run.
-2. **`fanda` names two decoders**: k = 4 in exp7–exp10, k = ∞ in exp11/exp18.
+2. **`fanda` names two decoders**: k = 4 in the saved runs of exp5–exp10 (committed 2026-06-03), k = ∞ from
+   commit `efec350` (2026-06-04) on, so in exp11/exp18 and in any rerun of exp5–exp10.
 3. **k = 1 is not DoLa.** The FAnDa variants select the layer by JSD at τ = 0.5; DoLa and exp13 use τ = 1. The
    difference between DoLa and FAnDa therefore combines four changes: no plausibility constraint, raw-logit
    difference, τ = 0.5, and k = ∞. No run isolates τ.
@@ -55,5 +56,8 @@ exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is withi
    so two options of one question can use different premature layers.
 5. **exp4 top-k/top-p of 0.04/0.00** probably predate the full-distribution fallback that exp11's README
    describes (not yet checked in the git history). Use exp11's numbers.
-6. **exp16 seed 101 ran on different hardware** (about 666 ms per step vs. 86 ms): compare its scores, not its latency.
+6. **exp16 seed 101 ran on different hardware** (about 666 ms per step vs. 86 ms), with an **uncommitted code
+   version** (decoders named `always_contrast_*`; no commit defines them). Its metadata records the same selection
+   intervals and the 50 dataset indices (`truthfulqa_sampling.selected_source_indices`), but the code cannot be
+   checked. Compare its scores, not its latency, and rerun it under the current code before relying on it.
 7. **Open-ended labels are LLM-written** (exp14, exp15).

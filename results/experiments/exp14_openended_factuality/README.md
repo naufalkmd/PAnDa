@@ -1,87 +1,30 @@
-# Experiment 14: Open-Ended Factuality Stress Test
+# Experiment 14: Open-ended generation
 
-This experiment asks whether selected-layer persistence matters more when the
-decoder has to generate a longer answer instead of only scoring short fixed
-multiple-choice strings.
+Does the selection interval k matter more when the model generates a free-form answer instead of scoring short
+multiple-choice options? In exp12, k = 4 and k = ∞ were close, but teacher-forced options are only a few tokens
+long, so the two may differ at only a few steps.
 
-The motivation comes from `exp12`: `fanda_update4` and
-`fanda_frozen` were close on the TruthfulQA multiple-choice setup,
-but that evaluator is teacher-forced over short candidate answers. In that
-setting, `update4` and `frozen` may differ only a few times before the answer
-ends.
-
-`exp14` keeps the same TruthfulQA questions but switches the task to
-open-ended generation.
-
-Decoder set:
-
-- `exp14_update1`
-- `exp14_update2`
-- `exp14_update4`
-- `exp14_update8`
-- `exp14_frozen`
-
-All five use the same direct logit-contrast view and differ only in
-`selected_layer` refresh schedule.
-
-## Main Question
-
-When the model must generate a longer factual answer, is:
-
-- `frozen` still enough?
-- an interior refresh schedule better?
-- or does the schedule barely matter even in free generation?
+Decoders (same FAnDa score, different k): `exp14_update1`, `exp14_update2`, `exp14_update4`, `exp14_update8`,
+`exp14_frozen` (k = 1, 2, 4, 8, ∞). Same 50 TruthfulQA questions, up to 64 new tokens.
 
 ## Evaluation
 
-This experiment uses a lightweight factuality proxy instead of the standard
-TruthfulQA multiple-choice score.
+Automatic reference overlap (an approximation, not a semantic judgement). For each answer:
 
-For each TruthfulQA question:
+- token-level F1 against each TruthfulQA true reference answer and each false reference answer;
+- `oref_margin` (main): best true-reference F1 minus best false-reference F1;
+- `oref_true_f1`: best F1 against any true reference;
+- `oref_win`: 1 if the answer is closer to a true than to any false reference.
 
-- generate a free-form answer
-- compare that answer against the known `mc2` true-answer bank
-- compare the same answer against the known `mc2` false-answer bank
-- score overlap with token-level F1
+0/1/2 correctness labels (`*_manual_eval.csv`): **all 250 rows were labelled by an LLM (Codex)**
+(`reviewer = codex`, `review_status = prefilled_by_codex`), not by a person. State this wherever they are used,
+or have them reviewed first.
 
-Primary metric:
+Outputs: raw predictions, summary, pairwise summary, metadata, progress logs, the label sheet.
 
-- `oref_margin`
-  - `best_true_f1 - best_false_f1`
-  - higher is better
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
-Secondary metrics:
-
-- `oref_true_f1`
-  - best token-F1 against any true reference
-- `oref_win`
-  - `1` if the answer matches a true reference better than any false reference
-
-This is intentionally an exploratory proxy:
-
-- it is useful for stress-testing longer generations today
-- it is not a substitute for a stronger semantic factuality judge
-
-## Why This Exists
-
-If short fixed answers compress the difference between `update4` and `frozen`,
-then a longer autoregressive answer should give stale carried state more time to
-drift.
-
-That makes `exp14` the natural follow-up to `exp12`:
-
-- `exp12`: controlled mechanism study on multiple-choice scoring
-- `exp14`: longer-generation stress test for whether staleness starts to hurt
-
-## Expected Outputs
-
-- raw prediction CSV
-- summary CSV
-- pairwise summary CSV
-- metadata JSON
-- progress logs
-
-## Run Example
+## Run
 
 ```bash
 ./.venv/bin/python results/experiments/exp14_openended_factuality/run_experiment.py \

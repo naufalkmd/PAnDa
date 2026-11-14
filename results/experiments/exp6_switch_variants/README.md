@@ -1,45 +1,26 @@
-# Experiment 6: Switch Variants
+# Experiment 6: Rule-based switches between greedy and contrastive scores
 
-This experiment isolates low-latency, single-pass switch rules for choosing
-between the two binary views:
+Tests single-pass rules that choose, at each token, between two scores:
 
-- greedy view: `final_logits`
-- contrast-subtracted view: `final_logits - shallow_logits`
+- the final-layer logits `final_logits` (greedy);
+- the contrastive score `final_logits - shallow_logits`.
 
-The goal is to test whether an intuitive local switch can recover useful
-contrast corrections without paying the latency cost of speculative blocks or
-multi-step horizon rollouts.
+The question is whether a simple per-token rule recovers the benefit of contrastive decoding without the cost
+of Jacobi blocks or look-ahead.
 
-Decoder set:
+Decoders:
 
-- `pure_argmax_switch`
-  - if the greedy and contrast views choose the same top token, keep greedy
-  - otherwise switch directly to contrast
+- `pure_argmax_switch`: if both scores have the same top token, use greedy; otherwise use the contrastive score.
+- `guarded_argmax_switch`: as above, but keep greedy if the greedy token is still in the contrastive score's
+  top k (`exp6_guarded_top_k`).
+- `sticky_contrast_switch`: the guarded rule, but once it switches to the contrastive score it stays there for
+  the next `sticky_hold_steps` tokens.
+- `contrast_margin_switch`: if the top tokens differ, switch only when the contrastive score of its own top
+  token exceeds its score of the greedy token by more than `exp6_margin_threshold`.
 
-- `guarded_argmax_switch`
-  - if the top tokens agree, keep greedy
-  - if they disagree but the greedy token still remains inside the contrast
-    view's top-`k`, keep greedy
-  - otherwise switch to contrast
+All four are single-pass: no Jacobi blocks, no look-ahead, no tuning of the contrastive weight.
 
-- `sticky_contrast_switch`
-  - use the same hard-disagreement rule as the guarded switch
-  - once a hard disagreement triggers contrast, stay in contrast briefly for
-    the next `sticky_hold_steps` token(s)
-
-- `contrast_margin_switch`
-  - if the top tokens agree, keep greedy
-  - if they disagree, measure the contrast-view score gap between the contrast
-    winner and the greedy winner
-  - switch to contrast only when that pairwise gap exceeds
-    `exp6_margin_threshold`
-
-Important constraint:
-
-- all four variants are single-pass
-- no speculative block is used
-- no horizon rollout is used
-- the comparison is about the switch rule itself, not alpha tuning
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 

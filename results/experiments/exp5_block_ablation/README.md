@@ -1,41 +1,26 @@
-# Experiment 5: Block-Refined FAnDa
+# Experiment 5: Jacobi blocks with contrastive decoding
 
-This repurposed `exp5` asks the cleaner follow-up question after the oracle
-diagnosis:
-
-- does block refinement still help if we stop relying on greedy arbitration?
-- the default speculative block window for this experiment is now `2`
+After exp8, does Jacobi-style block refinement still help when the choice between the greedy and contrastive
+scores is removed? The default block size for this experiment is 2.
 
 Compared decoders:
 
-- `fanda`
-  - single-token stateful fixed contrast endpoint
-  - always uses `final_logits - shallow_logits`
+- `fanda`: the contrastive score `final_logits - shallow_logits` at every token, one token at a time. In the
+  saved runs (2026-06-03) the premature layer was re-selected every 4 tokens; the current code keeps it fixed
+  per answer (see `docs/glossary.md`).
+- `panda_switch`: PAnDa (Jacobi blocks, choosing between greedy and contrastive scores).
+- `panda_switch_update4`: PAnDa, but one premature layer (selected by JSD) is shared by all positions in the
+  block and re-selected only every 4 scored tokens.
+- `panda_fandas`: the same Jacobi blocks, with the premature layer selected per position and the contrastive
+  score used at every position (no choice between scores).
 
-- `panda_switch`
-  - original speculative block refinement with greedy/contrast arbitration
+How to read it:
 
-- `panda_switch_update4`
-  - keeps the same block refinement and greedy/contrast arbitration as `panda_switch`
-  - but refreshes one shared JSD-selected shallow layer only every `4` scored tokens
-  - reuses that same shallow layer across every speculative position inside the block
+- `panda_fandas` > `fanda`: blocks add something beyond contrastive scoring at every token.
+- `panda_switch_update4` ≈ `panda_switch`: per-position layer selection inside a block is unnecessary.
+- `panda_switch_update4` > `panda_switch`: choosing between scores inside the block was unnecessary or harmful.
 
-- `panda_fandas`
-  - uses the same Jacobi block refinement scaffold as `panda_switch`
-  - selects the best shallow layer per speculative position
-  - but always decodes from the contrast view at every position
-  - does not use greedy as the final decision rule inside the block
-
-Interpretation:
-
-- if `panda_fandas` beats `fanda`, then block
-  refinement still adds value beyond plain fixed contrast
-- if `panda_switch_update4` stays competitive with `panda_switch`, then
-  per-position layer reselection may be unnecessary inside the block
-- if it also beats `panda_switch`, then the old greedy arbitration inside the block was
-  probably unnecessary or harmful
-- if it loses to `panda_switch`, then the block may still benefit from the original
-  mixed-view arbitration rule
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 

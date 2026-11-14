@@ -44,12 +44,13 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 | `dola`, `official_dola` | DoLa: dynamic premature-layer selection (JSD, τ = 1, mature layer excluded), log-probability difference, adaptive plausibility constraint | |
 | `relative_top` | Adaptive plausibility constraint | `relative_top_value` is the score given to masked tokens |
 | `fanda` (exp11, exp18) | FAnDa: premature layer selected once per answer | |
-| `fanda` (exp7–exp10) | FAnDa with the premature layer re-selected every 4 tokens | Config default `update_every = 4`; equals `fanda_update4` |
+| `fanda` (saved runs of exp5–exp10) | FAnDa with the premature layer re-selected every 4 tokens | These runs (committed 2026-06-03) predate commit `efec350` (2026-06-04), which made `fanda` a fixed layer. Their numbers equal `fanda_update4`; rerunning them now would use the fixed layer |
 | `fanda_update{k}`, `exp14_update{k}`, `always_contrast_update{k}` | FAnDa scoring with the premature layer re-selected every k tokens ("selection interval k") | k = 1 is **not** DoLa: τ = 0.5 and no plausibility constraint |
 | `fanda_frozen`, `exp14_frozen`, `always_contrast_frozen` | FAnDa scoring with the premature layer selected once, at the first token of the answer | `update_every = 10**9` |
 | `fanda_greedy` | Greedy decoding through the same code path (no contrast) | |
 | `exp13_{logprob,logit}_{top,no_top}` | 2 × 2 factorial: log-probability vs. raw-logit difference × plausibility constraint on vs. off, with DoLa's layer selection | Without the constraint both differences rank tokens identically: log-softmax shifts all logits by the same constant |
-| `fixed_alpha_dola{_low,,_high}`, `matched_alpha_dola_0p{10,50,95}` | Contrastive score z_mature − α · z_premature with a fixed weight α ∈ {0.1, 0.5, 0.95} | |
+| `fixed_alpha_dola{_low,,_high}` | Raw-logit contrastive score z_mature − α · z_premature with α = 0.0, 0.5, 1.0, premature layer re-selected every 4 tokens | α = 0 is greedy decoding; α = 1 equals `fanda_update4` (`src/panda/config.py`) |
+| `matched_alpha_dola_0p{10,50,95}` | DoLa's log-probability score with the premature term weighted by α = 0.10, 0.50, 0.95 | exp1 |
 | `top_k`, `top_p` | Top-k / nucleus truncation of the final-layer distribution, scored by likelihood | |
 | `panda`, `panda_switch` | PAnDa | |
 | `*_switch*`, `ema_risk_switch` | Rule-based switch between greedy and contrastive scores at each token | EMA = exponential moving average of a divergence |

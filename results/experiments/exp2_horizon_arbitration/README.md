@@ -1,19 +1,16 @@
-# Experiment 2: Horizon Arbitration
+# Experiment 2: Look-ahead depth for choosing between two scores
 
-This experiment isolates the horizon-arbitration question in a simplified no-block PAnDa:
+PAnDa without Jacobi blocks. At each token the decoder has two scores:
 
-Both variants use the same binary local choice:
+- the final-layer logits `final_logits` (greedy);
+- the contrastive score `final_logits - shallow_logits` (mature minus premature layer).
 
-- greedy view: `final_logits`
-- contrast-subtracted view: `final_logits - shallow_logits`
+When their top tokens disagree, it chooses between them by a short look-ahead:
 
-- `simple_panda_h1`
-  - no block
-  - resolve disagreement with horizon-1 branch scoring
+- `simple_panda_h1`: compare each score's top token by its log-probability under that score.
+- `simple_panda_h2`: extend each candidate by one more token under the same score and compare the two-token totals.
 
-- `simple_panda_h2`
-  - same no-block setup
-  - resolve disagreement with horizon-2 rollout scoring
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 

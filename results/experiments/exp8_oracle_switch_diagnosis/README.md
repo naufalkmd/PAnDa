@@ -1,38 +1,25 @@
-# Experiment 8: Oracle Switch Diagnosis
+# Experiment 8: Oracle switch
 
-This experiment tests whether the current switching idea is weak because of the
-**gate**, or because fixed contrast is simply the better regime under the
-current TruthfulQA multiple-choice scoring setup.
+Are the rule-based switches weak because of their rule, or because contrastive scoring at every token is simply
+better under TruthfulQA multiple-choice scoring? An oracle switch gives the upper bound for any switch rule.
 
 Compared decoders:
 
-- `pure_greedy`
-  - true final-layer greedy baseline using the repo's direct `greedy` decoder path
+- `pure_greedy`: greedy decoding (final-layer log-probabilities).
+- `fanda`: the contrastive score `final_logits - shallow_logits` at every token. In the saved run (2026-06-03)
+  the premature layer was re-selected every 4 tokens; the current code keeps it fixed per answer.
+- `pure_argmax_switchv2`: a rule-based switch with the same layer selection as `fanda`; it uses the contrastive
+  score only when the two scores' top tokens differ.
+- `oracle_token_switch`: at each scored token, uses whichever score gives the correct token the higher
+  log-probability. This uses the answer, so it is an upper bound, not a decoder.
+- `dola`: DoLa.
 
-- `fanda`
-  - fixed contrast-subtracted endpoint on the stateful carried-layer scaffold
-  - carries a shallow layer across steps and refreshes it every `update_every`
+How to read it:
 
-- `pure_argmax_switchv2`
-  - practical stateful switch
-  - uses the same carried-layer scaffold as `fanda`
-  - switches to contrast only when the greedy and contrast top tokens differ
+- oracle ≤ `fanda`: contrastive scoring at every token is the better setting here, and no switch rule can help.
+- oracle clearly > `fanda`: switching can help, and the practical rule is the weak part.
 
-- `oracle_token_switch`
-  - diagnostic upper bound for a switch rule under teacher forcing
-  - at each candidate token, chooses whichever view assigns higher logprob to the
-    actual token being scored
-  - uses the same carried-layer scaffold as `fanda` and `pure_argmax_switchv2`
-
-- `dola`
-  - external baseline from the original decoder family
-
-How to read the result:
-
-- if `oracle_token_switch` barely beats or fails to beat `fanda`, then
-  fixed contrast is probably the stronger regime on this benchmark
-- if `oracle_token_switch` clearly beats `fanda`, then the switching
-  idea is viable and the current practical gate is the weak part
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 

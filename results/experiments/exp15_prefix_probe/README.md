@@ -1,87 +1,37 @@
-# exp15_prefix_probe
+# Experiment 15: Answer prefixes (case study)
 
-`exp15` is a small case-study follow-up to `exp14_openended_factuality`.
+A small case study after exp14. On a few selected questions, at what point in the answer do the generations with
+k = ∞ (`exp14_frozen`) and k = 1 (`exp14_update1`) start to differ in correctness?
 
-The question is not "which decoder wins on average?" but:
+For each selected question it:
 
-- does `frozen` help mainly by giving a better early factual anchor?
-- does `update1` help later by avoiding stale drift?
-- at what answer prefix do the two decoders start to separate?
+1. generates one answer (up to 120 new tokens) with each of the two decoders;
+2. cuts **the same** answer into prefixes of 10, 30, 60 and 100 words and the full answer, so prefixes are
+   compared within one generation rather than across separate short and long generations;
+3. saves a prefix-level labelling sheet and a per-token trace with cumulative word counts.
 
-Instead of running another full benchmark, `exp15` reuses the completed
-`exp14` manual evaluation sheet and selects a small targeted set of questions:
+Question selection, from the exp14 label sheet: 3 questions where k = ∞ scored higher, 3 where k = 1 scored
+higher, 2 where both scored low. Those exp14 labels were assigned by an LLM (Codex).
 
-- some where `frozen > update1`
-- some where `update1 > frozen`
-- some where both were weak / noisy
+## Outputs
 
-For each selected question, it:
+- `selected_questions.csv`: the chosen questions and why;
+- `full_generations.csv`: one answer per question × decoder;
+- `token_trace.csv`: per-token rows with cumulative word counts;
+- `prefix_manual_eval.csv`: one row per question × decoder × prefix, with empty label columns. **Not labelled yet.**
+- `assistant_full_verdict.csv`: one judgement per question (8 rows), written by an LLM assistant, not a person;
+- `metadata.json`.
 
-1. generates one long open-ended answer with `exp14_frozen`
-2. generates one long open-ended answer with `exp14_update1`
-3. slices the same answer into prefixes such as:
-   - first `10` words
-   - first `30` words
-   - first `60` words
-   - first `100` words
-   - full answer
-4. saves both:
-   - a prefix-level manual review sheet
-   - a per-token trace with cumulative word counts
+## How to read it (once labelled)
 
-This avoids a common confound:
+- k = ∞ better at 10–30 words but worse by 60–100: the fixed layer helps early and hurts later in long answers.
+- k = ∞ better at every prefix: a layer chosen at the start suits the whole answer.
+- k = 1 better from 10 words on: fixing the layer does not help in free generation.
+- no consistent pattern: the difference depends on the question more than on answer length.
 
-- we do **not** ask the model to separately generate a "10-word answer" and a
-  "30-word answer"
-- we evaluate prefixes of the **same** long generation
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
-That makes the experiment a cleaner probe of when drift begins.
-
-## Default design
-
-- decoders: `exp14_frozen`, `exp14_update1`
-- question source: `exp14` manual eval CSV
-- default case mix:
-  - `3` frozen-win questions
-  - `3` update1-win questions
-  - `2` both-bad questions
-- generation length: `120` max new tokens
-- prefix checkpoints: `10,30,60,100,full`
-
-## Main outputs
-
-For each run, the runner writes:
-
-- `selected_questions.csv`
-  - which questions were chosen and why
-- `full_generations.csv`
-  - one full answer per `question x decoder`
-- `token_trace.csv`
-  - per-token trace rows with cumulative word counts
-- `prefix_manual_eval.csv`
-  - one row per `question x decoder x prefix`
-  - includes blank manual review fields ready for annotation
-- `metadata.json`
-
-## How to interpret it
-
-Possible patterns:
-
-- `frozen` wins at `10` / `30` words but loses by `60` / `100`
-  - evidence for late stale drift
-  - supports a decaying or adaptive refresh schedule
-
-- `frozen` wins at every prefix
-  - evidence that one fixed shallow layer acts like a question-level anchor
-
-- `update1` already wins at `10`
-  - freshness matters even for the core claim
-  - freezing is not the right general mechanism
-
-- no consistent pattern
-  - failures may depend more on question type than on answer age alone
-
-## Suggested first run
+## Run
 
 ```bash
 ./.venv/bin/python results/experiments/exp15_prefix_probe/run_experiment.py \
@@ -93,16 +43,10 @@ Possible patterns:
   --run-id run_01_default
 ```
 
-Optional plot after the run:
+Plot (top panel from the automatic scores; the bottom panel needs the prefix labels):
 
 ```bash
 ./.venv/bin/python scripts/plots/plot_exp15_prefix_probe.py
 ```
 
-This creates:
-
-- `results/figures/exp15_prefix_probe_summary.svg`
-- `results/figures/exp15_prefix_probe_summary.json`
-
-The top panel works immediately from the saved proxy scores.
-The bottom panel becomes informative after the prefix manual review sheet is filled.
+It writes `results/figures/exp15_prefix_probe_summary.svg` and `.json`.

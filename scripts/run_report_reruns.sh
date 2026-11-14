@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Reruns for the report (docs/report_checklist.md, part E). Run from the repository root on the GPU machine:
 #   bash scripts/run_report_reruns.sh            # R1 then R2
-#   bash scripts/run_report_reruns.sh r1         # only R1: three fresh 50-question subsets (exp16)
+#   bash scripts/run_report_reruns.sh r1         # only R1: exp16 seeds 202, 303, 404 and a rerun of seed 101
 #   bash scripts/run_report_reruns.sh r2         # only R2: all 817 questions (exp11, exp12, exp13)
 # Extra arguments after the first are passed to every run, e.g. --local-files-only.
 # Outputs go to results/experiments/<exp>/runs/<run_id>/; existing runs are not touched.
@@ -13,7 +13,7 @@ shift || true
 EXP=results/experiments
 
 r1() {
-  for run in run_03_seed_202 run_04_seed_303 run_05_seed_404; do
+  for run in run_03_seed_202 run_04_seed_303 run_05_seed_404 run_06_seed_101_rerun; do
     echo "=== R1 exp16 $run"
     "$PY" "$EXP/exp16_mc_persistence_seed_sweep/run_experiment.py" \
       --run-id "$run" --mode subset --truthfulqa-limit 50 "$@"
