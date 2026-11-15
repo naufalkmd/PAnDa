@@ -1,10 +1,21 @@
 cff-version: 1.2.0
-message: "If you use this repository, please cite the repository and the paper draft."
-title: "PAnDa: Parallel-block Adaptive Contrast DoLa"
-version: 0.1.0
-date-released: 2026-04-08
+message: "If you use this repository, please cite it as below."
+title: "What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and Option Length in Small Language Models"
+version: 0.2.0
 authors:
   - family-names: "Kamaruddin"
     given-names: "Naufal"
-repository-code: "https://github.com/naufalkmd/PAnDa"
-abstract: "PAnDa is a block-parallel adaptive contrastive decoding method that applies truth-biased local arbitration inside speculative Jacobi-style refinement instead of reranking full completed responses."
+  # Co-authors of the report, to be added once their family and given names are confirmed: Jeong Edon, Muhammad Aliff.
+repository-code: "https://github.com/naufalkmd/dola-static-per-question"
+abstract: >-
+  An empirical study of scoring rules on TruthfulQA multiple choice with small instruction-tuned language models:
+  the base model's likelihood, DoLa in two configurations, per-question DoLa-static and self-evaluation (P(True)).
+  Layer-contrast gains found on 50 development questions do not hold on 767 held-out questions; the plausibility
+  constraint and option length decide many multiple-choice answers; self-evaluation beats likelihood and DoLa under
+  a frozen design but works about as well without the question.
+keywords:
+  - TruthfulQA
+  - DoLa
+  - self-evaluation
+  - multiple-choice evaluation
+license: MIT

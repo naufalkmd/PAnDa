@@ -1,0 +1,58 @@
+%% F1. Three ways to score one answer option. Drawn from the code:
+%% likelihood and DoLa: src/panda/prompts.py (user message), results/experiments/local_evaluator.py
+%% (dola_mc_reference: candidate blocks N/2, N/2+2, ..., N-2, layer chosen per token by the largest JSD, no
+%% plausibility constraint, no renormalisation); self-evaluation: the exp20 README (frozen design).
+\begin{tikzpicture}[
+  font=\footnotesize,
+  >={Stealth[length=5pt]},
+  col/.style={text width=0.285\linewidth, align=left},
+  prompt/.style={draw=figgray, rounded corners=2pt, inner sep=4pt, col, fill=figgrid!35,
+                 minimum height=2.5cm, anchor=north},
+  reads/.style={col, align=center, inner sep=2pt, minimum height=1.25cm, anchor=north},
+  score/.style={draw=figblue, line width=0.8pt, rounded corners=2pt, inner sep=4pt, col, align=center,
+                minimum height=2cm, anchor=north},
+  head/.style={col, align=center, font=\small\bfseries, text height=1.6ex, text depth=0.4ex, anchor=north},
+]
+  % three columns at fixed x positions, every row at a fixed y, so the boxes line up
+  \foreach \i/\x in {1/0, 2/0.335, 3/0.67} {
+    \coordinate (c\i) at (\x\linewidth, 0);
+  }
+  \node[head] (h1) at (c1) {Base likelihood};
+  \node[head] (h2) at (c2) {DoLa (MC configuration)};
+  \node[head] (h3) at (c3) {Self-evaluation, P(True)};
+
+  % inputs
+  \node[prompt] (p1) at ($(c1)+(0,-0.6cm)$)
+    {\textit{User:} \{question\}\\ Answer with one of the provided answer options only.\\[3pt]
+     \textit{Assistant:} \underline{\{option\}}};
+  \node[prompt] (p2) at ($(c2)+(0,-0.6cm)$)
+    {\textit{User:} \{question\}\\ Answer with one of the provided answer options only.\\[3pt]
+     \textit{Assistant:} \underline{\{option\}}};
+  \node[prompt] (p3) at ($(c3)+(0,-0.6cm)$)
+    {\textit{User:} Question: \{question\}\\ Proposed answer: \{option\}\\ Is the proposed answer true?
+     Reply with one word: True or False.\\[3pt] \textit{Assistant:} \underline{\phantom{True}}};
+
+  % what is read
+  \node[reads] (s1) at ($(c1)+(0,-3.4cm)$) {final layer $N$\\ at each option token $y_t$};
+  \node[reads] (s2) at ($(c2)+(0,-3.4cm)$) {final layer $N$ and an earlier layer $M_t$\\ at each option token $y_t$};
+  \node[reads] (s3) at ($(c3)+(0,-3.4cm)$) {final layer $N$\\ at the first reply position};
+
+  % scores
+  \node[score] (r1) at ($(c1)+(0,-4.85cm)$)
+    {$\displaystyle\sum_t \log p_N(y_t \mid x, y_{<t})$\\[2pt] or the same divided by the\\ number of option tokens};
+  \node[score] (r2) at ($(c2)+(0,-4.85cm)$)
+    {$\displaystyle\sum_t \big[\log p_N(y_t) - \log p_{M_t}(y_t)\big]$\\[2pt]
+     $M_t$: the block in $\{\tfrac{N}{2}, \tfrac{N}{2}{+}2, \dots, N{-}2\}$\\ with the largest $\JSD(p_N \,\|\, p_M)$};
+  \node[score] (r3) at ($(c3)+(0,-4.85cm)$)
+    {$\log p_N(\texttt{True}) - \log p_N(\texttt{False})$\\[2pt] early exit: the same,\\ read after an earlier block};
+
+  \foreach \i in {1,2,3} {
+    \draw[->, figgray] (p\i.south) -- (s\i.north);
+    \draw[->, figgray] (s\i.south) -- (r\i.north);
+  }
+
+  % decision
+  \node[draw=figgray, rounded corners=2pt, inner sep=5pt, anchor=north, align=center] (d) at ($(c2)+(0,-7.6cm)$)
+    {MC1: choose the option with the highest score; MC2 and MC3 use the scores of all options};
+  \foreach \i in {1,2,3} \draw[->, figgray] (r\i.south) -- (r\i.south |- d.north);
+\end{tikzpicture}

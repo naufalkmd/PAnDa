@@ -1,0 +1,12 @@
+decoder,mean_spearman_score_vs_length,questions,mc1,mc3
+pure_greedy,-0.2845,766,,
+dola_mc_reference,0.6687,766,,
+dola,-0.442,766,,
+fanda_frozen,-0.4104,766,,
+exp13_logprob_top,-0.442,766,,
+exp13_logprob_no_top,-0.4088,766,,
+exp13_logit_top,-0.3975,766,,
+fanda_update1,-0.4056,766,,
+fanda_update4,-0.4071,766,,
+longest option,,,0.3611,0.3243
+shortest option,,,0.1721,0.2232

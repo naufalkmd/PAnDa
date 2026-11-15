@@ -5,10 +5,10 @@
 `dola` implements the repo's standard DoLa-style decoder:
 
 1. run a forward pass with hidden states
-2. score candidate shallow layers by disagreement with the final layer
-3. choose the shallow layer with the largest JSD
-4. build contrast scores from mature vs shallow log-probabilities
-5. optionally apply the `relative_top` mask
+2. score candidate premature layers by disagreement with the final layer
+3. choose the premature layer with the largest JSD
+4. build contrast scores from mature vs premature-layer log-probabilities
+5. optionally apply the adaptive plausibility constraint (`relative_top`, Li et al., 2023)
 6. choose the next token from those contrast scores
 
 Relevant code:
@@ -28,21 +28,21 @@ repeat until max_new_tokens or EOS:
     # earlier-layer logits for the same current prefix.
     layer_logits, final_logits = forward_with_layer_logits(generated)
 
-    # Search the allowed shallow layers and keep the one that
+    # Search the allowed premature layers and keep the one that
     # disagrees most with the final layer under JSD.
     best_layer = argmax over shallow_bucket of JSD(final_logits, layer_logits[layer])
     premature_logits = layer_logits[best_layer]
 
-    # Convert both views into log-probability form.
+    # Convert both layers' logits into log-probabilities.
     mature_log_probs = log_softmax(final_logits)
     premature_log_probs = log_softmax(premature_logits)
 
     # Standard DoLa contrast: boost tokens favored by the final layer
-    # relative to the selected shallow layer.
+    # relative to the selected premature layer.
     contrast_scores = log_softmax(mature_log_probs - premature_log_probs)
 
     if dola_relative_top > 0:
-        # Mask very implausible tail tokens using the mature-layer view.
+        # Adaptive plausibility constraint: mask tokens that are implausible under the mature layer.
         mask tokens outside relative_top filter
         set masked scores to dola_relative_top_value
 
@@ -84,9 +84,9 @@ Because `contrast_scores` are already log-prob style values here, the scorer add
 
 | Setting | Value in this repo | Notes |
 | --- | --- | --- |
-| Shallow bucket | dynamic, default `range(0, max(1, num_layers // 4), 2)` | early even-numbered layers |
+| Candidate premature layers | dynamic, default `range(0, max(1, num_layers // 4), 2)` | early even-numbered layers |
 | Mature layer | final hidden layer | `num_layers - 1` |
-| Layer-selection rule | max JSD between final and candidate shallow layer | recomputed every decoding step |
+| Layer-selection rule | max JSD between final and candidate premature layer | recomputed every decoding step |
 | `dola_relative_top` | `0.1` | default CLI value |
 | `dola_relative_top_value` | `-1000.0` | masked token score |
 
@@ -100,4 +100,4 @@ The contrast rule is:
 contrast_scores = log_softmax(log p_final - log p_shallow)
 ```
 
-plus `relative_top` masking.
+plus the adaptive plausibility constraint (`relative_top`).

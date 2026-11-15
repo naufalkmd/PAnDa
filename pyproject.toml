@@ -5,7 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "panda-decoding"
 version = "0.1.0"
-description = "PAnDa: Parallel-block Adaptive Contrast DoLa"
+description = "Scoring rules on TruthfulQA multiple choice: likelihood, layer contrast (DoLa) and self-evaluation"
+# Pinned versions for reproduction: requirements.txt (direct) and requirements-lock.txt (all); see scripts/setup_env.sh.
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

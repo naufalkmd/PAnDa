@@ -1,2 +1,0 @@
-run_id,notes
-run_01_default,Single-pass four-way switch comparison under the binary rule final_logits vs final_logits-minus-shallow_logits.

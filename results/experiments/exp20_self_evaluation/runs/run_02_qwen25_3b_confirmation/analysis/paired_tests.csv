@@ -1,0 +1,16 @@
+a,b,role,metric,n,mean_a,mean_b,diff,ci_low,ci_high,p_bootstrap,mcnemar_b,mcnemar_c,p_mcnemar,p_bootstrap_holm,p_mcnemar_holm
+self_evaluation,base_likelihood,main: method against the standard multiple-choice scoring,mc1,400,0.6225,0.34,0.2825,0.23,0.3375,0.0,131,18,2.2754371745663552e-22,0.0,1.3652623047398132e-21
+self_evaluation,base_likelihood,main: method against the standard multiple-choice scoring,mc2,400,0.7156262872688446,0.5132595167983267,0.20236677244906812,0.15489399912131754,0.2504401480891303,0.0,,,,0.0,
+self_evaluation,base_likelihood,main: method against the standard multiple-choice scoring,mc3,400,0.5987202380952381,0.26875,0.3299702380952381,0.28722619047619047,0.3715178571428572,0.0,,,,0.0,
+self_evaluation,base_likelihood_per_token,main: method against the best likelihood rule of the exploration part,mc1,400,0.6225,0.3825,0.24,0.1825,0.295,0.0,125,29,2.104006276646849e-15,0.0,1.0520031383234244e-14
+self_evaluation,base_likelihood_per_token,main: method against the best likelihood rule of the exploration part,mc2,400,0.7156262872688446,0.49202766045681323,0.2235986268120314,0.1839027480145889,0.2627038004092477,0.0,,,,0.0,
+self_evaluation,base_likelihood_per_token,main: method against the best likelihood rule of the exploration part,mc3,400,0.5987202380952381,0.2825357142857143,0.3161845238095238,0.27236309523809527,0.3592321428571429,0.0,,,,0.0,
+self_evaluation,dola_mc,main: method against DoLa in its multiple-choice configuration,mc1,400,0.6225,0.3975,0.225,0.1625,0.2875,0.0,136,46,1.6032259855376185e-11,0.0,6.412903942150474e-11
+self_evaluation,dola_mc,main: method against DoLa in its multiple-choice configuration,mc2,400,0.7156262872688446,0.5989159798916167,0.11671032000634787,0.058341527859602865,0.17412445955233252,0.0,,,,0.0,
+self_evaluation,dola_mc,main: method against DoLa in its multiple-choice configuration,mc3,400,0.5987202380952381,0.3200416666666666,0.27867857142857144,0.2301011904761905,0.32829166666666665,0.0,,,,0.0,
+self_evaluation_early_exit,self_evaluation,ablation: reading the verdict by early exit,mc1,400,0.685,0.6225,0.0625,0.035,0.0925,0.0002,31,6,4.12575900554657e-05,0.0002,8.25151801109314e-05
+self_evaluation_early_exit,self_evaluation,ablation: reading the verdict by early exit,mc2,400,0.7457691161333214,0.7156262872688446,0.030142828864476754,0.014415888109076562,0.04658812170749698,0.0,,,,0.0,
+self_evaluation_early_exit,self_evaluation,ablation: reading the verdict by early exit,mc3,400,0.6414642857142857,0.5987202380952381,0.04274404761904762,0.023190476190476192,0.06257738095238095,0.0,,,,0.0,
+self_evaluation_is_correct,base_likelihood_per_token,ablation: a second prompt wording,mc1,400,0.5775,0.3825,0.195,0.1375,0.25,0.0,111,33,4.5803256241732346e-11,0.0,1.3740976872519704e-10
+self_evaluation_is_correct,base_likelihood_per_token,ablation: a second prompt wording,mc2,400,0.6773211277112275,0.49202766045681323,0.1852934672544143,0.14614572289469654,0.22309071101908404,0.0,,,,0.0,
+self_evaluation_is_correct,base_likelihood_per_token,ablation: a second prompt wording,mc3,400,0.5357321428571429,0.2825357142857143,0.25319642857142854,0.213,0.29451190476190475,0.0,,,,0.0,

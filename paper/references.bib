@@ -1,0 +1,347 @@
+% Every entry was written from the publisher's or archive's own record (verified 2026-11-14):
+% ACL Anthology .bib, OpenReview _bibtex/venue, Crossref, the arXiv API, or the Hugging Face model card.
+% The claim each entry supports was checked in the paper text; see docs/report_checklist.md, part G.
+
+% --- Methods -----------------------------------------------------------------------------------------
+
+% ICLR 2024 poster (OpenReview Th6NyL07na). Supports: dynamic premature-layer selection by maximum JSD over a
+% candidate set J; buckets of J chosen on a validation set; DoLa-static (one layer chosen on a validation set);
+% the adaptive plausibility constraint with alpha = 0.1, taken from Li et al. Checked 2026-11-15 in arXiv
+% 2309.03883v2, Sec. 3.2: TruthfulQA tested with the default QA prompt; MC1/MC2/MC3 reported; "For alpha in APC, we
+% replace -inf with -1000 to avoid ruining LM likelihood scores" (the released tfqa_mc_eval.py defaults to
+% relative_top = 0.0, i.e. no constraint, and the README commands do not change it).
+@inproceedings{chuang2024dola,
+  title     = {{DoLa}: Decoding by Contrasting Layers Improves Factuality in Large Language Models},
+  author    = {Chuang, Yung-Sung and Xie, Yujia and Luo, Hongyin and Kim, Yoon and Glass, James and He, Pengcheng},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=Th6NyL07na}
+}
+
+% ACL Anthology 2023.acl-long.687. Supports: contrastive decoding (expert minus amateur model); the adaptive
+% plausibility constraint V_head = {x : p_EXP(x) >= alpha * max_w p_EXP(w)}, alpha = 0.1.
+@inproceedings{li2023contrastive,
+  title     = {Contrastive Decoding: Open-ended Text Generation as Optimization},
+  author    = {Li, Xiang Lisa and Holtzman, Ari and Fried, Daniel and Liang, Percy and Eisner, Jason and Hashimoto, Tatsunori and Zettlemoyer, Luke and Lewis, Mike},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {12286--12312},
+  year      = {2023},
+  address   = {Toronto, Canada},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2023.acl-long.687},
+  url       = {https://aclanthology.org/2023.acl-long.687/}
+}
+
+% OpenReview rygGQyrFvH, ICLR 2020. Supports: nucleus (top-p) sampling; the top-k / top-p baselines.
+@inproceedings{holtzman2020curious,
+  title     = {The Curious Case of Neural Text Degeneration},
+  author    = {Holtzman, Ari and Buys, Jan and Du, Li and Forbes, Maxwell and Choi, Yejin},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2020},
+  url       = {https://openreview.net/forum?id=rygGQyrFvH}
+}
+
+% --- Benchmark -----------------------------------------------------------------------------------------
+
+% ACL Anthology 2022.acl-long.229. Supports: TruthfulQA, 817 questions; the multiple-choice score is "the total
+% normalized likelihood of the true answers" (= MC2; the names MC1/MC3 are not in the paper); the default prompt is
+% a question-answering prompt of trivia questions ("QA prompt"), recommended for comparisons (checked 2026-11-15).
+@inproceedings{lin2022truthfulqa,
+  title     = {{TruthfulQA}: Measuring How Models Mimic Human Falsehoods},
+  author    = {Lin, Stephanie and Hilton, Jacob and Evans, Owain},
+  booktitle = {Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {3214--3252},
+  year      = {2022},
+  address   = {Dublin, Ireland},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2022.acl-long.229},
+  url       = {https://aclanthology.org/2022.acl-long.229/}
+}
+
+% --- Statistics ----------------------------------------------------------------------------------------
+
+% Crossref 10.1007/BF02295996. Supports: McNemar's test for paired binary outcomes.
+@article{mcnemar1947note,
+  title   = {Note on the Sampling Error of the Difference Between Correlated Proportions or Percentages},
+  author  = {McNemar, Quinn},
+  journal = {Psychometrika},
+  volume  = {12},
+  number  = {2},
+  pages   = {153--157},
+  year    = {1947},
+  doi     = {10.1007/BF02295996}
+}
+
+% ACL Anthology D12-1091. Supports: the paired bootstrap test for NLP evaluation.
+@inproceedings{bergkirkpatrick2012empirical,
+  title     = {An Empirical Investigation of Statistical Significance in {NLP}},
+  author    = {Berg-Kirkpatrick, Taylor and Burkett, David and Klein, Dan},
+  booktitle = {Proceedings of the 2012 Joint Conference on Empirical Methods in Natural Language Processing and Computational Natural Language Learning},
+  pages     = {995--1005},
+  year      = {2012},
+  address   = {Jeju Island, Korea},
+  publisher = {Association for Computational Linguistics},
+  url       = {https://aclanthology.org/D12-1091/}
+}
+
+% ACL Anthology P18-1128. Supports: choosing significance tests in NLP (McNemar for paired binary outcomes,
+% bootstrap for other metrics).
+@inproceedings{dror2018hitchhiker,
+  title     = {The Hitchhiker's Guide to Testing Statistical Significance in Natural Language Processing},
+  author    = {Dror, Rotem and Baumer, Gili and Shlomov, Segev and Reichart, Roi},
+  booktitle = {Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {1383--1392},
+  year      = {2018},
+  address   = {Melbourne, Australia},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/P18-1128},
+  url       = {https://aclanthology.org/P18-1128/}
+}
+
+% --- Models --------------------------------------------------------------------------------------------
+
+% arXiv 2412.15115 (first listed author: "Qwen"). Supports: Qwen2.5-3B-Instruct, the main model.
+@misc{qwen2024qwen25,
+  title         = {Qwen2.5 Technical Report},
+  author        = {{Qwen Team} and Yang, An and Yang, Baosong and Zhang, Beichen and Hui, Binyuan and Zheng, Bo and Yu, Bowen and others},
+  year          = {2024},
+  eprint        = {2412.15115},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2412.15115}
+}
+
+% arXiv 2503.19786. Supports: Gemma 3 4B (transfer experiment).
+@misc{gemmateam2025gemma3,
+  title         = {Gemma 3 Technical Report},
+  author        = {{Gemma Team} and Kamath, Aishwarya and Ferret, Johan and Pathak, Shreya and Vieillard, Nino and Merhej, Ramona and Perrin, Sarah and Matejovicova, Tatiana and others},
+  year          = {2025},
+  eprint        = {2503.19786},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2503.19786}
+}
+
+% No paper: Hugging Face model card (created 2024-12-14). Supports: Falcon 3 3B Instruct (transfer experiment).
+@misc{tii2024falcon3,
+  title        = {{Falcon3-3B-Instruct}},
+  author       = {{Technology Innovation Institute}},
+  year         = {2024},
+  howpublished = {Hugging Face model card},
+  url          = {https://huggingface.co/tiiuae/Falcon3-3B-Instruct}
+}
+
+% --- Context (optional) --------------------------------------------------------------------------------
+
+% Crossref 10.1145/3703155. Supports: one sentence of context on hallucination, if the introduction needs it.
+@article{huang2025survey,
+  title   = {A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions},
+  author  = {Huang, Lei and Yu, Weijiang and Ma, Weitao and Zhong, Weihong and Feng, Zhangyin and Wang, Haotian and Chen, Qianglong and Peng, Weihua and Feng, Xiaocheng and Qin, Bing and Liu, Ting},
+  journal = {ACM Transactions on Information Systems},
+  volume  = {43},
+  number  = {2},
+  pages   = {1--55},
+  year    = {2025},
+  doi     = {10.1145/3703155}
+}
+
+% === Added 2026-11-15 for the empirical framing. Each entry written from the record named in its comment ===
+
+% --- Self-evaluation ------------------------------------------------------------------------------------
+
+% arXiv 2207.05221 (no venue version). Supports: self-evaluation by asking the model whether a proposed answer is
+% true and reading the probability P(True); calibration on multiple-choice and true/false formats.
+@misc{kadavath2022language,
+  title         = {Language Models (Mostly) Know What They Know},
+  author        = {Kadavath, Saurav and Conerly, Tom and Askell, Amanda and Henighan, Tom and Drain, Dawn and Perez, Ethan and Schiefer, Nicholas and Hatfield-Dodds, Zac and others},
+  year          = {2022},
+  eprint        = {2207.05221},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2207.05221}
+}
+
+% PMLR v239 (ICBINB workshop at NeurIPS 2023), record pmlr-v239-ren23a; arXiv 2312.09300. Supports: self-evaluation
+% scores for selective generation and abstention, evaluated on TruthfulQA and TL;DR.
+@inproceedings{ren2023selfevaluation,
+  title     = {Self-Evaluation Improves Selective Generation in Large Language Models},
+  author    = {Ren, Jie and Zhao, Yao and Vu, Tu and Liu, Peter J. and Lakshminarayanan, Balaji},
+  booktitle = {Proceedings on ``I Can't Believe It's Not Better: Failure Modes in the Age of Foundation Models'' at NeurIPS 2023 Workshops},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {239},
+  pages     = {49--64},
+  year      = {2023},
+  publisher = {PMLR},
+  url       = {https://proceedings.mlr.press/v239/ren23a.html}
+}
+
+% NeurIPS 2023 proceedings BibTeX (author names as in that record; arXiv 2305.00633 lists two of them differently).
+% Supports: stepwise self-evaluation used to guide (stochastic) beam search in multi-step reasoning.
+@inproceedings{xie2023selfevaluation,
+  title     = {Self-Evaluation Guided Beam Search for Reasoning},
+  author    = {Xie, Yuxi and Kawaguchi, Kenji and Zhao, Yiran and Zhao, James Xu and Kan, Min-Yen and He, Junxian and Xie, Michael},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  pages     = {41618--41650},
+  year      = {2023},
+  publisher = {Curran Associates, Inc.},
+  doi       = {10.52202/075280-1802},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2023/hash/81fde95c4dc79188a69ce5b24d63010b-Abstract-Conference.html}
+}
+
+% ACL Anthology 2024.acl-long.107. Supports (checked in the text): Self-Eval-P(True) scores the model's own responses
+% and the scores are used as TRAINING signals (DPO preference data); TruthfulQA MC accuracy is still computed from
+% the answers' conditional probabilities; DoLa is one of their baselines. Not: P(True) used to choose the option.
+@inproceedings{zhang2024selfalignment,
+  title     = {Self-Alignment for Factuality: Mitigating Hallucinations in {LLM}s via Self-Evaluation},
+  author    = {Zhang, Xiaoying and Peng, Baolin and Tian, Ye and Zhou, Jingyan and Jin, Lifeng and Song, Linfeng and Mi, Haitao and Meng, Helen},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {1946--1965},
+  year      = {2024},
+  address   = {Bangkok, Thailand},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2024.acl-long.107},
+  url       = {https://aclanthology.org/2024.acl-long.107/}
+}
+
+% --- Truthfulness in hidden states and intermediate layers ----------------------------------------------
+
+% ACL Anthology 2023.findings-emnlp.68. Supports: a classifier trained on hidden-layer activations predicts whether
+% a statement is true (71-83 % accuracy depending on the model).
+@inproceedings{azaria2023internal,
+  title     = {The Internal State of an {LLM} Knows When It's Lying},
+  author    = {Azaria, Amos and Mitchell, Tom},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2023},
+  pages     = {967--976},
+  year      = {2023},
+  address   = {Singapore},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2023.findings-emnlp.68},
+  url       = {https://aclanthology.org/2023.findings-emnlp.68/}
+}
+
+% OpenReview Tigr1kMDZy (ICLR 2024 spotlight). Supports: decoding predictions from intermediate layers; with
+% incorrect demonstrations accuracy diverges after a "critical layer" ("overthinking").
+@inproceedings{halawi2024overthinking,
+  title     = {Overthinking the Truth: Understanding how Language Models Process False Demonstrations},
+  author    = {Halawi, Danny and Denain, Jean-Stanislas and Steinhardt, Jacob},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=Tigr1kMDZy}
+}
+
+% --- Partial-input baselines and benchmark weaknesses ---------------------------------------------------
+
+% ACL Anthology 2024.acl-long.555. Supports: multiple-choice QA with choices-only prompts beats a majority baseline
+% in 11 of 12 dataset-model cases.
+@inproceedings{balepur2024artifacts,
+  title     = {Artifacts or Abduction: How Do {LLM}s Answer Multiple-Choice Questions Without the Question?},
+  author    = {Balepur, Nishant and Ravichander, Abhilasha and Rudinger, Rachel},
+  booktitle = {Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
+  pages     = {10308--10330},
+  year      = {2024},
+  address   = {Bangkok, Thailand},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2024.acl-long.555},
+  url       = {https://aclanthology.org/2024.acl-long.555/}
+}
+
+% ACL Anthology N18-2017. Supports: annotation artifacts let a hypothesis-only classifier solve much of NLI.
+@inproceedings{gururangan2018annotation,
+  title     = {Annotation Artifacts in Natural Language Inference Data},
+  author    = {Gururangan, Suchin and Swayamdipta, Swabha and Levy, Omer and Schwartz, Roy and Bowman, Samuel R. and Smith, Noah A.},
+  booktitle = {Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 2 (Short Papers)},
+  pages     = {107--112},
+  year      = {2018},
+  address   = {New Orleans, Louisiana},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/N18-2017},
+  url       = {https://aclanthology.org/N18-2017/}
+}
+
+% ACL Anthology S18-2023 (*SEM 2018). Supports: hypothesis-only baselines in NLI.
+@inproceedings{poliak2018hypothesis,
+  title     = {Hypothesis Only Baselines in Natural Language Inference},
+  author    = {Poliak, Adam and Naradowsky, Jason and Haldar, Aparajita and Rudinger, Rachel and Van Durme, Benjamin},
+  booktitle = {Proceedings of the Seventh Joint Conference on Lexical and Computational Semantics},
+  pages     = {180--191},
+  year      = {2018},
+  address   = {New Orleans, Louisiana},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/S18-2023},
+  url       = {https://aclanthology.org/S18-2023/}
+}
+
+% Blog post (LessWrong, 16 Jan 2025 UTC, byline "TurnTrout"; authors Alex Turner and Mark Kurzeja on the author's
+% own copy). Supports: a simple decision tree games multiple-choice TruthfulQA (79.6 % in theory) with heuristics
+% such as "eliminate answers which imply other answers" and "select the odd answer out". Says nothing about length.
+@misc{turner2025gaming,
+  title        = {Gaming {TruthfulQA}: Simple Heuristics Exposed Dataset Weaknesses},
+  author       = {Turner, Alex and Kurzeja, Mark},
+  year         = {2025},
+  howpublished = {LessWrong blog post},
+  url          = {https://www.lesswrong.com/posts/57k6xNcWtAtsSTcor/gaming-truthfulqa-simple-heuristics-exposed-dataset}
+}
+
+% Blog post (LessWrong / Alignment Forum, 15 Jan 2025) by the TruthfulQA authors. Supports: the original
+% multiple-choice format may measure test-taking ability rather than truthfulness; the binary-choice version
+% (one true, one false option) is recommended instead.
+@misc{evans2025improved,
+  title        = {New, Improved Multiple-Choice {TruthfulQA}},
+  author       = {Evans, Owain and Chua, James and Lin, Stephanie},
+  year         = {2025},
+  howpublished = {LessWrong blog post},
+  url          = {https://www.lesswrong.com/posts/Bunfwz6JsNd44kgLT/new-improved-multiple-choice-truthfulqa}
+}
+
+% --- Selective prediction -------------------------------------------------------------------------------
+
+% JMLR 11(53):1605-1641, jmlr.org/papers/v11/el-yaniv10a.html. Supports: the risk-coverage (RC) trade-off
+% ("We term this trade-off the risk-coverage (RC) trade-off").
+@article{elyaniv2010foundations,
+  title   = {On the Foundations of Noise-free Selective Classification},
+  author  = {El-Yaniv, Ran and Wiener, Yair},
+  journal = {Journal of Machine Learning Research},
+  volume  = {11},
+  number  = {53},
+  pages   = {1605--1641},
+  year    = {2010},
+  url     = {https://www.jmlr.org/papers/v11/el-yaniv10a.html}
+}
+
+% NeurIPS 2017 proceedings BibTeX. Supports: selective classification (reject option) for deep networks, trading
+% coverage for a target risk.
+@inproceedings{geifman2017selective,
+  title     = {Selective Classification for Deep Neural Networks},
+  author    = {Geifman, Yonatan and El-Yaniv, Ran},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {30},
+  year      = {2017},
+  publisher = {Curran Associates, Inc.},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2017/hash/4a8423d5e91fda00bb7e46540e2b0cf1-Abstract.html}
+}
+
+% --- Models added in exp20/exp21 ------------------------------------------------------------------------
+
+% arXiv 2404.14219, linked from the model card of microsoft/Phi-3.5-mini-instruct (v4 of the report covers
+% phi-3.5). Supports: Phi-3.5-mini-instruct.
+@misc{abdin2024phi3,
+  title         = {Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone},
+  author        = {Abdin, Marah and Aneja, Jyoti and Awadalla, Hany and Awadallah, Ahmed and Awan, Ammar Ahmad and Bach, Nguyen and Bahree, Amit and Bakhtiari, Arash and others},
+  year          = {2024},
+  eprint        = {2404.14219},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2404.14219}
+}
+
+% arXiv 2502.02737, linked from the model card of HuggingFaceTB/SmolLM2-1.7B-Instruct. Supports: SmolLM2-1.7B-Instruct.
+@misc{benallal2025smollm2,
+  title         = {{SmolLM2}: When Smol Goes Big -- Data-Centric Training of a Small Language Model},
+  author        = {Ben Allal, Loubna and Lozhkov, Anton and Bakouch, Elie and Mart{\'i}n Bl{\'a}zquez, Gabriel and Penedo, Guilherme and Tunstall, Lewis and Marafioti, Andr{\'e}s and Kydl{\'i}{\v{c}}ek, Hynek and others},
+  year          = {2025},
+  eprint        = {2502.02737},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2502.02737}
+}

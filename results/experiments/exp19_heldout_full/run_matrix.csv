@@ -1,0 +1,3 @@
+run_id,notes,seed,model_name,shallow_bucket
+run_01_qwen25_3b_full,held_out_evaluation_on_all_817_questions_qwen25_3b,42,Qwen/Qwen2.5-3B-Instruct,
+run_02_gemma3_4b_full,optional_transfer_of_the_held_out_evaluation_to_gemma3_4b,42,google/gemma-3-4b-it,

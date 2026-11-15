@@ -1,0 +1,30 @@
+%% F4. Accuracy on the answered questions against coverage for self-evaluation on the 400 confirmation questions
+%% (exp20, Qwen2.5-3B), with the three thresholds frozen on the exploration questions and two reference scores
+%% on the same questions. Data: figures/data/f4_*.csv (scripts/figure_data.py).
+\begin{tikzpicture}
+  \pgfplotstableread[col sep=comma]{\figdata/f4_reference.csv}\ffourref
+  \pgfplotstablegetelem{0}{mc1}\of\ffourref \let\fourbase\pgfplotsretval
+  \pgfplotstablegetelem{1}{mc1}\of\ffourref \let\fourdola\pgfplotsretval
+  \begin{axis}[
+    report, width=0.7\linewidth, height=6cm,
+    xmin=0, xmax=1.02, ymin=0.25, ymax=1.03,
+    xtick={0,0.25,0.5,0.75,1}, xticklabels={0, 25\,\%, 50\,\%, 75\,\%, 100\,\%},
+    xlabel={coverage (share of questions answered)}, ylabel={MC1 on the answered questions},
+    clip=false,
+  ]
+    \addplot[figgray, dashed, line width=0.8pt, domain=0:1, samples=2] {\fourbase};
+    \addplot[figgray, densely dotted, line width=0.8pt, domain=0:1, samples=2] {\fourdola};
+    \node[font=\scriptsize, anchor=south west, inner sep=1pt] at (axis cs:0.01,\fourdola)
+      {DoLa (MC configuration), all questions};
+    \node[font=\scriptsize, anchor=north west, inner sep=1.5pt] at (axis cs:0.01,\fourbase)
+      {base likelihood, all questions};
+    \addplot[figblue, line width=1.2pt] table[col sep=comma, x=coverage, y=accuracy]{\figdata/f4_curve.csv}
+      node[pos=1, anchor=west, font=\scriptsize, text=black, align=left] {self-evaluation,\\ all questions};
+    \addplot[black, only marks, mark=*, mark size=2.2pt,
+             error bars/.cd, y dir=both, y explicit, error bar style={line width=0.8pt},
+             error mark options={rotate=90, mark size=2pt, line width=0.8pt}]
+      table[col sep=comma, x=coverage, y=accuracy, y error plus=plus, y error minus=minus]{\figdata/f4_frozen.csv};
+    \node[font=\scriptsize, anchor=south west, align=left] at (axis cs:0.55,0.88)
+      {$\bullet$ thresholds frozen on the exploration\\ questions, with 95\,\% intervals};
+  \end{axis}
+\end{tikzpicture}

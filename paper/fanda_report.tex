@@ -1,0 +1,805 @@
+%% arXiv-style technical report (write-report skill).
+%% Portfolio report, arXiv style, one column, no page limit (aim for 10-12 pages plus appendix).
+%% Build: latexmk -pdf -outdir=build fanda_report.tex   (latexmkrc in this folder)
+%% Outline, sources and open items: docs/report_checklist.md. Terms: docs/glossary.md.
+%% Style: each paragraph = what we did -> why (one sentence) -> at most one number, with a pointer to the table.
+%% Statistics live in the tables. \todo{...} and \verify print in red and must be gone before submission.
+%% Two columns: add "twocolumn" to the class options; use figure*/table* for full-width floats (see structure.md).
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage[hidelinks]{hyperref}
+
+%% ---- report macros (assets/report_macros.tex) ----
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,arrows.meta,backgrounds,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\input{figures/figstyle}  % figure colours, styles and data path; data from scripts/figure_data.py
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\verify}{\textcolor{red}{\textsuperscript{[verify]}}}
+\newcommand{\cha}[1]{\textsf{C#1}}
+
+%% ---- project names (one edit updates the whole report) ----
+\newcommand{\method}{per-question DoLa-static}
+\newcommand{\Method}{Per-question DoLa-static}
+\newcommand{\mainmodel}{Qwen2.5-3B-Instruct}
+\newcommand{\JSD}{\operatorname{JSD}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\Vhead}{\mathcal{V}_{\mathrm{head}}}
+
+%% Working title (checklist part C); decide before publishing.
+\title{What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and Option Length in Small
+Language Models}
+\author{Muhammad Naufal \quad Jeong Edon \quad Muhammad Aliff\\\small Korea University}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Multiple-choice TruthfulQA is a common test of methods that aim to make language models more truthful. We
+study what it rewards, using layer contrast (DoLa), self-evaluation (P(True)) and option length, on
+\mainmodel{} and seven other instruction-tuned models of 0.5 to 4 billion parameters. A variant of DoLa that led
+the base model's likelihood by 0.06 MC1 on the 50 questions it was developed on falls below it on 767 held-out
+questions ($-0.034$ [$-0.060$, $-0.008$]), and no layer-contrast rule beats the likelihood there. Two properties
+of the scores explain such gains and losses. Under DoLa's generation settings, the plausibility constraint masks
+tokens of every option, and the number of masked tokens alone decides MC1 on 73\,\% of the questions; DoLa's paper
+and its released code differ on whether the constraint is used. DoLa's multiple-choice configuration cannot be told
+apart from choosing the longest option (MC1 0.356 against 0.361), and on true and false options of nearly equal
+length every likelihood and contrast rule is close to chance. Self-evaluation, under a design frozen before 400
+confirmation questions, reaches MC1 0.623 against 0.340 for the likelihood and 0.398 for DoLa, and beats the
+likelihood on 5 of 8 models; but it is as accurate without the question on 6 of 8 models, so it judges each option
+as a statement rather than as an answer. We recommend four checks for multiple-choice evaluations of this kind: a
+longest-option baseline, length-matched pairwise accuracy, a question-removed control, and a design frozen before
+it is tested on held-out questions.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+Language models state falsehoods with confidence, and many methods try to reduce this; \citet{huang2025survey}
+survey them. Methods that change how a model scores or decodes text are often tested on the multiple-choice version
+of TruthfulQA~\citep{lin2022truthfulqa}: the model scores reference true and false answers to 817 questions, and MC1
+asks whether the true answer gets the highest score. DoLa, which contrasts the final layer with an earlier one,
+reports large gains on this test~\citep{chuang2024dola}.
+
+This study began as a method. We built a variant of DoLa, \method{}, on 50 development questions, where it led
+the base model's likelihood on \mainmodel{}. On the other 767 questions the lead disappeared. Asking why led to an
+empirical study of what multiple-choice TruthfulQA rewards. Four properties make the measurement hard:
+\begin{itemize}
+\item[\cha1] \textbf{Small development sets mislead.} \Method{} led the likelihood by $+0.06$ MC1 on the 50
+  development questions and trails it by $-0.034$ [$-0.060$, $-0.008$] on the 767 held-out questions.
+\item[\cha2] \textbf{Settings copied from generation break multiple-choice scoring.} Under DoLa's generation
+  settings the plausibility constraint masks at least one token of every held-out option; on the 55\,\% of
+  questions where the true option has more masked tokens, MC1 is 0.
+\item[\cha3] \textbf{Option scores follow option length.} The scores of DoLa's multiple-choice configuration have a
+  within-question rank correlation of $+0.669$ with option length, and choosing the longest option scores as well.
+\item[\cha4] \textbf{The benchmark can be answered without the question.} A self-evaluation verdict with the
+  question removed is at least as accurate as with it on 6 of 8 models.
+\end{itemize}
+
+We address them in turn. Every rule is scored on all 817 questions, and choices made on the development questions
+are tested on the held-out ones (\cha1). We measure how the plausibility constraint and option length decide answers
+(\cha2, \cha3). We then test self-evaluation, which asks the model whether each option is true and does not sum over
+the option's tokens, under a design frozen before 400 confirmation questions, and we check it on eight models with a
+question-removed control (\cha4). The report contributes:
+\begin{enumerate}
+\item A held-out evaluation of DoLa in two configurations and of \method{}: no layer-contrast rule beats the base
+  likelihood on MC1 on 767 held-out questions (Section~\ref{sec:heldout}).
+\item Two properties that decide multiple-choice answers regardless of truth: token masking by the plausibility
+  constraint and the association of scores with option length (Section~\ref{sec:mislead}).
+\item A test of self-evaluation against likelihood and DoLa under a frozen design: $+0.225$ MC1 over DoLa on 400
+  confirmation questions, and MC1 0.900 when only the 30\,\% most confident questions are answered
+  (Section~\ref{sec:selfeval}).
+\item Controls on eight models: reading the verdict from an earlier block helps on 2 of 8, self-evaluation beats
+  the likelihood on 5 of 8, and the verdict is as accurate without the question on 6 of 8
+  (Section~\ref{sec:controls}).
+\item Four checks we recommend for multiple-choice evaluations of truthfulness (Section~\ref{sec:discussion}).
+\end{enumerate}
+
+%% ============================================================================================================
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Contrastive and layer-contrastive decoding.}
+Contrastive decoding scores each candidate token by the difference between the log-probabilities of a large
+(expert) and a small (amateur) language model, and keeps only tokens whose expert probability is at least $\alpha$
+times the expert's top probability (an \emph{adaptive plausibility constraint}, $\alpha =
+0.1$)~\citep{li2023contrastive}. DoLa applies the same idea inside one model: it contrasts the final (mature)
+layer with an earlier (premature) layer read through the output head, chooses the premature layer at every token
+as the candidate with the largest divergence from the mature layer, and uses the same
+constraint~\citep{chuang2024dola}. DoLa also describes DoLa-static, which uses one premature layer chosen on a
+validation set, and reports large TruthfulQA gains for LLaMA models~\citep{chuang2024dola}. We do not propose a
+decoding method. We re-evaluate DoLa in two configurations and one variant, \method{}, that we developed on 50
+questions, on 767 held-out questions, and we measure two properties of the scores that explain their gains and
+losses: token masking by the constraint and the association with option length (Sections~\ref{sec:heldout}
+and~\ref{sec:mislead}).
+
+\paragraph{TruthfulQA and its weaknesses.}
+TruthfulQA has 817 questions written so that a common misconception gives a plausible false answer; its
+multiple-choice task ranks reference true and false answers by the model's likelihood~\citep{lin2022truthfulqa}.
+Two later reports question the multiple-choice format. A simple decision tree over the answer options, using
+heuristics such as ``eliminate answers which imply other answers'' and ``select the odd answer out'', reaches 79.6\,\%
+in theory~\citep{turner2025gaming}, and the dataset's authors note that the format may measure test-taking ability
+rather than truthfulness and recommend a binary-choice version with one true and one false
+option~\citep{evans2025improved}. Both concern how the options relate to each other. The two properties we report
+are different: likelihood and contrast scores follow the length of each option (\cha3), and each option, judged on its
+own, is about as easy to label without the question as with it (\cha4).
+
+\paragraph{Partial-input baselines.}
+A model that solves a task from part of its input shows that the dataset leaks the label. In natural language
+inference, classifiers that see only the hypothesis predict the label well above the majority
+class~\citep{gururangan2018annotation,poliak2018hypothesis}. In multiple-choice question answering, a prompt with
+the answer choices and no question beats a majority baseline in 11 of 12 dataset--model
+pairs~\citep{balepur2024artifacts}. Our question-removed control differs in one respect: every option is scored in
+its own forward pass, so the model cannot compare the options and must judge each one as a statement.
+
+\paragraph{Self-evaluation.}
+Language models can be asked whether a proposed answer is true and the probability of the reply ``True'',
+P(True), read as a score; for answers the model sampled itself, this score showed encouraging performance and
+calibration that improved with model size~\citep{kadavath2022language}. Self-evaluation scores have since been used to decide when to answer
+(selective generation, evaluated on TruthfulQA and TL;DR)~\citep{ren2023selfevaluation}, to guide beam search in
+multi-step reasoning~\citep{xie2023selfevaluation}, and to label a model's own responses as training data for
+factuality, with DoLa among the baselines~\citep{zhang2024selfalignment}. We use the self-evaluation score directly to
+rank the fixed options of multiple-choice TruthfulQA, compare it with likelihood and DoLa under a design frozen
+before 400 confirmation questions, and repeat the comparison with likelihood on eight models of 0.5 to 4 billion
+parameters (Sections~\ref{sec:selfeval} and~\ref{sec:controls}).
+
+\paragraph{Truthfulness in hidden states and intermediate layers.}
+A classifier trained on hidden-layer activations predicts whether a statement is true~\citep{azaria2023internal}.
+Decoding intermediate layers through the output head shows that, with false demonstrations in the prompt, accuracy
+falls after a ``critical layer''~\citep{halawi2024overthinking}. We read the self-evaluation verdict from
+intermediate blocks in the same way, without training a probe, and test whether an intermediate block beats the
+final layer on eight models (\emph{early exit}, Section~\ref{sec:controls}).
+
+\paragraph{Selective prediction.}
+A classifier that may abstain trades coverage, the share of inputs it answers, against the risk on the answered
+inputs (the risk--coverage trade-off)~\citep{elyaniv2010foundations}; for deep networks, a threshold on the
+confidence can be set so that the risk stays below a chosen level with high probability~\citep{geifman2017selective}. We set three thresholds
+on the exploration questions and report the accuracy they give on the confirmation questions
+(Section~\ref{sec:selfeval}).
+
+%% ============================================================================================================
+\section{Scoring Rules}
+\label{sec:rules}
+
+Every rule scores each answer option $y = (y_1, \dots, y_T)$ of a question separately, from one teacher-forced
+forward pass, and MC1 chooses the option with the highest score (Figure~\ref{fig:rules}). Let $x$ be the prompt,
+$h^{(j)}_t$ the hidden state after transformer block $j$ at the position that predicts $y_t$, and $\phi$ the model's
+final normalisation followed by its output head. Block $j$ then gives the logits $z^{(j)}_t = \phi(h^{(j)}_t)$ and
+the distribution $q_j(\cdot \mid x, y_{<t}) = \operatorname{softmax}(z^{(j)}_t)$; $N$ is the final block.
+
+\begin{figure}[t]
+\centering
+\input{figures/f1_scoring}
+\caption{The three ways to score one answer option. The likelihood and DoLa scores read the option's own tokens
+after a prompt that asks the question; the self-evaluation score reads one reply token after a prompt that shows
+the option and asks whether it is true. Our likelihood prompt says ``answer options'' but does not list them
+(Section~\ref{sec:setup}). The question-removed control drops the line ``Question: \{question\}'' from the
+self-evaluation prompt.}
+\label{fig:rules}
+\end{figure}
+
+\paragraph{Base likelihood.}
+The standard multiple-choice score of TruthfulQA is the option's log-likelihood under the base
+model~\citep{lin2022truthfulqa},
+\begin{equation}
+  S(y) = \sum_{t=1}^{T} \log q_N(y_t \mid x, y_{<t}),
+  \label{eq:likelihood}
+\end{equation}
+where $x$ is the chat-formatted question. Every token adds a negative term, so the sum favours short options; we
+also report the per-token score $S(y)/T$, which removes this dependence on the number of tokens (\cha3).
+
+\paragraph{DoLa.}
+DoLa selects the premature layer at every token,
+\begin{equation}
+  M_t = \arg\max_{j \in \mathcal{J}} d\bigl(q_N(\cdot \mid x, y_{<t}),\, q_j(\cdot \mid x, y_{<t})\bigr),
+  \label{eq:dola-select}
+\end{equation}
+from a set $\mathcal{J}$ of candidate blocks, and scores token $v$ by
+\begin{equation}
+  F_t(v) =
+  \begin{cases}
+    \log q_N(v \mid x, y_{<t}) - \log q_{M_t}(v \mid x, y_{<t}) & \text{if } v \in \Vhead,\\
+    -1000 & \text{otherwise,}
+  \end{cases}
+  \label{eq:dola-score}
+\end{equation}
+where the adaptive plausibility constraint keeps the tokens
+\begin{equation}
+  \Vhead = \bigl\{v : q_N(v \mid x, y_{<t}) \ge \alpha \max_w q_N(w \mid x, y_{<t})\bigr\},
+  \qquad \alpha = 0.1~\text{\citep{chuang2024dola}}.
+  \label{eq:vhead}
+\end{equation} The DoLa paper calls $d$ the Jensen--Shannon divergence; its reference
+implementation, which we reproduce, computes $d(q_N, q_j) = \tfrac12[\KL(m \Vert q_N) + \KL(m \Vert q_j)]$ with
+$m = \tfrac12(q_N + q_j)$, averaged over the vocabulary, which places the mixture first in both terms. DoLa's
+reference code uses different settings for free generation and for TruthfulQA multiple choice, and we report both:
+\begin{itemize}
+\item \emph{DoLa (generation settings)}: the constraint of Equation~\eqref{eq:vhead}, the renormalised option score
+  \[ \textstyle \sum_t \log \operatorname{softmax}(F_t)(y_t), \]
+  and candidate blocks from the first quarter of the network (blocks 1, 3, \dots, 9 of the 36 in \mainmodel{}).
+  Our development experiments used these settings.
+\item \emph{DoLa (MC configuration)}: no constraint, the plain sum without renormalisation,
+  \[ \textstyle \sum_t \bigl[\log q_N(y_t \mid x, y_{<t}) - \log q_{M_t}(y_t \mid x, y_{<t})\bigr], \]
+  and candidate blocks from the second half of the network. DoLa used layers 16, 18, \dots, 30 of the 32-layer
+  LLaMA-7B; we transfer them by relative depth to blocks 18, 20, \dots, 34 of \mainmodel{}.
+\end{itemize}
+The two sources differ on the constraint in multiple choice. The DoLa paper states that for TruthfulQA it replaces
+$-\infty$ with $-1000$ in the constraint ``to avoid ruining LM likelihood scores''~\citep{chuang2024dola}, which
+implies the constraint is applied; the released multiple-choice script sets $\alpha = 0$ by default, which keeps
+every token, and its published TruthfulQA commands do not change it. We follow the released script.
+Neither candidate set was tuned for \mainmodel{}. The constraint matters for multiple choice because the option's
+tokens are fixed in advance: an option token outside $\Vhead$ contributes about $-1000$ to the option score
+whatever the contrast says (\cha2, Section~\ref{sec:mislead}).
+
+\paragraph{\Method{}.}
+This is the variant we developed on the 50 development questions, and the held-out evaluation tests it
+(\cha1). It changes four settings of DoLa:
+\begin{enumerate}
+\item no plausibility constraint;
+\item the difference of raw logits in place of log-probabilities, with the option score renormalised as in DoLa's
+  generation settings,
+  \[ \textstyle \sum_t \log \operatorname{softmax}\bigl(z^{(N)}_t - z^{(L)}_t\bigr)(y_t); \]
+  without the constraint this gives the same option scores as the log-probability difference, because the two
+  differences differ by a constant per position that the softmax removes;
+\item layer selection by the standard Jensen--Shannon divergence $\JSD(p, q) = \tfrac12[\KL(p \Vert m) + \KL(q
+  \Vert m)]$ of the two distributions at temperature $\tau = 0.5$, in place of the reference implementation's
+  divergence at $\tau = 1$, a setting inherited from earlier code and not tested on its own;
+\item one premature layer $L$ per question, selected at the first answer position and kept for all later tokens.
+\end{enumerate}
+The first answer position follows the prompt alone, which is the same for every option, so all options of a
+question share the layer $L$. To test the fourth change, we also re-select the layer every $k$ tokens, $k \in \{1,
+4\}$; \method{} is $k = \infty$. Its candidate blocks are those of DoLa's generation settings.
+
+\paragraph{Self-evaluation, P(True).}
+Following \citet{kadavath2022language}, the model is shown the question and one option and asked whether the
+option is true, with the user message
+\begin{quote}\small\ttfamily
+Question: \{question\}\\ Proposed answer: \{option\}\\ Is the proposed answer true? Reply with one word: True or
+False.
+\end{quote}
+The score is the log-odds of the reply tokens at the first reply position,
+\begin{equation}
+  V(y) = \log q_N(\texttt{True} \mid x_y) - \log q_N(\texttt{False} \mid x_y) = z^{(N)}(\texttt{True}) -
+  z^{(N)}(\texttt{False}),
+  \label{eq:selfeval}
+\end{equation}
+where $x_y$ is the prompt for option $y$. It needs one forward pass per option and does not sum over the option's
+tokens, so, unlike Equation~\eqref{eq:likelihood}, it has no term per token. MC2 uses $V$ in place of the
+log-likelihood. A second wording (``\{question\}\textbackslash n\textbackslash nAnswer: \{option\}\textbackslash
+n\textbackslash nIs this answer correct? Reply with one word: Yes or No.'') is an ablation.
+
+\paragraph{Early exit of the verdict.}
+The same log-odds can be read after an earlier block $j$, from $z^{(j)} = \phi(h^{(j)})$ at the first reply
+position. On \mainmodel{} we use the mean over blocks 27--30 of 36, chosen on the exploration questions; on the
+other models the block is chosen on 50 labelled questions and tested on the rest (Section~\ref{sec:controls}).
+
+\paragraph{Verdict with the question removed.}
+As a partial-input control (\cha4), we delete the line ``Question: \{question\}'' from the self-evaluation prompt,
+so that the model judges the option as a statement. We also tested one way to use it: subtracting the
+question-removed verdict from the verdict, which removes what the option alone gives away, as pointwise mutual
+information does for likelihoods. The protocol for this test was fixed before any question-removed score existed.
+
+\paragraph{Longest option.}
+To measure \cha3, the baseline chooses the option with the most characters. MC1 counts a tie between a true and
+a false option as wrong; token counts tie more often than character counts, so we count characters
+(Section~\ref{sec:mislead} reports both).
+
+\paragraph{Selective prediction.}
+With the self-evaluation score, a question is answered only if the difference between the two highest scores among
+its MC1 options reaches a threshold. The three thresholds are the differences at 25\,\%, 50\,\% and 75\,\% coverage on
+the exploration questions; they are then fixed and applied to the confirmation questions.
+
+%% ============================================================================================================
+\section{Experimental Setup}
+\label{sec:setup}
+\paragraph{Data.}
+We use the multiple-choice version of TruthfulQA, 817 questions with 5,882 distinct answer
+options~\citep{lin2022truthfulqa}. Each question has one set of options with exactly one true answer (on average
+5.04 options), which MC1 uses, and a second set with several true and false answers, which MC2 and MC3 use.
+
+\paragraph{Question sets.}
+Every choice in this study was made on a named subset of the questions, and the main results are reported on
+questions that played no part in it (Figure~\ref{fig:sets}); where a result uses the questions a choice was made on,
+its section says so. The \emph{development set} is 50 questions drawn with seed 42;
+\method{} and all settings of the earlier experiments were chosen on it. The \emph{held-out set} is the other 767
+questions: we scored all 817 questions once with every likelihood and contrast rule and removed the development
+questions at analysis time. For self-evaluation, the 817 questions were split once, with seed 20261115, into 417
+\emph{exploration} questions (the 50 development questions and 367 others) and 400 \emph{confirmation} questions. The
+self-evaluation design, including the early-exit blocks and the abstention thresholds, was chosen on the
+exploration questions and written to a file with its hash before the confirmation questions were scored once. The
+likelihood and DoLa scores of the held-out questions existed before this split, but no self-evaluation score of a
+confirmation question did.
+
+\begin{figure}[t]
+\centering
+\input{figures/f2_question_sets}
+\caption{The question sets, drawn to scale, and what was decided on each. Choices about layer contrast were made on
+the 50 development questions and tested on the 767 held-out questions; choices about self-evaluation were made on
+the 417 exploration questions and tested on the 400 confirmation questions.}
+\label{fig:sets}
+\end{figure}
+
+\paragraph{Metrics.}
+MC1 is 1 if the true option of the first set scores strictly above every false option, so a tie counts as wrong.
+MC2 is the probability mass on the true options of the second set after a softmax over the option scores; with the
+log-likelihood as score, this is the score of the TruthfulQA paper, ``the total normalized likelihood of the true
+answers''~\citep{lin2022truthfulqa}. MC3 is the share of true options that score above the best false option. We
+report all three, as DoLa does~\citep{chuang2024dola}, and use MC1 as the primary metric, because it is the
+decision a user of the scores would make. To separate a rule's preference for true answers from its preference for
+long ones (\cha3), we also report \emph{length-matched pairwise accuracy}: over the pairs of one true and one false
+option of the second set whose token counts differ by at most one, the share of pairs in which the true option
+scores higher (a tie counts one half), averaged over questions. We defined this measure for this study; it is not a
+standard metric.
+
+\paragraph{Statistical tests.}
+Two rules are always compared on the same questions. For each difference we report the mean, a 95\,\% percentile
+interval from a paired bootstrap over questions (10,000 resamples, seed 0)~\citep{bergkirkpatrick2012empirical}
+and, for MC1, the numbers of questions gained and lost with an exact McNemar test~\citep{mcnemar1947note}, a
+choice of tests that follows \citet{dror2018hitchhiker}. Within each table, the bootstrap and McNemar $p$-values
+of all comparisons are adjusted together by the Holm--Bonferroni method; the comparison of self-evaluation with
+likelihood on eight models (Section~\ref{sec:controls}) uses unadjusted intervals, as its protocol fixed in advance.
+For scale: a single MC1 has a 95\,\% interval of about $\pm 0.033$ on the 767 held-out questions and of about $\pm
+0.12$ to $\pm 0.14$ on the 50 development questions (Figure~\ref{fig:heldout}).
+
+\paragraph{Models.}
+The main model is \mainmodel{}~\citep{qwen2024qwen25}, on which all rules were developed and tested. The
+cross-model checks add seven instruction-tuned models chosen by a rule written into their protocol: decoder language models
+of at most 4 billion parameters that run in bfloat16 on one 12\,GB GPU, have a chat template and answer directly,
+because the verdict is read at the first reply token. These are Gemma~3 4B and 1B~\citep{gemmateam2025gemma3},
+Falcon3-3B~\citep{tii2024falcon3}, Qwen2.5-1.5B and 0.5B~\citep{qwen2024qwen25},
+Phi-3.5-mini~\citep{abdin2024phi3} and SmolLM2-1.7B~\citep{benallal2025smollm2}, all in their instruction-tuned
+versions. Llama~3.2 3B was planned and left out, because access to its gated repository was not granted;
+SmolLM2-1.7B took its place. The protocol of the early-exit check was fixed after the first three models
+(\mainmodel{}, Gemma~3 4B, Falcon3-3B) had been scored and before the other five.
+
+\paragraph{Prompts.}
+All prompts use each model's chat template with a single user message. For the likelihood and DoLa scores, the
+user message is the question followed by ``Answer with one of the provided answer options only.'', and the
+option's tokens follow the assistant prefix. The options are not listed in the prompt, so the instruction refers
+to options the model does not see; we kept this prompt for every run so that all likelihood and contrast scores stay
+comparable. The TruthfulQA paper scores options after a fixed question-answering prompt of trivia questions and
+recommends it for comparisons~\citep{lin2022truthfulqa}; because we use a different prompt, our absolute scores are
+not comparable with published ones, and we compare rules only with each other on the same prompt. The
+self-evaluation prompts are given in Section~\ref{sec:rules}.
+
+\paragraph{Implementation.}
+All runs reported here used PyTorch 2.9.1 and Transformers 4.57.6 on one NVIDIA RTX 5070 (12\,GB), with \mainmodel{} in bfloat16,
+the precision of its configuration. The likelihood and contrast scorer processes one option at a time and is limited
+by the CPU: scoring all nine likelihood and contrast rules on the 817 questions took 3.2 hours for \mainmodel{}, and
+the base likelihood alone took 6.5 to 11.5 minutes per model. Self-evaluation scores the options in batches of
+eight and took 66 seconds for the 400 confirmation questions, both wordings and every block included. Each run
+records the code version it ran with. Rerunning the development questions in the current environment reproduced
+the earlier development runs to within two questions per rule on MC1 (Appendix~\ref{app:repro}).
+
+\section{Layer Contrast on Held-Out Questions}
+\label{sec:heldout}
+This section answers \cha1: does a layer-contrast rule that led on the development questions also lead on
+questions it was not chosen on? All four rules scored the 817 questions in one run, and Table~\ref{tab:heldout}
+splits the result into the 50 development and the 767 held-out questions.
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Layer contrast on the development and held-out questions (\mainmodel{}). The last three columns compare each
+rule with the base likelihood on the held-out questions: mean MC1 difference with its 95\,\% paired-bootstrap
+interval, questions gained and lost, and the exact McNemar $p$-value, Holm-adjusted over the 20 $p$-values of the
+five comparisons of this test family; the other two compare \method{} with each DoLa configuration.}
+\label{tab:heldout}
+\adjustbox{max width=\textwidth}{\input{tables/t1_heldout}}
+\end{table}
+
+\paragraph{No layer-contrast rule beats the base likelihood on held-out questions.}
+On the development questions, \method{} and DoLa in its multiple-choice configuration led the base likelihood by
+0.06 and 0.08 MC1. On the held-out questions neither lead remains: DoLa (MC configuration) is $+0.023$ [$-0.020$,
+$+0.068$], and \method{} is below the base likelihood, $-0.034$ [$-0.060$, $-0.008$], although not after the Holm
+adjustment (Table~\ref{tab:heldout}). DoLa with its generation settings is the only rule below the base likelihood
+on all three metrics with intervals that exclude 0. \Method{} also falls below DoLa (MC configuration) on the held-out questions, by
+$-0.057$ [$-0.100$, $-0.012$] MC1 (Holm-adjusted $p = 0.156$). The development intervals are four times wider
+than the held-out ones (Figure~\ref{fig:heldout}): with 50 questions, a lead of 0.06 MC1 is inside the noise of a
+single score, and choosing among variants on those questions can select for that noise.
+
+\begin{figure}[t]
+\centering
+\input{figures/f3_dev_vs_heldout}
+\caption{MC1 and MC2 of each rule on the 50 development and the 767 held-out questions, with 95\,\% bootstrap
+intervals of the mean (\mainmodel{}). The development scores of DoLa (MC configuration) and \method{} lie above
+their held-out scores, and their development intervals cover every held-out score in the panel.}
+\label{fig:heldout}
+\end{figure}
+
+\paragraph{Of the four changes in \method{}, only removing the constraint changes the scores.}
+Table~\ref{tab:factorial} (Appendix~\ref{app:tables}) adds the changes one at a time, starting from DoLa with its generation settings.
+Replacing the log-probability difference by the raw-logit difference while the constraint is kept changes nothing
+measurable. Removing the constraint leaves MC1 unchanged, $+0.009$ [$-0.020$, $+0.039$], and raises MC2 and MC3 by 0.046 and
+0.033 (Holm-adjusted $p$ 0.061 and 0.020).
+Fixing the premature layer once per question and switching to the standard Jensen--Shannon divergence then changes
+MC1 by $+0.004$ [$-0.013$, $+0.021$]. The variant without the constraint is still below the base likelihood on
+MC1, by $-0.038$ [$-0.064$, $-0.012$] (Holm-adjusted $p = 0.094$).
+
+\paragraph{How often the layer is re-selected does not matter on held-out questions.}
+Re-selecting the premature layer at every token ($k = 1$), every four tokens or once per question gives the same
+held-out scores within $0.008$ MC1, while the development MC1 differed by 0.06 to 0.08 between $k = 1$ and the other two
+(Table~\ref{tab:interval}, Appendix~\ref{app:tables}). Appendix~\ref{app:stability} states when a longer interval leaves the decisions unchanged;
+the held-out result is consistent with that condition holding for most questions, which we did not measure.
+
+\section{Why Multiple-Choice Scores Mislead}
+\label{sec:mislead}
+
+The held-out run also explains why the development results misled. Two properties of the scores, both measured
+on the 767 held-out questions, decide many multiple-choice answers without regard to truth.
+
+\paragraph{The plausibility constraint decides most answers under DoLa's generation settings (\cha2).}
+Under the generation settings, every one of the 5,529 held-out options has at least one token outside the plausible
+set (4.01 on average). Each such token adds $-1000$ to the option score, while the rest of the score lies between
+$-84.2$ and $0$, so whenever two options differ in the number of masked tokens, the one with fewer wins. This
+count alone decides MC1 on 73\,\% of the questions: where the true option has more masked tokens than some false
+option, MC1 is exactly 0, and where it has fewer, MC1 is exactly 1 (Table~\ref{tab:masking}). Of the 90 held-out
+questions that the base likelihood answers correctly and DoLa (generation settings) does not, 40 are of the first
+kind. A setting that limits the next token in free generation thus ranks fixed options by how many of their tokens
+the final layer finds implausible. The DoLa paper describes the constraint as part of its multiple-choice
+evaluation, while its released script turns it off (Section~\ref{sec:rules}), so which of the two one copies
+decides the result.
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Held-out questions grouped by the number of option tokens the plausibility constraint masks under DoLa's
+generation settings: the true MC1 option against the false option with the fewest masked tokens. MC1 per group for
+three rules.}
+\label{tab:masking}
+\adjustbox{max width=\textwidth}{\input{tables/t4_masking}}
+\end{table}
+
+\paragraph{Likelihood and contrast scores follow option length (\cha3).}
+Within a question, the base likelihood prefers short options (mean rank correlation with length in characters
+$-0.285$), as expected of a sum of negative log-probabilities, and DoLa (MC configuration) prefers long ones
+($+0.669$; Table~\ref{tab:length}). Choosing the
+longest option, which needs no model, reaches MC1 0.361; DoLa (MC configuration) reaches 0.356, and the two cannot
+be told apart: $-0.005$ [$-0.038$, $+0.027$], 86 questions gained and 90 lost. Comparing only true and false options
+of nearly equal length removes this effect: every likelihood and contrast rule then picks the true option in 46 to
+54\,\% of the pairs, close to the 50\,\% of a random choice. DoLa's multiple-choice gain over the base likelihood is
+therefore consistent with a preference for long options, which on TruthfulQA are the true option more often than a
+random choice would be (longest option 0.361, shortest 0.172 MC1), rather than with better recognition of true
+answers.
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Option length and option scores on the 767 held-out questions. Length correlation: mean within-question
+Spearman correlation between the option score and its length in characters (second option set). Matched pairs:
+length-matched pairwise accuracy, the share of true--false option pairs whose token counts differ by at most one in
+which the true option scores higher (654 questions have such pairs). Picks longest: share of questions in which the
+rule's MC1 choice is the longest option by token count. The token-count baseline loses on ties, which MC1 counts as wrong.}
+\label{tab:length}
+\adjustbox{max width=\textwidth}{\input{tables/t5_length}}
+\end{table}
+
+\paragraph{Mixing the contrast into the likelihood does not help.}
+We also scored $S_{\text{base}} + \beta S_{\text{contrast}}$, the base likelihood plus $\beta$ times the DoLa (MC
+configuration) score, for 16 values of $\beta$ from 0 to $\infty$, and chose $\beta$ on the development questions
+by a rule fixed before the held-out scores were read (highest MC1, then MC3, then MC2, then the smallest $\beta$).
+The chosen $\beta = 10$ is indistinguishable from DoLa alone on the held-out questions, $+0.003$ [$-0.005$, $+0.010$]
+MC1.
+
+\section{Self-Evaluation}
+\label{sec:selfeval}
+
+Self-evaluation asks the model whether each option is true instead of reading the option's likelihood
+(Section~\ref{sec:rules}). Its design, including the early-exit blocks and the abstention thresholds, was frozen on
+the 417 exploration questions and tested once on the 400 confirmation questions (\mainmodel{}).
+
+\paragraph{Self-evaluation beats every likelihood and contrast rule.}
+On the confirmation questions, self-evaluation reaches MC1 0.623, against 0.340 for the base likelihood and 0.398
+for DoLa (MC configuration) (Table~\ref{tab:selfeval}). Every MC1 difference has a Holm-adjusted $p$ below 0.001,
+and the MC2 and MC3 differences are positive in every comparison (Table~\ref{tab:selftests}). The score is higher on
+the confirmation questions than on the exploration questions it was designed on (0.571), so we see no sign that the
+design overfitted the exploration questions.
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Self-evaluation and the likelihood and contrast rules on the exploration and confirmation questions
+(\mainmodel{}). For the self-evaluation rows, MC2 uses the log-odds of Equation~\eqref{eq:selfeval} in place of the
+log-likelihood; the token-count baseline has no MC2. Matched pairs: length-matched pairwise accuracy as in
+Table~\ref{tab:length}. Length correlation: mean within-question rank correlation with the option's token count.}
+\label{tab:selfeval}
+\adjustbox{max width=\textwidth}{\input{tables/t6_selfeval}}
+\end{table}
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Paired comparisons on the 400 confirmation questions, as frozen before they were scored: three main
+comparisons and two ablations. $p$: exact McNemar on MC1, Holm-adjusted over all 20 $p$-values of the design. MC2
+and MC3: mean differences, all with 95\,\% intervals that exclude 0.}
+\label{tab:selftests}
+\adjustbox{max width=\textwidth}{\input{tables/t7_selfeval_tests}}
+\end{table}
+
+\paragraph{The gain is not a length effect.}
+The self-evaluation score has a rank correlation of $+0.069$ with the option's token count, against $-0.281$ for
+the base likelihood and $+0.791$ for DoLa (MC configuration), and it picks the true option in 73\,\% of the
+length-matched pairs, where the likelihood and contrast rules stay between 52 and 54\,\% (Table~\ref{tab:selfeval}).
+
+\paragraph{Reading the verdict earlier helps on this model; a second wording works too.}
+Averaging the verdict over blocks 27--30 of 36, chosen on the exploration questions, adds $+0.062$ [$+0.035$,
+$+0.092$] MC1 on the confirmation questions. A second wording (``Is this answer correct? Reply with one word: Yes
+or No.'') reaches MC1 0.578 and also beats the per-token likelihood (Table~\ref{tab:selftests}). Section~\ref{sec:controls}
+tests whether the early-exit gain holds on other models.
+
+\paragraph{Selective prediction.}
+The gap between the two highest option scores ranks the questions by how likely the answer is to be right
+(Figure~\ref{fig:riskcoverage}). With the three thresholds frozen on the exploration questions, answering 30\,\% of
+the confirmation questions gives MC1 0.900 [0.843, 0.950] on them (Table~\ref{tab:selective}). The thresholds were
+set for 25, 50 and 75\,\% coverage and gave 30, 60 and 82\,\% on the confirmation questions, so the share of
+answered questions moves between question sets even when the accuracy holds.
+
+\begin{figure}[t]
+\centering
+\input{figures/f4_risk_coverage}
+\caption{Selective prediction with self-evaluation on the 400 confirmation questions (\mainmodel{}): MC1 on the
+answered questions when only the questions with the largest gap between the two best options are answered. The
+dots are the three thresholds frozen on the exploration questions, with 95\,\% intervals. At every coverage,
+self-evaluation stays above the base likelihood and DoLa (MC configuration) on all questions.}
+\label{fig:riskcoverage}
+\end{figure}
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Selective prediction on the 400 confirmation questions with the thresholds frozen on the exploration
+questions. Interval: 95\,\% bootstrap interval of MC1 on the answered questions.}
+\label{tab:selective}
+\adjustbox{max width=\textwidth}{\input{tables/t8_selective}}
+\end{table}
+
+\section{Controls on Eight Models}
+\label{sec:controls}
+
+Three checks on the 417 exploration questions ask how far the results of Section~\ref{sec:selfeval} reach beyond
+\mainmodel{}, and what the verdict uses (\cha4). Each check's protocol was written down before the scores it
+judges existed, except that the early-exit protocol was written after three of the eight models had been scored.
+
+\paragraph{The early-exit gain does not generalise.}
+For each model, 50 exploration questions are drawn as a labelled set, the block in the upper half of the network
+with the highest MC1 on them is chosen, and the gain over the final layer is measured on the other 367 questions,
+over 500 draws. A model shows the gain if the mean gain is positive and fewer than 5\,\% of the draws lose; early exit
+would count as a general improvement if 6 of the 8 models showed it. Two do, \mainmodel{} and Falcon3-3B, and none
+of the five models scored after the protocol was written (Table~\ref{tab:earlyexit}, Appendix~\ref{app:tables}). The by-block curves suggest
+why (Figure~\ref{fig:earlyexit}): on Qwen2.5-1.5B, Gemma~3 4B and Phi-3.5-mini, for example, the verdict reaches its
+final level in the middle of the network and stays there, so no later block is better than the final layer.
+
+\begin{figure}[t]
+\centering
+\input{figures/f5_early_exit}
+\caption{MC1 of the self-evaluation verdict read after each block, eight models, 417 exploration questions; depth 1
+is the final layer. The dashed line is the model's base likelihood on the same questions. On all eight models
+the verdict at the final layer is above the base likelihood; Qwen2.5-3B and Falcon3-3B peak before the final layer.}
+\label{fig:earlyexit}
+\end{figure}
+
+\paragraph{The verdict works as well without the question (\cha4).}
+With the question deleted from the prompt, the verdict's MC1 is at least as high as with it on 6 of 8 models
+(Table~\ref{tab:questionremoved}, Appendix~\ref{app:tables}; the two were not tested against each other). Every option is scored in its own
+forward pass, so the model cannot compare options: it judges each option as a statement. On TruthfulQA the options
+are statements that can be judged alone, and we read the result as showing that the self-evaluation score measures
+mostly whether the model takes the statement to be true, not whether it answers the question. We also
+tested one use of the question-free verdict, fixed before it was scored: subtracting it from the verdict, as
+pointwise mutual information does for likelihoods. This loses on all 7 counted models, with every interval below 0,
+and we reject it. Adding the two verdicts instead gains on 3 of 7 models; it was not part of the protocol's
+decision and is reported only.
+
+\paragraph{Self-evaluation beats the likelihood on five of eight models.}
+We scored the base likelihood of all eight models with the code of the held-out run (it reproduces that run's
+scores of \mainmodel{} exactly) and compared it with self-evaluation by a rule fixed before any of these scores
+existed: self-evaluation beats likelihood scoring on a model if its MC1 is higher than both the sum and the
+per-token likelihood, with both 95\,\% intervals above 0. This holds for 5 of the 8 models (Table~\ref{tab:likelihood}).
+On the other three, Qwen2.5-0.5B (whose verdict is at chance), Gemma~3 1B and SmolLM2-1.7B, the difference from the
+per-token likelihood is inside the noise. Two of the five wins rest on intervals that only just exclude 0
+(Falcon3-3B and Qwen2.5-1.5B, lower bounds $+0.012$ and $+0.014$, unadjusted McNemar $p$ 0.024 and 0.018); the rule
+fixed no multiple-comparison adjustment. For \mainmodel{} these are the questions its design was chosen on; its
+clean test is Section~\ref{sec:selfeval}.
+
+\begin{table}[t]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{Self-evaluation against the base model's likelihood (sum and per token) on the 417 exploration questions.
+Differences in MC1 with 95\,\% paired-bootstrap intervals (unadjusted, as fixed in the protocol). Beats both: both
+differences positive with intervals above 0. $^\dagger$Verdict at chance level.}
+\label{tab:likelihood}
+\adjustbox{max width=\textwidth}{\input{tables/t11_vs_likelihood}}
+\end{table}
+
+\section{Discussion}
+\label{sec:discussion}
+\paragraph{What the multiple-choice scores measure.}
+For the likelihood and contrast rules, a multiple-choice score mixes three things: whether the model prefers the true
+statement, how long each option is, and settings such as the plausibility constraint that interact with the number
+of tokens. On 50 questions, differences of 0.02 to 0.08 MC1 between such rules are inside the noise of a single
+score (Section~\ref{sec:setup}), and on 767 questions they mostly disappear (Section~\ref{sec:heldout}). Once option
+length is controlled, none of these rules separates true from false options much better than chance
+(Section~\ref{sec:mislead}). Self-evaluation is different in size and in kind: its gain is large, it holds on
+questions it was not designed on, and it survives the length control. What it measures, however, is whether the
+model takes each option to be true as a statement; on TruthfulQA this is about as easy without the question as with
+it (Section~\ref{sec:controls}).
+
+\paragraph{Recommended checks.}
+Each finding suggests a check that costs little and could be reported with any multiple-choice result on this
+benchmark:
+\begin{enumerate}
+\item \emph{A longest-option baseline}, counted in characters, because token counts tie and MC1 counts ties as
+  wrong (\cha3).
+\item \emph{Length-matched pairwise accuracy} next to MC1, MC2 and MC3, so that a gain from preferring long options
+  is visible (\cha3).
+\item \emph{A question-removed control} that scores each option without the question, to see how much of the score
+  needs the question (\cha4).
+\item \emph{A design frozen before held-out questions}, tested once with paired tests, and a statement of the exact
+  settings used, including the plausibility constraint (\cha1, \cha2).
+\end{enumerate}
+
+\paragraph{What the results do not show.}
+We tested multiple-choice scoring only. The results say nothing about DoLa in free generation, where the
+plausibility constraint was designed to act, nor about the larger LLaMA models of the DoLa paper. That self-evaluation
+works without the question also does not mean it fails where the question matters; on TruthfulQA the options happen
+to be statements that can be judged alone.
+
+\section{Limitations}
+\label{sec:limitations}
+\begin{itemize}
+\item \textbf{One benchmark, multiple choice only.} All results are on TruthfulQA's multiple-choice task; we did not
+  test open-ended generation or the binary-choice version~\citep{evans2025improved}.
+\item \textbf{Small models.} All models have at most 4 billion parameters, against 7 to 65 billion in the DoLa paper.
+\item \textbf{Our prompt.} The likelihood prompt refers to answer options it does not list, and it is not the
+  question-answering prompt of the TruthfulQA paper, so absolute scores are not comparable with published ones
+  (Section~\ref{sec:setup}).
+\item \textbf{Layer contrast on one model.} DoLa and \method{} were scored on \mainmodel{} only; their candidate
+  layers were transferred by relative depth and not tuned for it.
+\item \textbf{Self-evaluation confirmed on one model.} Only \mainmodel{} has scored confirmation questions; the other
+  seven models were checked on the exploration questions, and the likelihood comparison there uses no
+  multiple-comparison adjustment.
+\item \textbf{Order of the analyses.} The likelihood and DoLa scores of all held-out questions existed before the
+  questions were split for self-evaluation, and the early-exit protocol was written after three of the eight models
+  had been scored.
+\item \textbf{Two wordings.} How much self-evaluation depends on the wording of its prompt was not studied beyond the
+  two wordings tested.
+\end{itemize}
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+On multiple-choice TruthfulQA with small models, self-evaluation beats likelihood and layer-contrast scores by a
+wide margin on questions it was not designed on, while the gains of layer contrast on 50 development questions do
+not hold on 767 held-out questions. Two properties of the scores, token masking by the plausibility constraint and
+the association with option length, explain much of how likelihood and contrast rules win and lose on this
+benchmark, and the self-evaluation verdict works about as well without the question. Each of these findings turns
+into a check that future evaluations can report (Section~\ref{sec:discussion}).
+
+Two directions follow. First, the checks can be applied to other decoding and scoring methods evaluated on this
+benchmark, and to larger models. Second, self-evaluation should be tested where the question is needed to judge an
+answer: open-ended generation, the binary-choice version of TruthfulQA~\citep{evans2025improved}, and short-answer
+question answering.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\appendix
+\section{Reproduction}
+\label{app:repro}
+The code, the per-question scores of every run, the analysis scripts and this report's source are in the
+project repository \todo{repository URL and the commit of the final version}. Each run directory holds its
+metadata, with the code commit, the model, the seed and the run time. The report is rebuilt from the saved scores
+without a GPU:
+\begin{itemize}\raggedright
+\item \texttt{scripts/heldout\_analysis.py} and \texttt{scripts/paired\_tests.py}: held-out scores, masking,
+  length and the paired tests (Sections~\ref{sec:heldout} and~\ref{sec:mislead});
+\item \texttt{scripts/self\_evaluation\_analysis.py}, \texttt{self\_evaluation\_layers.py},
+  \texttt{self\_evaluation\_prior.py} and \texttt{self\_evaluation\_vs\_likelihood.py}: Sections~\ref{sec:selfeval}
+  and~\ref{sec:controls};
+\item \texttt{scripts/report\_tables.py} and \texttt{scripts/figure\_data.py}: every table and the data of every
+  figure in this report.
+\end{itemize}
+Scoring the runs again needs one GPU with 12\,GB; the run times are in Section~\ref{sec:setup}. Rerunning the 50
+development questions in the current environment changed MC1 on at most 2 questions for each of the eight rules
+that the earlier development runs had scored.
+
+\section{Additional tables}
+\label{app:tables}
+
+The tables behind Sections~\ref{sec:heldout} and~\ref{sec:controls} that the text summarises in one sentence each.
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{The changes from DoLa (generation settings, first row) to \method{} (last row), one at a time, on the
+767 held-out questions. Constraint: the adaptive plausibility constraint. Difference: of log-probabilities or of
+raw logits; without the constraint the two give identical scores. Layer chosen: at every token by DoLa's
+divergence, or once per question by the Jensen--Shannon divergence at $\tau = 0.5$. The difference column compares
+each row with the row above; $p$: exact McNemar, Holm-adjusted within the table. A reimplementation of the first
+row gives identical scores on every question.}
+\label{tab:factorial}
+\adjustbox{max width=\textwidth}{\input{tables/t2_factorial}}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Re-selecting the premature layer of \method{} every $k$ tokens. The last column is the held-out MC1
+difference from $k = 1$ with its 95\,\% paired-bootstrap interval; no difference in this table has a Holm-adjusted
+$p$-value below 1.}
+\label{tab:interval}
+\adjustbox{max width=\textwidth}{\input{tables/t3_interval}}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Early exit of the self-evaluation verdict on the 417 exploration questions. Chosen block: median over 500
+draws of a 50-question labelled set. Mean gain over the final layer on the other 367 questions, with the 5th and
+95th percentiles over the draws. Gain: the mean gain is positive and fewer than 5\,\% of the draws lose.
+$^\dagger$Final-layer MC1 below chance level plus two standard errors.}
+\label{tab:earlyexit}
+\adjustbox{max width=\textwidth}{\input{tables/t9_early_exit}}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{The self-evaluation verdict with and without the question on the 417 exploration questions. Corrected: the
+verdict minus the question-free verdict; Sum: the two added. Differences with 95\,\% paired-bootstrap intervals.
+$^\dagger$Not counted: the verdict with the question is at chance level.}
+\label{tab:questionremoved}
+\adjustbox{max width=\textwidth}{\input{tables/t10_question_removed}}
+\end{table}
+
+\section{Development history}
+\label{app:history}
+
+Before the held-out run, we ran experiments on the 50 development questions only. They explored rules that switch,
+token by token, between the base model's scores and a layer-contrast score; a fixed weight between the two; a
+look-ahead of two tokens; and a parallel-decoding variant. None beat the layer-contrast score used at every token
+with the layer re-selected every four tokens (MC1 0.40 against 0.34 for the base model), from which \method{} was
+derived; the best switching rule reached 0.38, and the
+truncation baselines, top-$k$ and nucleus sampling~\citep{holtzman2020curious}, scored 0.34 and 0.36. We report
+these runs here only as the history of the choices that the held-out run tested; their saved runs are kept in the
+repository under the tag \texttt{exploration-2026-06}. Open-ended generation runs were
+also made, but their correctness labels were written by a language model and not checked by a person, so we do not
+use them; they, and a transfer run on 50 questions with three other models, are kept under the tag
+\texttt{pre-cleanup-2026-11}.
+
+The development questions also set the selection interval of \method{}. Table~\ref{tab:subsets} repeats the
+interval comparison on four other random sets of 50 questions. On the development set, one selection per question
+($k = \infty$) led re-selection at every token ($k = 1$) by 0.06 MC1; on the four other sets it leads on one, ties
+on one and trails on two, and the held-out run shows no difference (Section~\ref{sec:heldout}).
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{5pt}
+\caption{MC1 of \method{} with the premature layer re-selected every $k$ tokens, on the development set and on
+four other random sets of 50 questions (\mainmodel{}). With 50 questions one MC1 has a 95\,\% interval of about
+$\pm 0.13$.}
+\label{tab:subsets}
+\adjustbox{max width=\textwidth}{\input{tables/t12_interval_subsets}}
+\end{table}
+
+\section{When a longer selection interval changes nothing}
+\label{app:stability}
+
+This appendix states when re-selecting the premature layer less often leaves the decisions unchanged. It does not
+show that a longer interval is better: the reference is per-token selection ($k = 1$) itself.
+
+Let $L^\star_t$ be the layer that per-token selection would choose at step $t$ and $L^k_t$ the layer in use with
+interval $k$. Write $g^\star_t = z^{(N)}_t - z^{(L^\star_t)}_t$ and $g^k_t = z^{(N)}_t - z^{(L^k_t)}_t$. Their
+difference $e^k_t = g^k_t - g^\star_t = z^{(L^\star_t)}_t - z^{(L^k_t)}_t$ does not depend on the mature layer.
+
+\paragraph{Next token.} Let $a = \arg\max_v g^\star_t(v)$ be unique, with margin
+$m_t = g^\star_t(a) - \max_{v \ne a} g^\star_t(v)$. If $2\lVert e^k_t \rVert_\infty < m_t$, then
+$\arg\max_v g^k_t(v) = a$, since $g^k_t(a) - g^k_t(v) \ge m_t - 2\lVert e^k_t \rVert_\infty > 0$ for every $v \ne a$.
+
+\paragraph{Option ranking.} For any vectors $x, x'$ and index $i$,
+$\lvert \log\operatorname{softmax}(x)_i - \log\operatorname{softmax}(x')_i \rvert \le 2 \lVert x - x' \rVert_\infty$,
+because $\log\operatorname{softmax}(x)_i = x_i - \operatorname{logsumexp}(x)$ and both terms are 1-Lipschitz in
+$\lVert\cdot\rVert_\infty$. Summing over the tokens of an option $y$ gives
+$\lvert S_k(y) - S_\star(y) \rvert \le 2 \sum_t \lVert e^k_t \rVert_\infty$. Hence, if
+$S_\star(y) - S_\star(y') > 2 \sum_t \lVert e^k_t(y) \rVert_\infty + 2 \sum_t \lVert e^k_t(y') \rVert_\infty$, the
+interval-$k$ decoder ranks option $y$ above $y'$, as per-token selection does.
+
+\end{document}

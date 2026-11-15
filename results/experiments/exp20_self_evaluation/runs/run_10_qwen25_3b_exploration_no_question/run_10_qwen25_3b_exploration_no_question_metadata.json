@@ -1,0 +1,85 @@
+{
+  "experiment_name": "exp20_self_evaluation",
+  "run_id": "run_10_qwen25_3b_exploration_no_question",
+  "notes": "verdict_with_the_question_removed_scored_after_the_prior_correction_protocol_was_fixed",
+  "model_name": "Qwen/Qwen2.5-3B-Instruct",
+  "part": "exploration",
+  "questions": 417,
+  "options": 3021,
+  "wording_set": "no_question",
+  "forward_passes": 6042,
+  "batch_size": 8,
+  "blocks": 36,
+  "scoring_seconds": 60.291152238845825,
+  "checks": {
+    "is_true": {
+      "reply_token_ids": {
+        "True": 2514,
+        "False": 4049
+      },
+      "final_block_vs_model_logits_mean_abs_difference": 0.08179621439388911,
+      "final_block_vs_model_logits_max_abs_difference": 0.25059986114501953,
+      "mean_probability_mass_on_the_two_reply_tokens": 0.9999993508795719,
+      "min_probability_mass_on_the_two_reply_tokens": 0.9993287920951843
+    },
+    "is_correct": {
+      "reply_token_ids": {
+        "Yes": 9454,
+        "No": 2753
+      },
+      "final_block_vs_model_logits_mean_abs_difference": 0.07982915859867981,
+      "final_block_vs_model_logits_max_abs_difference": 0.2544746398925781,
+      "mean_probability_mass_on_the_two_reply_tokens": 1.0,
+      "min_probability_mass_on_the_two_reply_tokens": 1.0
+    }
+  },
+  "split": {
+    "seed": 20261115,
+    "confirmation_size": 400,
+    "sha256": "c1da810f5867fe787d4a1ca58238f62cc6bab16bc785d0195cb57125a30e5b47"
+  },
+  "frozen_design_sha256": "5f5c2fec6eb8c60025ee0f2a79222aa2b88d89400af43606a3c52805eb977093",
+  "scores_sha256": "959e1e640c49718b567386aea113db694473520765b2455f580a1ea8406a0ff1",
+  "environment": {
+    "recorded_at_utc": "2026-11-15T00:38:09Z",
+    "git_commit": "7a3d6a090de0431554f4e3c79955b04c75ff19ae",
+    "git_uncommitted_changes": true,
+    "python": "3.12.3",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "packages": {
+      "torch": "2.9.1+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.5",
+      "huggingface_hub": "0.36.2",
+      "accelerate": "1.13.0",
+      "tokenizers": "0.22.2",
+      "safetensors": "0.7.0",
+      "numpy": "2.4.6",
+      "pandas": "3.1.1"
+    },
+    "gpu": {
+      "cuda_available": true,
+      "torch_cuda": "12.8",
+      "cudnn": 91002,
+      "devices": [
+        "NVIDIA GeForce RTX 5070"
+      ]
+    },
+    "model_settings": {
+      "model_name": "Qwen/Qwen2.5-3B-Instruct",
+      "dtype": "torch.bfloat16",
+      "device": "cuda",
+      "use_chat_template": true,
+      "mature_layer_index": null,
+      "candidate_premature_layers": null,
+      "layer_selection_temperature_tau": null,
+      "default_update_every": null,
+      "dola_relative_top": null,
+      "single_pass_teacher_forcing": null
+    },
+    "truthfulqa_file": {
+      "cached_arrow_file": "truthful_qa-validation.arrow",
+      "sha256": "d8416ca73542259ac0a80d012e8c0af42f6f4035bbfe5b4a7f27a0365a744c13"
+    }
+  }
+}

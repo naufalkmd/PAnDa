@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -145,6 +146,16 @@ MATCHED_ALPHA_VALUES = {
     "matched_alpha_dola_0p95": 0.95,
 }
 
+# DoLa exactly as in its own TruthfulQA multiple-choice evaluation (github.com/voidism/DoLa, tfqa_mc_eval.py and
+# dola.py `lm_score`, checked 2026-11-14): no adaptive plausibility constraint (relative_top = 0.0), option score =
+# sum of log q_mature - log q_premature without renormalisation (post_softmax = False), DoLa's reference
+# divergence, and candidate premature layers in the second half of the network, every second layer (LLaMA-7B:
+# 16, 18, ..., 30 of 32). The `dola` decoder instead uses DoLa's generation settings (constraint on, renormalised)
+# and the evaluator's early candidate layers.
+DOLA_MC_REFERENCE_DECODERS = (
+    "dola_mc_reference",
+)
+
 EXPERIMENT_DECODER_LABELS = {
     "official_dola": "official_dola",
     "matched_alpha_dola_0p10": "matched_alpha_dola_0p10",
@@ -190,7 +201,37 @@ EXPERIMENT_DECODER_LABELS = {
     "guarded_argmax_switch": "guarded_argmax_switch",
     "sticky_contrast_switch": "sticky_contrast_switch",
     "contrast_margin_switch": "contrast_margin_switch",
+    "dola_mc_reference": "dola_mc_reference",
 }
+
+
+class _LazyLayerLogits(Sequence):
+    """Early-exit logits of every block at one cached position, computed only for the layers that are read.
+
+    Decoders index the list by layer (`layer_logits[i]`, `len(layer_logits)`); most read only the 5-8 candidate
+    layers, so projecting all blocks through the output head at every step is wasted work. Each value is computed
+    exactly as in `forward_with_layer_logits` (final norm, then output head, then float32).
+    """
+
+    def __init__(self, cache, offset):
+        self._cache = cache
+        self._offset = offset
+        self._computed = {}
+
+    def __len__(self):
+        return len(self._cache["hidden"])
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return [self[i] for i in range(*index.indices(len(self)))]
+        index = range(len(self))[index]  # bounds check and negative indices, like a list
+        if index not in self._computed:
+            cache, offset = self._cache, self._offset
+            hidden = cache["hidden"][index][:, offset : offset + 1, :]
+            with torch.no_grad():
+                logits = cache["lm_head"](cache["apply_final_norm"](cache["base_model"], hidden))[:, -1, :].float()
+            self._computed[index] = logits
+        return self._computed[index]
 
 
 class ExperimentEvaluator(Stage4Evaluator):
@@ -489,7 +530,77 @@ class ExperimentEvaluator(Stage4Evaluator):
         self.cd_amateur_model = amateur_model
         self.cd_amateur_input_device = next(amateur_model.parameters()).device
 
+    # ---- single-pass teacher forcing ------------------------------------------------------------------------
+    # Scoring an answer option y by teacher forcing evaluates the model on every prefix prompt + y_<t. The code
+    # used to rerun the full model on each prefix (one forward pass per answer token). The model is causal, so one
+    # forward pass over prompt + y gives the same hidden states at every position; the per-token decoder logic then
+    # reads them from that pass. Identical in exact arithmetic; in bf16, different matrix shapes can change the last
+    # digits. Only an input that is a prefix of the cached sequence is served from the cache; anything else
+    # (PAnDa blocks, truncation baselines, generation) runs the original code. Disable with PANDA_SINGLE_PASS_TF=0.
+
+    @property
+    def single_pass_teacher_forcing(self):
+        import os
+
+        return os.environ.get("PANDA_SINGLE_PASS_TF", "1") != "0"
+
+    def _prime_teacher_forcing_cache(self, prompt, choice_text):
+        from panda.core import apply_final_norm, get_base_model
+
+        prompt_ids = self.prepare_prompt(prompt)
+        option_ids = torch.tensor([self.candidate_to_ids(choice_text)], device=prompt_ids.device)
+        full_ids = torch.cat([prompt_ids, option_ids], dim=-1)
+        start = int(prompt_ids.shape[1]) - 1  # position whose output scores the first option token
+        with torch.no_grad():
+            outputs = self.model(input_ids=full_ids, output_hidden_states=True, use_cache=False, return_dict=True)
+        self._tf_cache = {
+            "input_ids": full_ids,
+            "start": start,
+            # hidden_states[1:]: output of every transformer block, kept only for the positions that are scored
+            "hidden": [h[:, start:, :] for h in outputs.hidden_states[1:]],
+            "final_logits": outputs.logits[:, start:, :],
+            "base_model": get_base_model(self.model),
+            "lm_head": self.model.get_output_embeddings(),
+            "apply_final_norm": apply_final_norm,
+        }
+
+    def _teacher_forcing_position(self, input_ids):
+        cache = getattr(self, "_tf_cache", None)
+        if cache is None:
+            return None
+        length = int(input_ids.shape[1])
+        full_ids = cache["input_ids"]
+        if length - 1 < cache["start"] or length > full_ids.shape[1]:
+            return None
+        if input_ids.device != full_ids.device or not torch.equal(input_ids, full_ids[:, :length]):
+            return None
+        return length - 1 - cache["start"]
+
+    def forward_with_layer_logits(self, input_ids):
+        offset = self._teacher_forcing_position(input_ids)
+        if offset is None:
+            return super().forward_with_layer_logits(input_ids)
+        cache = self._tf_cache
+        final_logits = cache["final_logits"][:, offset, :].float()
+        return _LazyLayerLogits(cache, offset), final_logits
+
+    def decoder_step_logits(self, decoder_name, generated, decoder_state=None):
+        if decoder_name == "greedy":
+            offset = self._teacher_forcing_position(generated)
+            if offset is not None:
+                return self._tf_cache["final_logits"][:, offset, :].float(), decoder_state, None, False
+        return super().decoder_step_logits(decoder_name, generated, decoder_state)
+
     def score_candidate_with_decoder(self, prompt, decoder_name, choice_text):
+        if not self.single_pass_teacher_forcing:
+            return self._score_candidate_with_decoder_impl(prompt, decoder_name, choice_text)
+        self._prime_teacher_forcing_cache(prompt, choice_text)
+        try:
+            return self._score_candidate_with_decoder_impl(prompt, decoder_name, choice_text)
+        finally:
+            self._tf_cache = None
+
+    def _score_candidate_with_decoder_impl(self, prompt, decoder_name, choice_text):
         if decoder_name == "official_dola":
             total_logprob, trace, runtime = super().score_candidate_with_decoder(prompt, "dola", choice_text)
             for row in trace:
@@ -530,6 +641,9 @@ class ExperimentEvaluator(Stage4Evaluator):
             return self._score_candidate_with_custom_step(prompt, choice_text, decoder_name)
 
         if decoder_name in MATCHED_ALPHA_VALUES:
+            return self._score_candidate_with_custom_step(prompt, choice_text, decoder_name)
+
+        if decoder_name in DOLA_MC_REFERENCE_DECODERS:
             return self._score_candidate_with_custom_step(prompt, choice_text, decoder_name)
 
         if decoder_name in EXP2_DECODER_NAMES:
@@ -684,6 +798,37 @@ class ExperimentEvaluator(Stage4Evaluator):
         if not candidate_metrics:
             raise ValueError("No candidate shallow layers were available for the matched exp13 comparison.")
         return max(candidate_metrics, key=lambda row: row["jsd_current"])
+
+    def dola_mc_reference_layers(self):
+        """Candidate premature layers of DoLa's TruthfulQA-MC setup, transferred by relative depth.
+
+        DoLa used hidden states 16, 18, ..., 30 of a 32-block LLaMA-7B (hidden state j = output of block j).
+        Here layer_logits[i] is the output of block i + 1, so blocks N/2, N/2 + 2, ..., N - 2 are indices
+        N/2 - 1, ..., N - 3 (Qwen2.5-3B, N = 36: blocks 18, 20, ..., 34).
+        """
+        num_blocks = int(self.mature_layer_index) + 1
+        return [block - 1 for block in range(num_blocks // 2, num_blocks - 1, 2)]
+
+    def build_dola_mc_reference_scores(self, final_logits, layer_logits):
+        candidates = [idx for idx in self.dola_mc_reference_layers() if 0 <= idx < len(layer_logits)]
+        if not candidates:
+            raise ValueError("No candidate premature layers for dola_mc_reference.")
+        divergences = {idx: self.official_dola_js_divergence(final_logits, layer_logits[idx]) for idx in candidates}
+        selected_layer = max(divergences, key=divergences.get)
+        # No plausibility constraint and no renormalisation, as in DoLa's multiple-choice evaluation.
+        scores = F.log_softmax(final_logits, dim=-1) - F.log_softmax(layer_logits[selected_layer], dim=-1)
+        trace_row = {
+            "step": None,
+            "selected_layer": int(selected_layer),
+            "divergence": float(divergences[selected_layer]),
+            "margin": None,
+            "instability": None,
+            "alpha": None,
+            "ablation_mode": "dola_mc_reference",
+            "jsd_current": float(divergences[selected_layer]),
+            "selection_score": float(divergences[selected_layer]),
+        }
+        return scores, trace_row
 
     def build_exp13_factorial_scores(self, final_logits, layer_logits, decoder_name):
         variant = EXP13_FACTORIAL_DECODERS[decoder_name]
@@ -887,6 +1032,12 @@ class ExperimentEvaluator(Stage4Evaluator):
                 decoder_name,
             )
             return scores, scores_are_logprobs, trace_row, 1, None
+
+        if decoder_name in DOLA_MC_REFERENCE_DECODERS:
+            layer_logits, final_logits = self.forward_with_layer_logits(generated)
+            scores, trace_row = self.build_dola_mc_reference_scores(final_logits, layer_logits)
+            # True: the caller sums these scores directly, without a log-softmax (DoLa's post_softmax = False).
+            return scores, True, trace_row, 1, None
 
         if decoder_name in EXP14_OPEN_FACTUAL_DECODERS:
             variant = EXP14_OPEN_FACTUAL_DECODERS[decoder_name]

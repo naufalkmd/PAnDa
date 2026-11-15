@@ -1,46 +1,30 @@
-# Experiment 11: Core Decoder Comparison
+# Experiment 11: Main decoder comparison
 
-This experiment puts the main baseline families and the original switched PAnDa
-path into one direct TruthfulQA comparison:
+The baselines, DoLa, per-question DoLa-static and PAnDa in one TruthfulQA multiple-choice run, scored by teacher forcing:
 
-- `pure_greedy`
-  - plain final-layer greedy scoring baseline
+- `pure_greedy`: greedy decoding (final-layer log-probabilities).
+- `top_k`: final-layer distribution truncated to the top k tokens and renormalised. If the scored token falls
+  outside the kept set, its full-distribution log-probability is used instead.
+- `top_p`: final-layer nucleus (top-p) distribution with cumulative mass p, renormalised, with the same fallback.
+- `top_p_backoff`: older name for the same nucleus baseline, kept so older runs can be compared (opt-in).
+- `dola`: DoLa (dynamic premature-layer selection, log-probability difference, adaptive plausibility constraint).
+- `fanda`: per-question DoLa-static, the raw-logit difference `final_logits - shallow_logits` with the premature layer selected once
+  per question (at the first answer token).
+- `panda_switch`: PAnDa (Jacobi blocks, choosing between greedy and contrastive scores).
 
-- `top_k`
-  - final-layer distribution truncated to the top `k` tokens, then renormalized
-  - teacher-forced MC scoring falls back to the full-distribution gold-token logprob if the gold token falls outside the kept set
-
-- `top_p`
-  - final-layer nucleus distribution with cumulative mass `p`, then renormalized
-  - teacher-forced MC scoring falls back to the full-distribution gold-token logprob if the gold token falls outside the kept nucleus
-
-- `top_p_backoff`
-  - legacy alias for the same finite-scoring nucleus baseline
-  - kept so older runs and explicit fallback tracing remain easy to compare
-
-- `dola`
-  - official DoLa contrast rule with relative-top filtering
-
-- `fanda`
-  - fixed contrast-subtracted endpoint using `final_logits - shallow_logits`
-
-- `panda_switch`
-  - original speculative PAnDa block refinement with greedy/contrast arbitration
-
-This is meant to answer a simple practical question:
-
-- how does `fanda` compare against standard truncation and DoLa baselines?
-- does the original `panda_switch` recover anything meaningful when judged against
-  the same baseline family?
+Questions: how does per-question DoLa-static compare with the truncation baselines and DoLa, and does PAnDa add anything over the
+same baselines?
 
 Defaults:
 
-- `top_k` uses `--top-k-value 50`
-- `top_p` uses `--top-p-value 0.9`
-- `panda_switch` uses the standard block defaults here: `jacobi_window_size=4`,
-  `jacobi_max_iters=2`
-- `top_p_backoff` remains opt-in via `--include-top-p-backoff` as a legacy alias
-  so the historical exp11 decoder list stays unchanged
+- `top_k`: `--top-k-value 50`; `top_p`: `--top-p-value 0.9`.
+- `panda_switch`: `jacobi_window_size=4`, `jacobi_max_iters=2`.
+- `top_p_backoff` is added only with `--include-top-p-backoff`.
+
+Run row: `run_01_default` (the 50-question development set). The full-dataset evaluation of these
+decoders is in exp19 (`exp19_heldout_full`).
+
+Terms: [`docs/glossary.md`](../../../docs/glossary.md).
 
 Run example:
 
@@ -53,7 +37,7 @@ Run example:
   --run-id run_01_default
 ```
 
-To include the legacy `top_p_backoff` alias in the same comparison:
+With the `top_p_backoff` alias:
 
 ```bash
 ./.venv/bin/python results/experiments/exp11_core_decoder_comparison/run_experiment.py \

@@ -1,0 +1,4 @@
+group,questions,share,mc1_dola,mc1_base,mc1_dola_mc_reference
+true option has more masked tokens,420,0.5476,0.0,0.0952,0.35
+same count,207,0.2699,0.3816,0.4734,0.3768
+true option has fewer masked tokens,140,0.1825,1.0,0.8357,0.3429

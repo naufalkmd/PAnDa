@@ -1,0 +1,22 @@
+%% Shared style of the report's figures. \input{figures/figstyle} in the preamble, after tikz and pgfplots.
+%% Data files: paper/figures/data/, written by scripts/figure_data.py from the results files (never edit by hand).
+%% Colours: two categorical hues checked for colour-vision deficiency on white (dataviz validator, all checks pass).
+\usepackage{pgfplotstable}
+\usetikzlibrary{positioning,fit,arrows.meta,calc,decorations.pathreplacing}
+\usepgfplotslibrary{groupplots}
+\definecolor{figblue}{HTML}{2A78D6}    % held-out questions; the main series
+\definecolor{figorange}{HTML}{EB6834}  % development questions
+\definecolor{figgray}{HTML}{6E6E6E}    % reference lines and annotations
+\definecolor{figgrid}{HTML}{E4E4E4}
+\newcommand{\figdata}{figures/data}
+\pgfplotsset{
+  report/.style={
+    width=\linewidth, height=5cm,
+    axis lines=left, axis line style={figgray},
+    tick style={figgray}, tick label style={font=\footnotesize},
+    label style={font=\footnotesize}, title style={font=\footnotesize},
+    legend style={font=\footnotesize, draw=none, fill=none},
+    ymajorgrids, grid style={figgrid, line width=0.4pt},
+    every axis plot/.append style={line width=1pt},
+  },
+}

@@ -1,0 +1,32 @@
+%% F2. The question sets and what was decided on each. Counts: exp12 run (50 development questions, seed 42),
+%% exp19 (817 = 50 + 767), exp20 split.json (seed 20261115: exploration 417 = the 50 + 367 others, confirmation 400).
+%% The bar is drawn to scale: 817 questions = \linewidth (less 2pt for the segment borders).
+\begin{tikzpicture}[
+  font=\footnotesize,
+  seg/.style={draw=white, line width=1pt, minimum height=0.8cm, inner sep=0pt, text=white, font=\footnotesize\bfseries},
+  brace/.style={decorate, decoration={brace, amplitude=5pt}, figgray, line width=0.6pt},
+  note/.style={align=center, text=black},
+]
+  \pgfmathsetlengthmacro{\unit}{(\linewidth-5pt)/817}
+  \coordinate (o) at (0,0);
+  \node[seg, fill=figorange, anchor=south west, minimum width=50*\unit]  (dev)  at (o) {50};
+  \node[seg, fill=figblue!70, anchor=south west, minimum width=367*\unit] (rest) at (dev.south east) {367};
+  \node[seg, fill=figblue, anchor=south west, minimum width=400*\unit]   (conf) at (rest.south east) {400};
+
+  % above: development and held-out (exp1--exp19)
+  \draw[brace] ($(dev.north west)+(0,3pt)$) -- coordinate[pos=0.5] (bdev) ($(dev.north east)+(0,3pt)$);
+  \draw[brace] ($(rest.north west)+(0,3pt)$) -- coordinate[pos=0.5] (bheld) ($(conf.north east)+(0,3pt)$);
+  \draw[figgray, line width=0.4pt] ($(bdev)+(0,6pt)$) -- ($(bdev)+(0,2.1em)$);
+  \node[note, anchor=south west, inner sep=1pt] at ($(bdev)+(-2pt,2.1em)$)
+    {\textbf{Development} (50, seed 42): layer-contrast methods and settings chosen};
+  \node[note, anchor=south] at ($(bheld)+(0,8pt)$)
+    {\textbf{Held-out} (767): every likelihood and contrast rule scored once};
+
+  % below: exploration and confirmation (exp20)
+  \draw[brace] ($(rest.south east)+(0,-3pt)$) -- coordinate[pos=0.5] (bexp) ($(dev.south west)+(0,-3pt)$);
+  \draw[brace] ($(conf.south east)+(0,-3pt)$) -- coordinate[pos=0.5] (bconf) ($(conf.south west)+(0,-3pt)$);
+  \node[note, anchor=north] at ($(bexp)+(0,-8pt)$)
+    {\textbf{Exploration} (417, seed 20261115)\\ self-evaluation design frozen;\\ checks on eight models};
+  \node[note, anchor=north] at ($(bconf)+(0,-8pt)$)
+    {\textbf{Confirmation} (400)\\ self-evaluation tested once (Qwen2.5-3B)};
+\end{tikzpicture}
