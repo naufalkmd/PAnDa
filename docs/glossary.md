@@ -56,7 +56,7 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 | `fanda_frozen`, `exp14_frozen`, `always_contrast_frozen` | Per-question DoLa-static scoring with the premature layer selected once, at the first answer token (so once per question) | `update_every = 10**9` |
 | `fanda_greedy` | Greedy decoding through the same code path (no contrast) | |
 | `exp13_{logprob,logit}_{top,no_top}` | 2 × 2 factorial: log-probability vs. raw-logit difference × plausibility constraint on vs. off, with DoLa's layer selection | Without the constraint both differences rank tokens identically: log-softmax shifts all logits by the same constant |
-| `fixed_alpha_dola{_low,,_high}` | Raw-logit contrastive score z_mature − α · z_premature with α = 0.0, 0.5, 1.0, premature layer re-selected every 4 tokens | α = 0 is greedy decoding; α = 1 equals `fanda_update4` (`src/panda/config.py`) |
+| `fixed_alpha_dola{_low,,_high}` | Raw-logit contrastive score z_mature − α · z_premature with α = 0.0, 0.5, 1.0, premature layer re-selected every 4 tokens | α = 0 is greedy decoding; α = 1 equals `fanda_update4` (`src/truthfulqa_scoring/config.py`) |
 | `matched_alpha_dola_0p{10,50,95}` | DoLa's log-probability score with the premature term weighted by α = 0.10, 0.50, 0.95 | exp1 |
 | `top_k`, `top_p` | Top-k / nucleus truncation of the final-layer distribution, scored by likelihood | |
 | `is_true`, `is_correct` (exp20) | The two self-evaluation prompt wordings: True/False after "Is the proposed answer true?"; Yes/No after "Is this answer correct?" | `is_true` is the frozen method |
@@ -69,7 +69,7 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 | `oracle_token_switch` | Oracle switch: picks, per token, whichever score ranks the correct token higher | |
 | `switch_rate` | Fraction of steps at which the selected premature layer changes | Report column: "layer changes (%)" |
 | `selected_layer_match_rate` | Fraction of steps at which the selected layer equals the current max-JSD layer | |
-| `shallow_bucket` | Candidate layers | Per-model default in `src/panda/evaluator.py` |
+| `shallow_bucket` | Candidate layers | Per-model default in `src/truthfulqa_scoring/evaluator.py` |
 | `oref_true_f1`, `oref_win` (exp14) | Token-level F1 against the TruthfulQA reference answers; fraction of answers closer to a true than to a false reference | Automatic metric |
 | `manual_score_0_2` (exp14) | 0/1/2 correctness label (0 false, 1 partly correct, 2 correct) | All 250 written by an LLM (Codex): see `experiment_log.md` |
 

@@ -1,6 +1,6 @@
 %% arXiv-style technical report (write-report skill).
 %% Portfolio report, arXiv style, one column, no page limit (aim for 10-12 pages plus appendix).
-%% Build: latexmk -pdf -outdir=build fanda_report.tex   (latexmkrc in this folder)
+%% Build: latexmk -pdf -outdir=build report.tex   (latexmkrc in this folder)
 %% Outline, sources and open items: docs/report_checklist.md. Terms: docs/glossary.md.
 %% Style: each paragraph = what we did -> why (one sentence) -> at most one number, with a pointer to the table.
 %% Statistics live in the tables. \todo{...} and \verify print in red and must be gone before submission.
@@ -39,7 +39,7 @@
 \newcommand{\KL}{\operatorname{KL}}
 \newcommand{\Vhead}{\mathcal{V}_{\mathrm{head}}}
 
-%% Working title (checklist part C); decide before publishing.
+%% Title decided 2026-11-15 (checklist part A).
 \title{What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and Option Length in Small
 Language Models}
 \author{Muhammad Naufal \quad Jeong Edon \quad Muhammad Aliff\\\small Korea University}
@@ -74,9 +74,9 @@ of TruthfulQA~\citep{lin2022truthfulqa}: the model scores reference true and fal
 asks whether the true answer gets the highest score. DoLa, which contrasts the final layer with an earlier one,
 reports large gains on this test~\citep{chuang2024dola}.
 
-This study began as a method. We built a variant of DoLa, \method{}, on 50 development questions, where it led
-the base model's likelihood on \mainmodel{}. On the other 767 questions the lead disappeared. Asking why led to an
-empirical study of what multiple-choice TruthfulQA rewards. Four properties make the measurement hard:
+We study what multiple-choice TruthfulQA rewards, with the base model's likelihood, DoLa, self-evaluation and
+\method{}, a variant of DoLa whose settings were chosen on 50 development questions and which therefore shows what
+happens to such a choice on questions it was not made on. Four properties make the measurement hard:
 \begin{itemize}
 \item[\cha1] \textbf{Small development sets mislead.} \Method{} led the likelihood by $+0.06$ MC1 on the 50
   development questions and trails it by $-0.034$ [$-0.060$, $-0.008$] on the 767 held-out questions.
@@ -259,8 +259,7 @@ This is the variant we developed on the 50 development questions, and the held-o
 \item one premature layer $L$ per question, selected at the first answer position and kept for all later tokens.
 \end{enumerate}
 The first answer position follows the prompt alone, which is the same for every option, so all options of a
-question share the layer $L$. To test the fourth change, we also re-select the layer every $k$ tokens, $k \in \{1,
-4\}$; \method{} is $k = \infty$. Its candidate blocks are those of DoLa's generation settings.
+question share the layer $L$. Its candidate blocks are those of DoLa's generation settings.
 
 \paragraph{Self-evaluation, P(True).}
 Following \citet{kadavath2022language}, the model is shown the question and one option and asked whether the
@@ -313,7 +312,7 @@ options~\citep{lin2022truthfulqa}. Each question has one set of options with exa
 Every choice in this study was made on a named subset of the questions, and the main results are reported on
 questions that played no part in it (Figure~\ref{fig:sets}); where a result uses the questions a choice was made on,
 its section says so. The \emph{development set} is 50 questions drawn with seed 42;
-\method{} and all settings of the earlier experiments were chosen on it. The \emph{held-out set} is the other 767
+\method{} and its settings were chosen on it. The \emph{held-out set} is the other 767
 questions: we scored all 817 questions once with every likelihood and contrast rule and removed the development
 questions at analysis time. For self-evaluation, the 817 questions were split once, with seed 20261115, into 417
 \emph{exploration} questions (the 50 development questions and 367 others) and 400 \emph{confirmation} questions. The
@@ -426,12 +425,6 @@ measurable. Removing the constraint leaves MC1 unchanged, $+0.009$ [$-0.020$, $+
 Fixing the premature layer once per question and switching to the standard Jensen--Shannon divergence then changes
 MC1 by $+0.004$ [$-0.013$, $+0.021$]. The variant without the constraint is still below the base likelihood on
 MC1, by $-0.038$ [$-0.064$, $-0.012$] (Holm-adjusted $p = 0.094$).
-
-\paragraph{How often the layer is re-selected does not matter on held-out questions.}
-Re-selecting the premature layer at every token ($k = 1$), every four tokens or once per question gives the same
-held-out scores within $0.008$ MC1, while the development MC1 differed by 0.06 to 0.08 between $k = 1$ and the other two
-(Table~\ref{tab:interval}, Appendix~\ref{app:tables}). Appendix~\ref{app:stability} states when a longer interval leaves the decisions unchanged;
-the held-out result is consistent with that condition holding for most questions, which we did not measure.
 
 \section{Why Multiple-Choice Scores Mislead}
 \label{sec:mislead}
@@ -690,7 +683,8 @@ question answering.
 \section{Reproduction}
 \label{app:repro}
 The code, the per-question scores of every run, the analysis scripts and this report's source are in the
-project repository \todo{repository URL and the commit of the final version}. Each run directory holds its
+project repository, \url{https://github.com/naufalkmd/truthfulqa-scoring-rules}; the tag \texttt{v1.0-report} marks
+the version described here. Each run directory holds its
 metadata, with the code commit, the model, the seed and the run time. The report is rebuilt from the saved scores
 without a GPU:
 \begin{itemize}\raggedright
@@ -725,15 +719,6 @@ row gives identical scores on every question.}
 
 \begin{table}[h]
 \centering\small\setlength{\tabcolsep}{4pt}
-\caption{Re-selecting the premature layer of \method{} every $k$ tokens. The last column is the held-out MC1
-difference from $k = 1$ with its 95\,\% paired-bootstrap interval; no difference in this table has a Holm-adjusted
-$p$-value below 1.}
-\label{tab:interval}
-\adjustbox{max width=\textwidth}{\input{tables/t3_interval}}
-\end{table}
-
-\begin{table}[h]
-\centering\small\setlength{\tabcolsep}{4pt}
 \caption{Early exit of the self-evaluation verdict on the 417 exploration questions. Chosen block: median over 500
 draws of a 50-question labelled set. Mean gain over the final layer on the other 367 questions, with the 5th and
 95th percentiles over the draws. Gain: the mean gain is positive and fewer than 5\,\% of the draws lose.
@@ -750,56 +735,5 @@ $^\dagger$Not counted: the verdict with the question is at chance level.}
 \label{tab:questionremoved}
 \adjustbox{max width=\textwidth}{\input{tables/t10_question_removed}}
 \end{table}
-
-\section{Development history}
-\label{app:history}
-
-Before the held-out run, we ran experiments on the 50 development questions only. They explored rules that switch,
-token by token, between the base model's scores and a layer-contrast score; a fixed weight between the two; a
-look-ahead of two tokens; and a parallel-decoding variant. None beat the layer-contrast score used at every token
-with the layer re-selected every four tokens (MC1 0.40 against 0.34 for the base model), from which \method{} was
-derived; the best switching rule reached 0.38, and the
-truncation baselines, top-$k$ and nucleus sampling~\citep{holtzman2020curious}, scored 0.34 and 0.36. We report
-these runs here only as the history of the choices that the held-out run tested; their saved runs are kept in the
-repository under the tag \texttt{exploration-2026-06}. Open-ended generation runs were
-also made, but their correctness labels were written by a language model and not checked by a person, so we do not
-use them; they, and a transfer run on 50 questions with three other models, are kept under the tag
-\texttt{pre-cleanup-2026-11}.
-
-The development questions also set the selection interval of \method{}. Table~\ref{tab:subsets} repeats the
-interval comparison on four other random sets of 50 questions. On the development set, one selection per question
-($k = \infty$) led re-selection at every token ($k = 1$) by 0.06 MC1; on the four other sets it leads on one, ties
-on one and trails on two, and the held-out run shows no difference (Section~\ref{sec:heldout}).
-
-\begin{table}[h]
-\centering\small\setlength{\tabcolsep}{5pt}
-\caption{MC1 of \method{} with the premature layer re-selected every $k$ tokens, on the development set and on
-four other random sets of 50 questions (\mainmodel{}). With 50 questions one MC1 has a 95\,\% interval of about
-$\pm 0.13$.}
-\label{tab:subsets}
-\adjustbox{max width=\textwidth}{\input{tables/t12_interval_subsets}}
-\end{table}
-
-\section{When a longer selection interval changes nothing}
-\label{app:stability}
-
-This appendix states when re-selecting the premature layer less often leaves the decisions unchanged. It does not
-show that a longer interval is better: the reference is per-token selection ($k = 1$) itself.
-
-Let $L^\star_t$ be the layer that per-token selection would choose at step $t$ and $L^k_t$ the layer in use with
-interval $k$. Write $g^\star_t = z^{(N)}_t - z^{(L^\star_t)}_t$ and $g^k_t = z^{(N)}_t - z^{(L^k_t)}_t$. Their
-difference $e^k_t = g^k_t - g^\star_t = z^{(L^\star_t)}_t - z^{(L^k_t)}_t$ does not depend on the mature layer.
-
-\paragraph{Next token.} Let $a = \arg\max_v g^\star_t(v)$ be unique, with margin
-$m_t = g^\star_t(a) - \max_{v \ne a} g^\star_t(v)$. If $2\lVert e^k_t \rVert_\infty < m_t$, then
-$\arg\max_v g^k_t(v) = a$, since $g^k_t(a) - g^k_t(v) \ge m_t - 2\lVert e^k_t \rVert_\infty > 0$ for every $v \ne a$.
-
-\paragraph{Option ranking.} For any vectors $x, x'$ and index $i$,
-$\lvert \log\operatorname{softmax}(x)_i - \log\operatorname{softmax}(x')_i \rvert \le 2 \lVert x - x' \rVert_\infty$,
-because $\log\operatorname{softmax}(x)_i = x_i - \operatorname{logsumexp}(x)$ and both terms are 1-Lipschitz in
-$\lVert\cdot\rVert_\infty$. Summing over the tokens of an option $y$ gives
-$\lvert S_k(y) - S_\star(y) \rvert \le 2 \sum_t \lVert e^k_t \rVert_\infty$. Hence, if
-$S_\star(y) - S_\star(y') > 2 \sum_t \lVert e^k_t(y) \rVert_\infty + 2 \sum_t \lVert e^k_t(y') \rVert_\infty$, the
-interval-$k$ decoder ranks option $y$ above $y'$, as per-token selection does.
 
 \end{document}

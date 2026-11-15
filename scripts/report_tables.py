@@ -9,7 +9,6 @@ inside its table float, so a rerun of an analysis updates the tables without han
 
     t1_heldout.tex          exp19 scores_by_split.csv, heldout_main.csv
     t2_factorial.tex        exp19 scores_by_split.csv, heldout_factorial.csv
-    t3_interval.tex         exp19 scores_by_split.csv, heldout_interval.csv
     t4_masking.tex          exp19 mask_counts.csv
     t5_length.tex           exp19 length_control.csv, length_association.csv
     t6_selfeval.tex         exp20 run_01 and run_02 analysis/scores.csv
@@ -18,7 +17,6 @@ inside its table float, so a rerun of an analysis updates the tables without han
     t9_early_exit.tex       exp20 cross_model/early_exit_selection.csv
     t10_question_removed.tex exp20 cross_model/prior_correction.csv
     t11_vs_likelihood.tex   exp20 cross_model/self_evaluation_vs_likelihood.csv (exp21 scores)
-    t12_interval_subsets.tex exp16 runs 01 and 03-06, *_summary.csv (MC1 by selection interval, five subsets)
 """
 from __future__ import annotations
 
@@ -136,23 +134,6 @@ def t2() -> None:
           body)
 
 
-def t3() -> None:
-    scores = {r["decoder"]: r for r in rows(A19 / "scores_by_split.csv")}
-    tests = rows(A19 / "heldout_interval.csv")
-    body = []
-    for d, k in (("fanda_update1", "$1$"), ("fanda_update4", "$4$"), ("fanda_frozen", "$\\infty$ (per question)")):
-        s = scores[d]
-        r = [k] + [num(s[f"dev_{m}"]) for m in ("mc1", "mc2", "mc3")] + [num(s[f"heldout_{m}"]) for m in ("mc1", "mc2", "mc3")]
-        if d == "fanda_update1":
-            r += ["--"]
-        else:
-            t = pair(tests, d, "fanda_update1", "mc1")
-            r += [f"{signed(t['diff'])} {interval(t['ci_low'], t['ci_high'])}"]
-        body.append(r)
-    write("t3_interval.tex", "lccccccl",
-          ["& \\multicolumn{3}{c}{Development (50)} & \\multicolumn{3}{c}{Held-out (767)} & \\\\",
-           "\\cmidrule(lr){2-4} \\cmidrule(lr){5-7}",
-           "Interval $k$ & MC1 & MC2 & MC3 & MC1 & MC2 & MC3 & Held-out MC1 minus $k = 1$ \\\\"], body)
 
 
 def t4() -> None:
@@ -292,21 +273,8 @@ def t11() -> None:
            "Model & Self-evaluation & Likelihood & Per token & likelihood & per token & Beats both \\\\"], body)
 
 
-def t12() -> None:
-    runs = EXP / "exp16_mc_persistence_seed_sweep" / "runs"
-    spec = (("run_01_anchor_subset", "development set (seed 42)"), ("run_06_seed_101_rerun", "seed 101"),
-            ("run_03_seed_202", "seed 202"), ("run_04_seed_303", "seed 303"), ("run_05_seed_404", "seed 404"))
-    ks = (("fanda_update1", "1"), ("fanda_update2", "2"), ("fanda_update4", "4"), ("fanda_update8", "8"),
-          ("fanda_frozen", "$\\infty$"))
-    body = []
-    for run, label in spec:
-        mc1 = {r["decoder"]: r["score_mean"] for r in rows(runs / run / f"{run}_summary.csv") if r["metric_name"] == "mc1"}
-        body.append([label] + [num(mc1[d]) for d, _ in ks])
-    write("t12_interval_subsets.tex", "lccccc",
-          ["& \\multicolumn{5}{c}{MC1 with selection interval $k$} \\\\", "\\cmidrule(lr){2-6}",
-           "50 questions & " + " & ".join(k for _, k in ks) + " \\\\"], body, midrules=(1,))
 
 
 if __name__ == "__main__":
-    for make in (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12):
+    for make in (t1, t2, t4, t5, t6, t7, t8, t9, t10, t11):
         make()

@@ -6,7 +6,7 @@ parameters). The rules are the base model's likelihood, DoLa (decoding by contra
 in two configurations, per-question DoLa-static (a DoLa variant we developed), and self-evaluation, P(True)
 (Kadavath et al., 2022).
 
-The report is `paper/fanda_report.tex`. Every number in it is read from the saved runs in `results/experiments/`
+The report is `paper/report.tex`. Every number in it is read from the saved runs in `results/experiments/`
 by the scripts under [Rebuild the report](#rebuild-the-report).
 
 ## Findings
@@ -28,9 +28,10 @@ by the scripts under [Rebuild the report](#rebuild-the-report).
 Every experiment, its result and the known issues: [`docs/experiment_log.md`](docs/experiment_log.md). Code names →
 standard terms: [`docs/glossary.md`](docs/glossary.md).
 
-**Names.** The repository and the Python package (`panda`) are named after PAnDa, an earlier block-wise decoding
-method that was dropped; its code stays because saved exploration runs used it. Per-question DoLa-static was called
-FAnDa in the June 2026 course version, and code identifiers still use `fanda`.
+**Names.** The Python package is `truthfulqa_scoring`. Until 2026-11-15 it was called `panda`, after PAnDa, an
+earlier block-wise decoding method that was dropped; the PAnDa decoder (`decoders/panda.py`) stays because saved
+exploration runs used it. Per-question DoLa-static was called FAnDa in the June 2026 course version, and the code
+names of the scoring rules in the saved runs still use `fanda` (they are kept so the saved results stay readable).
 
 ## Install
 
@@ -62,7 +63,7 @@ $PY scripts/self_evaluation_prior.py                    # question-removed contr
 $PY scripts/self_evaluation_vs_likelihood.py            # self-evaluation vs likelihood on eight models (exp21)
 python scripts/report_tables.py                         # writes paper/tables/*.tex
 python scripts/figure_data.py                           # writes paper/figures/data/*.csv
-cd paper && latexmk -pdf -outdir=build fanda_report.tex # writes paper/build/fanda_report.pdf
+cd paper && latexmk -pdf -outdir=build report.tex # writes paper/build/report.pdf
 ```
 
 `scripts/paired_tests.py` runs the paired bootstrap and the exact McNemar test between any two rules of a run.
@@ -91,30 +92,31 @@ the 50 development questions in the current environment changed MC1 on at most 2
 ## Repository layout
 
 ```text
-PAnDa/
-  src/panda/                        Evaluator, decoders, benchmark loaders, older CLI (python -m panda)
-  results/experiments/              The experiments of the study (exp11-exp13, exp16, exp19-exp21): runner,
-                                    run matrix, README, saved runs
-  scripts/                          Analysis scripts, paired tests, table and figure data for the report
-  paper/                            Report source (tables/ and figures/data/ are generated)
-  docs/                             Experiment log, glossary, report checklist, notes on the likelihood and DoLa code
+truthfulqa-scoring-rules/
+  src/truthfulqa_scoring/   Evaluator, decoders, benchmark loaders, older CLI (python -m truthfulqa_scoring)
+  results/experiments/      The experiments (exp19-exp21 in the report; exp11-exp13 read by the analysis):
+                            runner, run matrix, README, saved runs
+  scripts/                  Analysis scripts, paired tests, table and figure data for the report
+  paper/                    Report source (tables/ and figures/data/ are generated)
+  docs/                     Experiment log, glossary, report checklist
 ```
 
-Material the study does not use was removed from the tree and is kept under two git tags (see
+Material the study does not use was removed from the tree and is kept under three git tags (see
 [`results/experiments/README.md`](results/experiments/README.md)):
 
 - `exploration-2026-06`: the early design alternatives (exp1–exp10) and the first sanity runs;
-- `pre-cleanup-2026-11`: the left-out experiments (exp14, exp15, exp17, exp18), the development plots
-  (`results/figures/`, `scripts/plots/`), the earlier method notes and presentation, and the June 2026 course report
-  (`paper/course_version_2026_06/`).
+- `pre-cleanup-2026-11`: the left-out experiments (exp14, exp15, exp17, exp18), the development plots, the earlier
+  method notes and presentation, and the June 2026 course report;
+- `dev-history-2026-11`: exp16, the notes on the older evaluator (`docs/algorithms/`), the rerun script, and the
+  report version with its development-history appendices.
 
 Key implementation files:
 
 - `results/experiments/local_evaluator.py`: the scoring rules of the experiments (DoLa in both configurations,
-  per-question DoLa-static and its selection intervals, the factorial)
+  per-question DoLa-static, the factorial)
 - `results/experiments/exp20_self_evaluation/run_experiment.py`: self-evaluation, every block and both wordings
-- `src/panda/decoders/core.py`: premature-layer selection and DoLa scores
-- `src/panda/evaluation.py`: MC1 / MC2 / MC3
+- `src/truthfulqa_scoring/decoders/core.py`: premature-layer selection and DoLa scores
+- `src/truthfulqa_scoring/evaluation.py`: MC1 / MC2 / MC3
 
 ## Authors
 

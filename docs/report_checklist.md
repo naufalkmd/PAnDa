@@ -1,7 +1,7 @@
 # Report checklist: empirical study of scoring rules on multiple-choice TruthfulQA
 
-Status and open items for the report. The report is `paper/fanda_report.tex` (figures in `paper/figures/`;
-build with `latexmk -pdf -outdir=build fanda_report.tex` from `paper/`, PDF in `paper/build/`). In the PDF, red
+Status and open items for the report. The report is `paper/report.tex` (figures in `paper/figures/`;
+build with `latexmk -pdf -outdir=build report.tex` from `paper/`, PDF in `paper/build/`). In the PDF, red
 `[TODO]` marks a missing value and red `[verify]` a statement from an older run. `[x]` done, `[ ]` open.
 The June 2026 course version is kept at the git tag `pre-cleanup-2026-11` (`paper/course_version_2026_06/`).
 
@@ -16,7 +16,9 @@ Last updated: 2026-11-15.
 - [x] arXiv style, `article`, one column, no page limit (aim: 10–12 pages plus appendix).
 - [x] Authors: Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University). [ ] Co-authors review before publishing.
 - [x] Framing (2026-11-15): **empirical study**, not a method paper (outline in part C).
-- [ ] Title: working title in part C.
+- [x] Title (decided 2026-11-15): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and
+  Option Length in Small Language Models". Considered and not taken: "What Does Multiple-Choice TruthfulQA Reward? A
+  Held-Out Study of Scoring Rules in Small Language Models" (shorter, but drops DoLa and self-evaluation).
 - [x] Method name (decided 2026-11-14): **per-question DoLa-static**, built on DoLa's own term DoLa-static; "FAnDa"
   only as the former name. [ ] No "novel", "first" or "state of the art".
 
@@ -49,7 +51,7 @@ standard qualifier). PAnDa was dropped (2026-11-14): it appears only in the one-
 rules studied and is reported with its held-out result. No "we propose", no "novel". The earlier method-paper
 outline is in the git history.
 
-**Working title** (decide before publishing): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast,
+**Title** (decided 2026-11-15, part A): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast,
 Self-Evaluation and Option Length in Small Language Models".
 
 **Challenges** (here: what makes the measurement hard; each result section answers one):
@@ -133,7 +135,7 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 | T9, F5 early exit | exp20 `cross_model/early_exit_selection.csv`, `early_exit_by_block.csv` | [x] |
 | T10 question removed | exp20 `cross_model/prior_correction.csv` | [x] |
 | T11 self-evaluation vs likelihood, eight models (§8) | exp20 `cross_model/self_evaluation_vs_likelihood.csv` (exp21 scores) | [x] |
-| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code (`src/panda/prompts.py`, `local_evaluator.py`, exp20 README) and `split.json` | [x] `paper/figures/f1_scoring.tex`, `f2_question_sets.tex` |
+| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code (`src/truthfulqa_scoring/prompts.py`, `local_evaluator.py`, exp20 README) and `split.json` | [x] `paper/figures/f1_scoring.tex`, `f2_question_sets.tex` |
 
 ---
 
@@ -180,7 +182,7 @@ Open (no GPU unless noted):
   that it is not the standard 6-shot TruthfulQA-MC prompt, so absolute scores are not comparable with published ones.
 - [x] Option score: sum of token log-probabilities (no length normalisation). MC1 = best true option above best
   false (MC1 option set); MC2 = normalised probability mass on true options; MC3 = fraction of true options above
-  the best false option (MC2 option set), as in DoLa's evaluation (`src/panda/evaluation.py`).
+  the best false option (MC2 option set), as in DoLa's evaluation (`src/truthfulqa_scoring/evaluation.py`).
 
 ## Draft status
 
@@ -216,10 +218,21 @@ Open (no GPU unless noted):
   so no separate prompt appendix. `huang2025efficient` and `guo2025deepseekr1` removed from the bib (exp18 left
   out); `holtzman2020curious` cited in Appendix C, `huang2025survey` in §1. Check script: 0 FAIL; 136 numbers
   traced; all 26 citations resolve.
-- [ ] Repository URL and final commit in Appendix A (the one remaining `\todo`), once the branch is merged.
+- [x] Repository URL in Appendix A (2026-11-15; `reorganise-report` merged into `main` as PR #1). Appendix A names
+  the tag `v1.0-report` for the version described.
+- [ ] Create and push the tag `v1.0-report` on the commit with the final report, after the title and the authors'
+  final read (`git tag -a v1.0-report -m ...`, `git push origin v1.0-report`). Until then the tag named in Appendix A
+  does not exist.
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
-- [ ] Title (part A) and a final read by the authors.
+- [x] Title (part A), kept 2026-11-15.
+- [x] Refocused after the authors' read (2026-11-15): no development history in the report. Removed Appendix C
+  (development history, Table 12), Appendix D (selection-interval bound), the selection-interval paragraph of §5 and
+  its table (T3), the k-variants sentence of §3, and the project story at the start of §1 (now a neutral sentence on
+  why per-question DoLa-static is the test case for C1). `holtzman2020curious` removed from the bib. Tag
+  `dev-history-2026-11` (on b686fd8) keeps that version, exp16, `docs/algorithms/` and `scripts/run_report_reruns.sh`,
+  which were removed from the tree. Push the tag with the branch.
+- [ ] A final read by the authors.
 - [x] Repository cleanup (2026-11-15): exp1–exp10 and `results/dev/` moved to `results/experiments/exploration/`
   (`dev` → `sanity_runs`; runners use `parents[2]`, all nine `--list` checked; `summarise_runs.py` finds all 32
   runs); README, `results/experiments/README.md`, project `CLAUDE.md`, `pyproject.toml` description and
