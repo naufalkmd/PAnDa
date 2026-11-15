@@ -18,6 +18,7 @@ inside its table float, so a rerun of an analysis updates the tables without han
     t9_early_exit.tex       exp20 cross_model/early_exit_selection.csv
     t10_question_removed.tex exp20 cross_model/prior_correction.csv
     t11_vs_likelihood.tex   exp20 cross_model/self_evaluation_vs_likelihood.csv (exp21 scores)
+    t12_interval_subsets.tex exp16 runs 01 and 03-06, *_summary.csv (MC1 by selection interval, five subsets)
 """
 from __future__ import annotations
 
@@ -291,6 +292,21 @@ def t11() -> None:
            "Model & Self-evaluation & Likelihood & Per token & likelihood & per token & Beats both \\\\"], body)
 
 
+def t12() -> None:
+    runs = EXP / "exp16_mc_persistence_seed_sweep" / "runs"
+    spec = (("run_01_anchor_subset", "development set (seed 42)"), ("run_06_seed_101_rerun", "seed 101"),
+            ("run_03_seed_202", "seed 202"), ("run_04_seed_303", "seed 303"), ("run_05_seed_404", "seed 404"))
+    ks = (("fanda_update1", "1"), ("fanda_update2", "2"), ("fanda_update4", "4"), ("fanda_update8", "8"),
+          ("fanda_frozen", "$\\infty$"))
+    body = []
+    for run, label in spec:
+        mc1 = {r["decoder"]: r["score_mean"] for r in rows(runs / run / f"{run}_summary.csv") if r["metric_name"] == "mc1"}
+        body.append([label] + [num(mc1[d]) for d, _ in ks])
+    write("t12_interval_subsets.tex", "lccccc",
+          ["& \\multicolumn{5}{c}{MC1 with selection interval $k$} \\\\", "\\cmidrule(lr){2-6}",
+           "50 questions & " + " & ".join(k for _, k in ks) + " \\\\"], body, midrules=(1,))
+
+
 if __name__ == "__main__":
-    for make in (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11):
+    for make in (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12):
         make()

@@ -209,10 +209,17 @@ Open (no GPU unless noted):
   `paper/tables/*.tex` from the results CSVs (rerun it after any analysis change; never edit the .tex tables by
   hand); each is capped at the text width with `adjustbox`. The check script traced all 107 numbers in text and
   tables. Figure captions F3–F5 written.
-- [ ] Length: 18 pages with the appendix stub; target 10–12 plus appendix. Candidates for the appendix: T2
-  (factorial), T3 (interval), T9 (early exit), T10 (question removed), keeping one sentence each in the text.
-- [ ] Next: §9 Discussion, §10 Limitations, §11 Conclusion, then §1 and the abstract; appendix (reproduction,
-  development history, prompts).
+- [x] T2, T3, T9, T10 moved to Appendix B (2026-11-15).
+- [x] Full draft (2026-11-15): abstract, §1 (C1–C4 with one fact each, contributions 1–5), §9 (what the scores
+  measure; four recommended checks; what the results do not show), §10, §11, Appendix A (reproduction), B
+  (tables), C (development history with T12 from exp16), D (selection-interval bound). Prompts are verbatim in §3/§4,
+  so no separate prompt appendix. `huang2025efficient` and `guo2025deepseekr1` removed from the bib (exp18 left
+  out); `holtzman2020curious` cited in Appendix C, `huang2025survey` in §1. Check script: 0 FAIL; 136 numbers
+  traced; all 26 citations resolve.
+- [ ] Repository URL and final commit in Appendix A (the one remaining `\todo`), once the branch is merged.
+- [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
+  2026-11-15); the 10–12 page target in part C no longer applies.
+- [ ] Title (part A) and a final read by the authors.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
 ---

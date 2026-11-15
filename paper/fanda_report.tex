@@ -49,21 +49,64 @@ Language Models}
 \maketitle
 
 \begin{abstract}
-\todo{setting; C1--C4 as findings with their numbers; the recommendation (checklist part C)}
+Multiple-choice TruthfulQA is a common test of methods that aim to make language models more truthful. We
+study what it rewards, using layer contrast (DoLa), self-evaluation (P(True)) and option length, on
+\mainmodel{} and seven other instruction-tuned models of 0.5 to 4 billion parameters. A variant of DoLa that led
+the base model's likelihood by 0.06 MC1 on the 50 questions it was developed on falls below it on 767 held-out
+questions ($-0.034$ [$-0.060$, $-0.008$]), and no layer-contrast rule beats the likelihood there. Two properties
+of the scores explain such gains and losses. Under DoLa's generation settings, the plausibility constraint masks
+tokens of every option, and the number of masked tokens alone decides MC1 on 73\,\% of the questions; DoLa's paper
+and its released code differ on whether the constraint is used. DoLa's multiple-choice configuration cannot be told
+apart from choosing the longest option (MC1 0.356 against 0.361), and on true and false options of nearly equal
+length every likelihood and contrast rule is close to chance. Self-evaluation, under a design frozen before 400
+confirmation questions, reaches MC1 0.623 against 0.340 for the likelihood and 0.398 for DoLa, and beats the
+likelihood on 5 of 8 models; but it is as accurate without the question on 6 of 8 models, so it judges each option
+as a statement rather than as an answer. We recommend four checks for multiple-choice evaluations of this kind: a
+longest-option baseline, length-matched pairwise accuracy, a question-removed control, and a design frozen before
+it is tested on held-out questions.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-\todo{task and metric}
+Language models state falsehoods with confidence, and many methods try to reduce this; \citet{huang2025survey}
+survey them. Methods that change how a model scores or decodes text are often tested on the multiple-choice version
+of TruthfulQA~\citep{lin2022truthfulqa}: the model scores reference true and false answers to 817 questions, and MC1
+asks whether the true answer gets the highest score. DoLa, which contrasts the final layer with an earlier one,
+reports large gains on this test~\citep{chuang2024dola}.
 
+This study began as a method. We built a variant of DoLa, \method{}, on 50 development questions, where it led
+the base model's likelihood on \mainmodel{}. On the other 767 questions the lead disappeared. Asking why led to an
+empirical study of what multiple-choice TruthfulQA rewards. Four properties make the measurement hard:
 \begin{itemize}
-\item[\cha1] \textbf{Small development sets mislead.} \todo{one fact}
-\item[\cha2] \textbf{Settings copied from generation break multiple-choice scoring.} \todo{one fact}
-\item[\cha3] \textbf{Option scores follow option length.} \todo{one fact}
-\item[\cha4] \textbf{The benchmark can be answered without the question.} \todo{one fact}
+\item[\cha1] \textbf{Small development sets mislead.} \Method{} led the likelihood by $+0.06$ MC1 on the 50
+  development questions and trails it by $-0.034$ [$-0.060$, $-0.008$] on the 767 held-out questions.
+\item[\cha2] \textbf{Settings copied from generation break multiple-choice scoring.} Under DoLa's generation
+  settings the plausibility constraint masks at least one token of every held-out option; on the 55\,\% of
+  questions where the true option has more masked tokens, MC1 is 0.
+\item[\cha3] \textbf{Option scores follow option length.} The scores of DoLa's multiple-choice configuration have a
+  within-question rank correlation of $+0.669$ with option length, and choosing the longest option scores as well.
+\item[\cha4] \textbf{The benchmark can be answered without the question.} A self-evaluation verdict with the
+  question removed is at least as accurate as with it on 6 of 8 models.
 \end{itemize}
 
-\todo{approach in one paragraph; contributions 1--5 as plain statements with section pointers}
+We address them in turn. Every rule is scored on all 817 questions, and choices made on the development questions
+are tested on the held-out ones (\cha1). We measure how the plausibility constraint and option length decide answers
+(\cha2, \cha3). We then test self-evaluation, which asks the model whether each option is true and does not sum over
+the option's tokens, under a design frozen before 400 confirmation questions, and we check it on eight models with a
+question-removed control (\cha4). The report contributes:
+\begin{enumerate}
+\item A held-out evaluation of DoLa in two configurations and of \method{}: no layer-contrast rule beats the base
+  likelihood on MC1 on 767 held-out questions (Section~\ref{sec:heldout}).
+\item Two properties that decide multiple-choice answers regardless of truth: token masking by the plausibility
+  constraint and the association of scores with option length (Section~\ref{sec:mislead}).
+\item A test of self-evaluation against likelihood and DoLa under a frozen design: $+0.225$ MC1 over DoLa on 400
+  confirmation questions, and MC1 0.900 when only the 30\,\% most confident questions are answered
+  (Section~\ref{sec:selfeval}).
+\item Controls on eight models: reading the verdict from an earlier block helps on 2 of 8, self-evaluation beats
+  the likelihood on 5 of 8, and the verdict is as accurate without the question on 6 of 8
+  (Section~\ref{sec:controls}).
+\item Four checks we recommend for multiple-choice evaluations of truthfulness (Section~\ref{sec:discussion}).
+\end{enumerate}
 
 %% ============================================================================================================
 \section{Related Work}
@@ -376,7 +419,7 @@ their held-out scores, and their development intervals cover every held-out scor
 \end{figure}
 
 \paragraph{Of the four changes in \method{}, only removing the constraint changes the scores.}
-Table~\ref{tab:factorial} adds the changes one at a time, starting from DoLa with its generation settings.
+Table~\ref{tab:factorial} (Appendix~\ref{app:tables}) adds the changes one at a time, starting from DoLa with its generation settings.
 Replacing the log-probability difference by the raw-logit difference while the constraint is kept changes nothing
 measurable. Removing the constraint leaves MC1 unchanged, $+0.009$ [$-0.020$, $+0.039$], and raises MC2 and MC3 by 0.046 and
 0.033 (Holm-adjusted $p$ 0.061 and 0.020).
@@ -384,32 +427,11 @@ Fixing the premature layer once per question and switching to the standard Jense
 MC1 by $+0.004$ [$-0.013$, $+0.021$]. The variant without the constraint is still below the base likelihood on
 MC1, by $-0.038$ [$-0.064$, $-0.012$] (Holm-adjusted $p = 0.094$).
 
-\begin{table}[t]
-\centering\small\setlength{\tabcolsep}{4pt}
-\caption{The changes from DoLa (generation settings, first row) to \method{} (last row), one at a time, on the
-767 held-out questions. Constraint: the adaptive plausibility constraint. Difference: of log-probabilities or of
-raw logits; without the constraint the two give identical scores. Layer chosen: at every token by DoLa's
-divergence, or once per question by the Jensen--Shannon divergence at $\tau = 0.5$. The difference column compares
-each row with the row above; $p$: exact McNemar, Holm-adjusted within the table. A reimplementation of the first
-row gives identical scores on every question.}
-\label{tab:factorial}
-\adjustbox{max width=\textwidth}{\input{tables/t2_factorial}}
-\end{table}
-
 \paragraph{How often the layer is re-selected does not matter on held-out questions.}
 Re-selecting the premature layer at every token ($k = 1$), every four tokens or once per question gives the same
 held-out scores within $0.008$ MC1, while the development MC1 differed by 0.06 to 0.08 between $k = 1$ and the other two
-(Table~\ref{tab:interval}). Appendix~\ref{app:stability} states when a longer interval leaves the decisions unchanged;
+(Table~\ref{tab:interval}, Appendix~\ref{app:tables}). Appendix~\ref{app:stability} states when a longer interval leaves the decisions unchanged;
 the held-out result is consistent with that condition holding for most questions, which we did not measure.
-
-\begin{table}[t]
-\centering\small\setlength{\tabcolsep}{4pt}
-\caption{Re-selecting the premature layer of \method{} every $k$ tokens. The last column is the held-out MC1
-difference from $k = 1$ with its 95\,\% paired-bootstrap interval; no difference in this table has a Holm-adjusted
-$p$-value below 1.}
-\label{tab:interval}
-\adjustbox{max width=\textwidth}{\input{tables/t3_interval}}
-\end{table}
 
 \section{Why Multiple-Choice Scores Mislead}
 \label{sec:mislead}
@@ -549,19 +571,9 @@ For each model, 50 exploration questions are drawn as a labelled set, the block 
 with the highest MC1 on them is chosen, and the gain over the final layer is measured on the other 367 questions,
 over 500 draws. A model shows the gain if the mean gain is positive and fewer than 5\,\% of the draws lose; early exit
 would count as a general improvement if 6 of the 8 models showed it. Two do, \mainmodel{} and Falcon3-3B, and none
-of the five models scored after the protocol was written (Table~\ref{tab:earlyexit}). The by-block curves suggest
+of the five models scored after the protocol was written (Table~\ref{tab:earlyexit}, Appendix~\ref{app:tables}). The by-block curves suggest
 why (Figure~\ref{fig:earlyexit}): on Qwen2.5-1.5B, Gemma~3 4B and Phi-3.5-mini, for example, the verdict reaches its
 final level in the middle of the network and stays there, so no later block is better than the final layer.
-
-\begin{table}[t]
-\centering\small\setlength{\tabcolsep}{4pt}
-\caption{Early exit of the self-evaluation verdict on the 417 exploration questions. Chosen block: median over 500
-draws of a 50-question labelled set. Mean gain over the final layer on the other 367 questions, with the 5th and
-95th percentiles over the draws. Gain: the mean gain is positive and fewer than 5\,\% of the draws lose.
-$^\dagger$Final-layer MC1 below chance level plus two standard errors.}
-\label{tab:earlyexit}
-\adjustbox{max width=\textwidth}{\input{tables/t9_early_exit}}
-\end{table}
 
 \begin{figure}[t]
 \centering
@@ -574,7 +586,7 @@ the verdict at the final layer is above the base likelihood; Qwen2.5-3B and Falc
 
 \paragraph{The verdict works as well without the question (\cha4).}
 With the question deleted from the prompt, the verdict's MC1 is at least as high as with it on 6 of 8 models
-(Table~\ref{tab:questionremoved}; the two were not tested against each other). Every option is scored in its own
+(Table~\ref{tab:questionremoved}, Appendix~\ref{app:tables}; the two were not tested against each other). Every option is scored in its own
 forward pass, so the model cannot compare options: it judges each option as a statement. On TruthfulQA the options
 are statements that can be judged alone, and we read the result as showing that the self-evaluation score measures
 mostly whether the model takes the statement to be true, not whether it answers the question. We also
@@ -582,15 +594,6 @@ tested one use of the question-free verdict, fixed before it was scored: subtrac
 pointwise mutual information does for likelihoods. This loses on all 7 counted models, with every interval below 0,
 and we reject it. Adding the two verdicts instead gains on 3 of 7 models; it was not part of the protocol's
 decision and is reported only.
-
-\begin{table}[t]
-\centering\small\setlength{\tabcolsep}{3.5pt}
-\caption{The self-evaluation verdict with and without the question on the 417 exploration questions. Corrected: the
-verdict minus the question-free verdict; Sum: the two added. Differences with 95\,\% paired-bootstrap intervals.
-$^\dagger$Not counted: the verdict with the question is at chance level.}
-\label{tab:questionremoved}
-\adjustbox{max width=\textwidth}{\input{tables/t10_question_removed}}
-\end{table}
 
 \paragraph{Self-evaluation beats the likelihood on five of eight models.}
 We scored the base likelihood of all eight models with the code of the held-out run (it reproduces that run's
@@ -614,15 +617,71 @@ differences positive with intervals above 0. $^\dagger$Verdict at chance level.}
 
 \section{Discussion}
 \label{sec:discussion}
-\todo{\S9}
+\paragraph{What the multiple-choice scores measure.}
+For the likelihood and contrast rules, a multiple-choice score mixes three things: whether the model prefers the true
+statement, how long each option is, and settings such as the plausibility constraint that interact with the number
+of tokens. On 50 questions, differences of 0.02 to 0.08 MC1 between such rules are inside the noise of a single
+score (Section~\ref{sec:setup}), and on 767 questions they mostly disappear (Section~\ref{sec:heldout}). Once option
+length is controlled, none of these rules separates true from false options much better than chance
+(Section~\ref{sec:mislead}). Self-evaluation is different in size and in kind: its gain is large, it holds on
+questions it was not designed on, and it survives the length control. What it measures, however, is whether the
+model takes each option to be true as a statement; on TruthfulQA this is about as easy without the question as with
+it (Section~\ref{sec:controls}).
+
+\paragraph{Recommended checks.}
+Each finding suggests a check that costs little and could be reported with any multiple-choice result on this
+benchmark:
+\begin{enumerate}
+\item \emph{A longest-option baseline}, counted in characters, because token counts tie and MC1 counts ties as
+  wrong (\cha3).
+\item \emph{Length-matched pairwise accuracy} next to MC1, MC2 and MC3, so that a gain from preferring long options
+  is visible (\cha3).
+\item \emph{A question-removed control} that scores each option without the question, to see how much of the score
+  needs the question (\cha4).
+\item \emph{A design frozen before held-out questions}, tested once with paired tests, and a statement of the exact
+  settings used, including the plausibility constraint (\cha1, \cha2).
+\end{enumerate}
+
+\paragraph{What the results do not show.}
+We tested multiple-choice scoring only. The results say nothing about DoLa in free generation, where the
+plausibility constraint was designed to act, nor about the larger LLaMA models of the DoLa paper. That self-evaluation
+works without the question also does not mean it fails where the question matters; on TruthfulQA the options happen
+to be statements that can be judged alone.
 
 \section{Limitations}
 \label{sec:limitations}
-\todo{\S10}
+\begin{itemize}
+\item \textbf{One benchmark, multiple choice only.} All results are on TruthfulQA's multiple-choice task; we did not
+  test open-ended generation or the binary-choice version~\citep{evans2025improved}.
+\item \textbf{Small models.} All models have at most 4 billion parameters, against 7 to 65 billion in the DoLa paper.
+\item \textbf{Our prompt.} The likelihood prompt refers to answer options it does not list, and it is not the
+  question-answering prompt of the TruthfulQA paper, so absolute scores are not comparable with published ones
+  (Section~\ref{sec:setup}).
+\item \textbf{Layer contrast on one model.} DoLa and \method{} were scored on \mainmodel{} only; their candidate
+  layers were transferred by relative depth and not tuned for it.
+\item \textbf{Self-evaluation confirmed on one model.} Only \mainmodel{} has scored confirmation questions; the other
+  seven models were checked on the exploration questions, and the likelihood comparison there uses no
+  multiple-comparison adjustment.
+\item \textbf{Order of the analyses.} The likelihood and DoLa scores of all held-out questions existed before the
+  questions were split for self-evaluation, and the early-exit protocol was written after three of the eight models
+  had been scored.
+\item \textbf{Two wordings.} How much self-evaluation depends on the wording of its prompt was not studied beyond the
+  two wordings tested.
+\end{itemize}
 
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
-\todo{\S11}
+On multiple-choice TruthfulQA with small models, self-evaluation beats likelihood and layer-contrast scores by a
+wide margin on questions it was not designed on, while the gains of layer contrast on 50 development questions do
+not hold on 767 held-out questions. Two properties of the scores, token masking by the plausibility constraint and
+the association with option length, explain much of how likelihood and contrast rules win and lose on this
+benchmark, and the self-evaluation verdict works about as well without the question. Each of these findings turns
+into a check that future evaluations can report (Section~\ref{sec:discussion}).
+
+Two directions follow. First, the checks can be applied to other decoding and scoring methods evaluated on this
+benchmark, and to larger models. Second, self-evaluation should be tested where the question is needed to judge an
+answer: open-ended generation, the binary-choice version of TruthfulQA~\citep{evans2025improved}, and short-answer
+question answering.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
@@ -630,8 +689,94 @@ differences positive with intervals above 0. $^\dagger$Verdict at chance level.}
 \appendix
 \section{Reproduction}
 \label{app:repro}
-\todo{repository, commit, run command, run time; the development-run reproduction table (0--2 questions changed per
-rule on MC1)}
+The code, the per-question scores of every run, the analysis scripts and this report's source are in the
+project repository \todo{repository URL and the commit of the final version}. Each run directory holds its
+metadata, with the code commit, the model, the seed and the run time. The report is rebuilt from the saved scores
+without a GPU:
+\begin{itemize}\raggedright
+\item \texttt{scripts/heldout\_analysis.py} and \texttt{scripts/paired\_tests.py}: held-out scores, masking,
+  length and the paired tests (Sections~\ref{sec:heldout} and~\ref{sec:mislead});
+\item \texttt{scripts/self\_evaluation\_analysis.py}, \texttt{self\_evaluation\_layers.py},
+  \texttt{self\_evaluation\_prior.py} and \texttt{self\_evaluation\_vs\_likelihood.py}: Sections~\ref{sec:selfeval}
+  and~\ref{sec:controls};
+\item \texttt{scripts/report\_tables.py} and \texttt{scripts/figure\_data.py}: every table and the data of every
+  figure in this report.
+\end{itemize}
+Scoring the runs again needs one GPU with 12\,GB; the run times are in Section~\ref{sec:setup}. Rerunning the 50
+development questions in the current environment changed MC1 on at most 2 questions for each of the eight rules
+that the earlier development runs had scored.
+
+\section{Additional tables}
+\label{app:tables}
+
+The tables behind Sections~\ref{sec:heldout} and~\ref{sec:controls} that the text summarises in one sentence each.
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{The changes from DoLa (generation settings, first row) to \method{} (last row), one at a time, on the
+767 held-out questions. Constraint: the adaptive plausibility constraint. Difference: of log-probabilities or of
+raw logits; without the constraint the two give identical scores. Layer chosen: at every token by DoLa's
+divergence, or once per question by the Jensen--Shannon divergence at $\tau = 0.5$. The difference column compares
+each row with the row above; $p$: exact McNemar, Holm-adjusted within the table. A reimplementation of the first
+row gives identical scores on every question.}
+\label{tab:factorial}
+\adjustbox{max width=\textwidth}{\input{tables/t2_factorial}}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Re-selecting the premature layer of \method{} every $k$ tokens. The last column is the held-out MC1
+difference from $k = 1$ with its 95\,\% paired-bootstrap interval; no difference in this table has a Holm-adjusted
+$p$-value below 1.}
+\label{tab:interval}
+\adjustbox{max width=\textwidth}{\input{tables/t3_interval}}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{4pt}
+\caption{Early exit of the self-evaluation verdict on the 417 exploration questions. Chosen block: median over 500
+draws of a 50-question labelled set. Mean gain over the final layer on the other 367 questions, with the 5th and
+95th percentiles over the draws. Gain: the mean gain is positive and fewer than 5\,\% of the draws lose.
+$^\dagger$Final-layer MC1 below chance level plus two standard errors.}
+\label{tab:earlyexit}
+\adjustbox{max width=\textwidth}{\input{tables/t9_early_exit}}
+\end{table}
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\caption{The self-evaluation verdict with and without the question on the 417 exploration questions. Corrected: the
+verdict minus the question-free verdict; Sum: the two added. Differences with 95\,\% paired-bootstrap intervals.
+$^\dagger$Not counted: the verdict with the question is at chance level.}
+\label{tab:questionremoved}
+\adjustbox{max width=\textwidth}{\input{tables/t10_question_removed}}
+\end{table}
+
+\section{Development history}
+\label{app:history}
+
+Before the held-out run, we ran experiments on the 50 development questions only. They explored rules that switch,
+token by token, between the base model's scores and a layer-contrast score; a fixed weight between the two; a
+look-ahead of two tokens; and a parallel-decoding variant. None beat the layer-contrast score used at every token
+with the layer re-selected every four tokens (MC1 0.40 against 0.34 for the base model), from which \method{} was
+derived; the best switching rule reached 0.38, and the
+truncation baselines, top-$k$ and nucleus sampling~\citep{holtzman2020curious}, scored 0.34 and 0.36. We report
+these runs here only as the history of the choices that the held-out run tested. Open-ended generation runs were
+also made, but their correctness labels were written by a language model and not checked by a person, so we do not
+use them.
+
+The development questions also set the selection interval of \method{}. Table~\ref{tab:subsets} repeats the
+interval comparison on four other random sets of 50 questions. On the development set, one selection per question
+($k = \infty$) led re-selection at every token ($k = 1$) by 0.06 MC1; on the four other sets it leads on one, ties
+on one and trails on two, and the held-out run shows no difference (Section~\ref{sec:heldout}).
+
+\begin{table}[h]
+\centering\small\setlength{\tabcolsep}{5pt}
+\caption{MC1 of \method{} with the premature layer re-selected every $k$ tokens, on the development set and on
+four other random sets of 50 questions (\mainmodel{}). With 50 questions one MC1 has a 95\,\% interval of about
+$\pm 0.13$.}
+\label{tab:subsets}
+\adjustbox{max width=\textwidth}{\input{tables/t12_interval_subsets}}
+\end{table}
 
 \section{When a longer selection interval changes nothing}
 \label{app:stability}
