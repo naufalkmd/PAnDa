@@ -191,8 +191,9 @@ not yet in the report's bibliography.
 
 - Multiple choice only. Open-ended generation was not tested: there the candidates would be sampled answers, and
   the method helps only if a true answer is among them.
-- The comparison with likelihood and DoLa scores exists for Qwen2.5-3B only. The other seven models have no
-  likelihood or DoLa scores on these questions.
+- The comparison with DoLa exists for Qwen2.5-3B only. The comparison with base likelihood was extended to all
+  eight models on the exploration questions by exp21 (2026-11-15; `cross_model/self_evaluation_vs_likelihood.csv`):
+  self-evaluation beats both likelihood rules on 5 of 8 models.
 - The block band 27–30 was chosen on the exploration part with the first wording. It was tested on the
   confirmation part with that wording only.
 - Two wordings were tested. How much the score depends on the wording was not studied further.

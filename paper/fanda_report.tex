@@ -38,7 +38,9 @@
 \newcommand{\KL}{\operatorname{KL}}
 \newcommand{\Vhead}{\mathcal{V}_{\mathrm{head}}}
 
-\title{\todo{title: see docs/report\_checklist.md, part A}}
+%% Working title (checklist part C); decide before publishing.
+\title{What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and Option Length in Small
+Language Models}
 \author{Muhammad Naufal \quad Jeong Edon \quad Muhammad Aliff\\\small Korea University}
 \date{}
 
@@ -46,188 +48,245 @@
 \maketitle
 
 \begin{abstract}
-\todo{task in one sentence; the challenges; the approach, one clause per component; headline number against the
-baseline; main finding.}
+\todo{setting; C1--C4 as findings with their numbers; the recommendation (checklist part C)}
 \end{abstract}
 
 \section{Introduction}
+\label{sec:intro}
 \todo{task and metric}
 
 \begin{itemize}
-\item[\cha1] \textbf{\todo{challenge}.} \todo{one fact that shows it is real}
+\item[\cha1] \textbf{Small development sets mislead.} \todo{one fact}
+\item[\cha2] \textbf{Settings copied from generation break multiple-choice scoring.} \todo{one fact}
+\item[\cha3] \textbf{Option scores follow option length.} \todo{one fact}
+\item[\cha4] \textbf{The benchmark can be answered without the question.} \todo{one fact}
 \end{itemize}
 
-\todo{approach in one paragraph, each component mapped to its challenge; then what this report contributes, as plain
-statements with section pointers}
+\todo{approach in one paragraph; contributions 1--5 as plain statements with section pointers}
 
+%% ============================================================================================================
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Contrastive decoding.}
+\paragraph{Contrastive and layer-contrastive decoding.}
 Contrastive decoding scores each candidate token by the difference between the log-probabilities of a large
-(expert) and a small (amateur) language model, so that tokens favoured only by the weaker model are
-down-weighted~\citep{li2023contrastive}. Because the difference can reward tokens that both models find
-implausible, it is combined with an \emph{adaptive plausibility constraint}: only tokens whose expert probability
-is at least $\alpha$ times the expert's top probability are kept, with $\alpha = 0.1$~\citep{li2023contrastive}.
+(expert) and a small (amateur) language model, and keeps only tokens whose expert probability is at least $\alpha$
+times the expert's top probability (an \emph{adaptive plausibility constraint}, $\alpha =
+0.1$)~\citep{li2023contrastive}. DoLa applies the same idea inside one model: it contrasts the final (mature)
+layer with an earlier (premature) layer read through the output head, chooses the premature layer at every token
+as the candidate with the largest divergence from the mature layer, and uses the same
+constraint~\citep{chuang2024dola}. DoLa also describes DoLa-static, which uses one premature layer chosen on a
+validation set, and reports large TruthfulQA gains for LLaMA models~\citep{chuang2024dola}. We do not propose a
+decoding method. We re-evaluate DoLa in two configurations and one variant, \method{}, that we developed on 50
+questions, on 767 held-out questions, and we measure two properties of the scores that explain their gains and
+losses: token masking by the constraint and the association with option length (Sections~\ref{sec:heldout}
+and~\ref{sec:mislead}).
 
-\paragraph{Contrasting layers of one model.}
-DoLa applies the same idea inside a single model~\citep{chuang2024dola}. The final (\emph{mature}) layer is
-contrasted with an earlier (\emph{premature}) layer whose hidden state is passed through the output head (early
-exit). The premature layer is selected \emph{dynamically}: at every token, the candidate layer with the largest
-divergence from the mature layer is chosen, from a set of candidate layers that is itself chosen on a validation
-set. DoLa also describes a static variant, DoLa-static, that uses one premature layer chosen on a validation set
-for all inputs, and argues that dynamic selection avoids the per-task layer search~\citep{chuang2024dola}. DoLa
-uses the adaptive plausibility constraint with $\alpha = 0.1$ and reports large gains on TruthfulQA for LLaMA
-models~\citep{chuang2024dola}; its reference code applies the constraint in free generation but not in
-multiple-choice scoring (Section~\ref{sec:method-dola}). The method studied here lies between the two variants, and we name it after DoLa's own term:
-\emph{\method{}} selects the premature layer by divergence, as dynamic DoLa does, but only once per question, and
-then keeps it fixed, as DoLa-static does; unlike DoLa-static, the layer is chosen per question rather than on a
-validation set. It also removes the plausibility constraint (Section~\ref{sec:method}).
+\paragraph{TruthfulQA and its weaknesses.}
+TruthfulQA has 817 questions written so that a common misconception gives a plausible false answer; its
+multiple-choice task ranks reference true and false answers by the model's likelihood~\citep{lin2022truthfulqa}.
+Two later reports question the multiple-choice format. A simple decision tree over the answer options, using
+heuristics such as ``eliminate answers which imply other answers'' and ``select the odd answer out'', reaches 79.6\,\%
+in theory~\citep{turner2025gaming}, and the dataset's authors note that the format may measure test-taking ability
+rather than truthfulness and recommend a binary-choice version with one true and one false
+option~\citep{evans2025improved}. Both concern how the options relate to each other. The two properties we report
+are different: likelihood and contrast scores follow the length of each option (\cha3), and each option, judged on its
+own, is about as easy to label without the question as with it (\cha4).
 
-\paragraph{Truncation baselines.}
-Top-$k$ and nucleus (top-$p$) truncation~\citep{holtzman2020curious} restrict sampling to the most likely tokens.
-Under likelihood-based multiple-choice scoring they act as truncated and renormalised scoring distributions; on
-the development set they scored like the base model, and we report them there only.
+\paragraph{Partial-input baselines.}
+A model that solves a task from part of its input shows that the dataset leaks the label. In natural language
+inference, classifiers that see only the hypothesis predict the label well above the majority
+class~\citep{gururangan2018annotation,poliak2018hypothesis}. In multiple-choice question answering, a prompt with
+the answer choices and no question beats a majority baseline in 11 of 12 dataset--model
+pairs~\citep{balepur2024artifacts}. Our question-removed control differs in one respect: every option is scored in
+its own forward pass, so the model cannot compare the options and must judge each one as a statement.
 
-\section{Method}
-\label{sec:method}
+\paragraph{Self-evaluation.}
+Language models can be asked whether a proposed answer is true and the probability of the reply ``True'',
+P(True), read as a score; for answers the model sampled itself, this score showed encouraging performance and
+calibration that improved with model size~\citep{kadavath2022language}. Self-evaluation scores have since been used to decide when to answer
+(selective generation, evaluated on TruthfulQA and TL;DR)~\citep{ren2023selfevaluation}, to guide beam search in
+multi-step reasoning~\citep{xie2023selfevaluation}, and to label a model's own responses as training data for
+factuality, with DoLa among the baselines~\citep{zhang2024selfalignment}. We use the self-evaluation score directly to
+rank the fixed options of multiple-choice TruthfulQA, compare it with likelihood and DoLa under a design frozen
+before 400 confirmation questions, and repeat the comparison with likelihood on eight models of 0.5 to 4 billion
+parameters (Sections~\ref{sec:selfeval} and~\ref{sec:controls}).
 
-\subsection{DoLa}
-\label{sec:method-dola}
+\paragraph{Truthfulness in hidden states and intermediate layers.}
+A classifier trained on hidden-layer activations predicts whether a statement is true~\citep{azaria2023internal}.
+Decoding intermediate layers through the output head shows that, with false demonstrations in the prompt, accuracy
+falls after a ``critical layer''~\citep{halawi2024overthinking}. We read the self-evaluation verdict from
+intermediate blocks in the same way, without training a probe, and test whether an intermediate block beats the
+final layer on eight models (\emph{early exit}, Section~\ref{sec:controls}).
 
-Let $x_{<t}$ be the prompt followed by the first $t-1$ answer tokens, $h^{(j)}_t$ the hidden state after
-transformer block $j$ at the last position, and $\phi$ the model's final normalisation followed by its output
-head. The early-exit logits of block $j$ are $z^{(j)}_t = \phi(h^{(j)}_t)$ and its next-token distribution is
-$q_j(\cdot \mid x_{<t}) = \operatorname{softmax}(z^{(j)}_t)$; block $N$ is the mature layer. DoLa selects the
-premature layer
+\paragraph{Selective prediction.}
+A classifier that may abstain trades coverage, the share of inputs it answers, against the risk on the answered
+inputs (the risk--coverage trade-off)~\citep{elyaniv2010foundations}; for deep networks, a threshold on the
+confidence can be set so that the risk stays below a chosen level with high probability~\citep{geifman2017selective}. We set three thresholds
+on the exploration questions and report the accuracy they give on the confirmation questions
+(Section~\ref{sec:selfeval}).
+
+%% ============================================================================================================
+\section{Scoring Rules}
+\label{sec:rules}
+
+Every rule scores each answer option $y = (y_1, \dots, y_T)$ of a question separately, from one teacher-forced
+forward pass, and MC1 chooses the option with the highest score (Figure~\ref{fig:rules}). Let $x$ be the prompt,
+$h^{(j)}_t$ the hidden state after transformer block $j$ at the position that predicts $y_t$, and $\phi$ the model's
+final normalisation followed by its output head. Block $j$ then gives the logits $z^{(j)}_t = \phi(h^{(j)}_t)$ and
+the distribution $q_j(\cdot \mid x, y_{<t}) = \operatorname{softmax}(z^{(j)}_t)$; $N$ is the final block.
+
+\begin{figure}[t]
+\centering
+\input{figures/f1_scoring}
+\caption{The three ways to score one answer option. The likelihood and DoLa scores read the option's own tokens
+after a prompt that asks the question; the self-evaluation score reads one reply token after a prompt that shows
+the option and asks whether it is true. Our likelihood prompt says ``answer options'' but does not list them
+(Section~\ref{sec:setup}). The question-removed control drops the line ``Question: \{question\}'' from the
+self-evaluation prompt.}
+\label{fig:rules}
+\end{figure}
+
+\paragraph{Base likelihood.}
+The standard multiple-choice score of TruthfulQA is the option's log-likelihood under the base
+model~\citep{lin2022truthfulqa},
 \begin{equation}
-  M_t = \arg\max_{j \in \mathcal{J}} d\bigl(q_N(\cdot \mid x_{<t}),\, q_j(\cdot \mid x_{<t})\bigr)
+  S(y) = \sum_{t=1}^{T} \log q_N(y_t \mid x, y_{<t}),
+  \label{eq:likelihood}
+\end{equation}
+where $x$ is the chat-formatted question. Every token adds a negative term, so the sum favours short options; we
+also report the per-token score $S(y)/T$, which removes this dependence on the number of tokens (\cha3).
+
+\paragraph{DoLa.}
+DoLa selects the premature layer at every token,
+\begin{equation}
+  M_t = \arg\max_{j \in \mathcal{J}} d\bigl(q_N(\cdot \mid x, y_{<t}),\, q_j(\cdot \mid x, y_{<t})\bigr),
   \label{eq:dola-select}
 \end{equation}
-from the candidate layers $\mathcal{J}$ and scores token $v$ by
+from a set $\mathcal{J}$ of candidate blocks, and scores token $v$ by
 \begin{equation}
   F_t(v) =
   \begin{cases}
-    \log q_N(v \mid x_{<t}) - \log q_{M_t}(v \mid x_{<t}) & \text{if } v \in \Vhead(x_{<t}),\\
+    \log q_N(v \mid x, y_{<t}) - \log q_{M_t}(v \mid x, y_{<t}) & \text{if } v \in \Vhead,\\
     -1000 & \text{otherwise,}
   \end{cases}
   \label{eq:dola-score}
 \end{equation}
-where the adaptive plausibility constraint keeps the set
+where the adaptive plausibility constraint keeps the tokens
 \begin{equation}
-  \Vhead(x_{<t}) = \bigl\{v : q_N(v \mid x_{<t}) \ge \alpha \max_w q_N(w \mid x_{<t})\bigr\},
+  \Vhead = \bigl\{v : q_N(v \mid x, y_{<t}) \ge \alpha \max_w q_N(w \mid x, y_{<t})\bigr\},
+  \qquad \alpha = 0.1~\text{\citep{chuang2024dola}}.
   \label{eq:vhead}
-\end{equation}
-with $\alpha = 0.1$. The next-token distribution is $\operatorname{softmax}(F_t)$. The DoLa paper calls $d$ the
-Jensen--Shannon divergence; its reference implementation, which our DoLa baseline reproduces, computes
-$d(q_N, q_j) = \tfrac12[\KL(m \Vert q_N) + \KL(m \Vert q_j)]$ with $m = \tfrac12(q_N + q_j)$, averaged over the
-vocabulary. This places the mixture $m$ first in both terms, the reverse of the standard definition.
+\end{equation} The DoLa paper calls $d$ the Jensen--Shannon divergence; its reference
+implementation, which we reproduce, computes $d(q_N, q_j) = \tfrac12[\KL(m \Vert q_N) + \KL(m \Vert q_j)]$ with
+$m = \tfrac12(q_N + q_j)$, averaged over the vocabulary, which places the mixture first in both terms. DoLa's
+reference code uses different settings for free generation and for TruthfulQA multiple choice, and we report both:
+\begin{itemize}
+\item \emph{DoLa (generation settings)}: the constraint of Equation~\eqref{eq:vhead}, the renormalised option score
+  \[ \textstyle \sum_t \log \operatorname{softmax}(F_t)(y_t), \]
+  and candidate blocks from the first quarter of the network (blocks 1, 3, \dots, 9 of the 36 in \mainmodel{}).
+  Our development experiments used these settings.
+\item \emph{DoLa (MC configuration)}: no constraint, the plain sum without renormalisation,
+  \[ \textstyle \sum_t \bigl[\log q_N(y_t \mid x, y_{<t}) - \log q_{M_t}(y_t \mid x, y_{<t})\bigr], \]
+  and candidate blocks from the second half of the network. DoLa used layers 16, 18, \dots, 30 of the 32-layer
+  LLaMA-7B; we transfer them by relative depth to blocks 18, 20, \dots, 34 of \mainmodel{}.
+\end{itemize}
+Neither candidate set was tuned for \mainmodel{}. The constraint matters for multiple choice because the option's
+tokens are fixed in advance: an option token outside $\Vhead$ contributes about $-1000$ to the option score
+whatever the contrast says (\cha2, Section~\ref{sec:mislead}).
 
-\paragraph{Two configurations of DoLa.}
-DoLa's reference code uses different settings for free generation and for TruthfulQA multiple-choice
-scoring. For multiple choice, it applies no plausibility constraint, scores an option by the plain sum
-$\sum_t [\log q_N(y_t \mid x_{<t}) - \log q_{M_t}(y_t \mid x_{<t})]$ without renormalising, and draws the
-candidate layers from the second half of the network (layers 16, 18, \dots, 30 of the 32-layer LLaMA-7B, chosen
-on a validation set). Our development runs instead used the generation settings, Equations~\eqref{eq:dola-score}
-and~\eqref{eq:vhead} followed by renormalisation, with candidate layers from the first quarter of the network
-(blocks 1, 3, \dots, 9 of the 36 in \mainmodel{}), the same candidates as \method{}. We report both:
-\emph{DoLa (MC settings)}, which transfers the multiple-choice candidate layers to \mainmodel{} by relative depth
-(blocks 18, 20, \dots, 34), and \emph{DoLa (generation settings)}, the baseline \method{} was developed against.
-Neither candidate set was tuned for \mainmodel{}.
+\paragraph{\Method{}.}
+This is the variant we developed on the 50 development questions, and the held-out evaluation tests it
+(\cha1). It changes four settings of DoLa:
+\begin{enumerate}
+\item no plausibility constraint;
+\item the difference of raw logits in place of log-probabilities, with the option score renormalised as in DoLa's
+  generation settings,
+  \[ \textstyle \sum_t \log \operatorname{softmax}\bigl(z^{(N)}_t - z^{(L)}_t\bigr)(y_t); \]
+  without the constraint this gives the same option scores as the log-probability difference, because the two
+  differences differ by a constant per position that the softmax removes;
+\item layer selection by the standard Jensen--Shannon divergence $\JSD(p, q) = \tfrac12[\KL(p \Vert m) + \KL(q
+  \Vert m)]$ of the two distributions at temperature $\tau = 0.5$, in place of the reference implementation's
+  divergence at $\tau = 1$, a setting inherited from earlier code and not tested on its own;
+\item one premature layer $L$ per question, selected at the first answer position and kept for all later tokens.
+\end{enumerate}
+The first answer position follows the prompt alone, which is the same for every option, so all options of a
+question share the layer $L$. To test the fourth change, we also re-select the layer every $k$ tokens, $k \in \{1,
+4\}$; \method{} is $k = \infty$. Its candidate blocks are those of DoLa's generation settings.
 
-\subsection{\Method}
-\label{sec:method-fanda}
-
-\Method{} keeps the contrast between the mature and a premature layer and changes four settings of DoLa. Its score
-for token $v$ when the answer so far is $x_{<t}$ is
+\paragraph{Self-evaluation, P(True).}
+Following \citet{kadavath2022language}, the model is shown the question and one option and asked whether the
+option is true, with the user message
+\begin{quote}\small\ttfamily
+Question: \{question\}\\ Proposed answer: \{option\}\\ Is the proposed answer true? Reply with one word: True or
+False.
+\end{quote}
+The score is the log-odds of the reply tokens at the first reply position,
 \begin{equation}
-  s_t(v) = z^{(N)}_t(v) - z^{(L)}_t(v),
-  \qquad
-  L = \arg\max_{j \in \mathcal{J}} \JSD\bigl(\operatorname{softmax}(z^{(N)}_1/\tau),\, \operatorname{softmax}(z^{(j)}_1/\tau)\bigr),
-  \label{eq:fanda}
+  V(y) = \log q_N(\texttt{True} \mid x_y) - \log q_N(\texttt{False} \mid x_y) = z^{(N)}(\texttt{True}) -
+  z^{(N)}(\texttt{False}),
+  \label{eq:selfeval}
 \end{equation}
-where the subscript 1 denotes the first token of the answer, $\JSD(p, q) = \tfrac12[\KL(p \Vert m) + \KL(q \Vert m)]$
-is the standard Jensen--Shannon divergence, and $\tau = 0.5$. The next-token distribution is
-$\operatorname{softmax}(s_t)$. Figure~\ref{fig:pipeline} shows the computation for one answer option.
+where $x_y$ is the prompt for option $y$. It needs one forward pass per option and does not sum over the option's
+tokens, so, unlike Equation~\eqref{eq:likelihood}, it has no term per token. MC2 uses $V$ in place of the
+log-likelihood. A second wording (``\{question\}\textbackslash n\textbackslash nAnswer: \{option\}\textbackslash
+n\textbackslash nIs this answer correct? Reply with one word: Yes or No.'') is an ablation.
 
-\paragraph{No plausibility constraint (\cha1).}
-Under likelihood-based multiple-choice scoring, the answer option's tokens are fixed in advance and only their
-log-probabilities are read. With the constraint, an option token outside $\Vhead$ receives the score $-1000$
-before the softmax, so its log-probability is close to $-1000$, and the option ranks below every option whose
-tokens all lie inside $\Vhead$. Because $\Vhead$ depends only on the mature layer, the constraint thereby rejects
-any option that contains one token the mature layer finds unlikely relative to its top token, whatever the
-contrast says about the rest of the option. In free generation the same constraint only limits which token is
-chosen next. \Method{} removes it. DoLa's own multiple-choice evaluation also leaves it out
-(Section~\ref{sec:method-dola}), so this change matters relative to DoLa's generation settings, not relative to
-DoLa's multiple-choice settings. Its effect is measured in a $2 \times 2$ ablation (Table~\ref{tab:factorial}).
-We did not count how often a correct option contains a token outside $\Vhead$.
+\paragraph{Early exit of the verdict.}
+The same log-odds can be read after an earlier block $j$, from $z^{(j)} = \phi(h^{(j)})$ at the first reply
+position. On \mainmodel{} we use the mean over blocks 27--30 of 36, chosen on the exploration questions; on the
+other models the block is chosen on 50 labelled questions and tested on the rest (Section~\ref{sec:controls}).
 
-\paragraph{Raw-logit difference.}
-\Method{} subtracts raw logits instead of log-probabilities. Without the constraint this change has no effect:
-$\log q_N(v) - \log q_L(v) = z^{(N)}(v) - z^{(L)}(v) - c$, where $c$ is the same for every $v$ at a given step,
-and the softmax removes $c$. The two scores therefore give identical option scores, which the ablation confirms
-(Table~\ref{tab:factorial}). With the constraint the two differ, because the fixed value $-1000$ is then compared
-with scores on two different scales.
+\paragraph{Verdict with the question removed.}
+As a partial-input control (\cha4), we delete the line ``Question: \{question\}'' from the self-evaluation prompt,
+so that the model judges the option as a statement. We also tested one way to use it: subtracting the
+question-removed verdict from the verdict, which removes what the option alone gives away, as pointwise mutual
+information does for likelihoods. The protocol for this test was fixed before any question-removed score existed.
 
-\paragraph{Layer-selection divergence.}
-\Method{} selects the premature layer with the standard Jensen--Shannon divergence at temperature $\tau = 0.5$,
-whereas our DoLa baseline uses the reference implementation's divergence at $\tau = 1$
-(Section~\ref{sec:method-dola}). This setting was inherited from an earlier version of the code, and we did not
-test it separately. The comparison between DoLa and \method{} therefore includes this change.
-\todo{after R3: replace the last two sentences with the result of the $\tau$ ablation, or keep them}
+\paragraph{Longest option.}
+To measure \cha3, the baseline chooses the option with the most characters. MC1 counts a tie between a true and
+a false option as wrong; token counts tie more often than character counts, so we count characters
+(Section~\ref{sec:mislead} reports both).
 
-\paragraph{Premature layer fixed for each question (\cha2).}
-With dynamic selection, the premature layer, and therefore the scoring function in Equation~\eqref{eq:dola-score},
-can change from one token to the next. On the development set, per-token selection changed the premature layer
-at 69\,\% of steps (Table~\ref{tab:interval}). \Method{} selects the layer once, at the first answer token, and keeps
-it for the remaining tokens. To separate this choice from the other three, we also evaluate the
-same score with the premature layer re-selected every $k$ tokens, for $k \in \{1, 2, 4, 8\}$; \method{} is
-$k = \infty$. With $k = 1$ the score still differs from DoLa in the other three settings. The first answer token is
-scored from the prompt alone, which is the same for every answer option, so all options of a question are scored
-with the same premature layer: the layer is chosen from the question. Appendix~\ref{app:stability}
-shows that a longer interval leaves the chosen tokens and the option ranking unchanged whenever the change in
-premature-layer logits stays below the decision margin. This explains when a longer interval makes no difference,
-not why it would help; whether it helps is tested empirically.
+\paragraph{Selective prediction.}
+With the self-evaluation score, a question is answered only if the difference between the two highest scores among
+its MC1 options reaches a threshold. The three thresholds are the differences at 25\,\%, 50\,\% and 75\,\% coverage on
+the exploration questions; they are then fixed and applied to the confirmation questions.
 
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[
-  node distance=8mm and 6mm,
-  box/.style={draw, rounded corners=2pt, align=center, font=\small, inner sep=4pt,
-              minimum height=10mm, minimum width=24mm},
-  arr/.style={-{Stealth[length=2mm]}}]
-  % row 1: the per-token path
-  \node[box, minimum width=20mm] (in) {prompt $+$\\answer $y_{<t}$};
-  \node[box, minimum width=16mm, right=of in] (fw) {forward\\pass};
-  \node[box, right=of fw] (mat) {mature logits\\$z^{(N)}_t$};
-  \node[box, right=12mm of mat] (sc) {contrastive score\\$s_t = z^{(N)}_t - z^{(L)}_t$};
-  \node[box, right=of sc] (lp) {$\log p(y_t) =$\\$\log\operatorname{softmax}(s_t)[y_t]$};
-  % row 2: premature-layer selection and the option score
-  \node[box, below=of mat] (ee) {early-exit logits\\$z^{(j)}_t,\ j \in \mathcal{J}$};
-  \node[box, below=of sc, fill=black!5] (sel) {at $t = 1$ only:\\$L = \arg\max_j \JSD_\tau$};
-  \node[box, below=of lp] (sum) {option score\\$S(y) = \sum_t \log p(y_t)$};
-  \draw[arr] (in) -- (fw);
-  \draw[arr] (fw) -- (mat);
-  \draw[arr] (fw) |- (ee);
-  \draw[arr] (mat) -- (sc);
-  \draw[arr] (ee) -- (sel);
-  \draw[arr] (sel) -- node[right, font=\scriptsize, align=left] {$L$ kept\\for $t > 1$} (sc);
-  \draw[arr] (sc) -- (lp);
-  \draw[arr] (lp) -- (sum);
-\end{tikzpicture}
-\caption{\Method{} scoring of one answer option $y$ by teacher forcing. At each answer token, one forward pass
-gives the mature logits and the early-exit logits of the candidate layers. The premature layer $L$ is selected
-by Jensen--Shannon divergence only at the first answer token and then kept. There is no plausibility constraint.
-The option scores $S(y)$ give MC1, MC2 and MC3 (Section~\ref{sec:setup}).}
-\label{fig:pipeline}
-\end{figure}
-
+%% ============================================================================================================
 \section{Experimental Setup}
 \label{sec:setup}
-\section{Results}
-\section{Analysis}
+\todo{\S4 per checklist part C: data; the question sets and what each decided (Figure F2); metrics; tests; the eight
+models and the inclusion rule; prompts (not the 6-shot prompt; the likelihood prompt mentions answer options it does
+not list); hardware, run times; environment check}
+
+\section{Layer Contrast on Held-Out Questions}
+\label{sec:heldout}
+\todo{\S5: T1, T2, T3, F3 (\cha1)}
+
+\section{Why Multiple-Choice Scores Mislead}
+\label{sec:mislead}
+\todo{\S6: T4 masking (\cha2), T5 length (\cha3), contrast-weight sweep}
+
+\section{Self-Evaluation}
+\label{sec:selfeval}
+\todo{\S7: T6--T8, F4}
+
+\section{Controls on Eight Models}
+\label{sec:controls}
+\todo{\S8: T9 early exit, T10 question removed, T11 self-evaluation vs likelihood, F5 (\cha4)}
+
+\section{Discussion}
+\label{sec:discussion}
+\todo{\S9}
+
 \section{Limitations}
-\section{Conclusion}
+\label{sec:limitations}
+\todo{\S10}
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+\todo{\S11}
 
 \bibliographystyle{plainnat}
 \bibliography{references}
@@ -238,6 +297,7 @@ The option scores $S(y)$ give MC1, MC2 and MC3 (Section~\ref{sec:setup}).}
 
 \section{When a longer selection interval changes nothing}
 \label{app:stability}
+\todo{keep only if \S5 discusses the selection interval; not in the outline (checklist part C)}
 
 This appendix states when re-selecting the premature layer less often leaves the decisions unchanged. It does not
 show that a longer interval is better: the reference is per-token selection ($k = 1$) itself.

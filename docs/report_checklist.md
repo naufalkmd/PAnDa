@@ -188,9 +188,14 @@ Open (no GPU unless noted):
   output head on each block's hidden state; DoLa's divergence as in its reference implementation,
   ½[KL(m‖q_N) + KL(m‖q_j)] (mixture first, checked in the DoLa repository); per-question DoLa-static uses the standard JSD at τ = 0.5; the
   −1000 mask value and its effect on option scores. PAnDa removed from §2/§3 (dropped method).
-- [ ] §2/§3 cite tables `tab:factorial`, `tab:interval`, `tab:main` that the Results section will define.
-- [ ] The §2/§3 draft was written for the method framing: rewrite both for the outline in part C (keep the checked DoLa facts).
-- [ ] Abstract, §1, §4–§8 wait for R1/R2 (§4 Setup can be drafted now except hardware).
+- [x] §2 Related work and §3 Scoring rules rewritten for the empirical framing (2026-11-15). §2: six groups, each
+  with how this report differs. §3: base likelihood (sum, per token), DoLa in both configurations, per-question
+  DoLa-static (four changes, renormalised option score checked in `local_evaluator.py`), self-evaluation, early exit,
+  question removed (prompt from `exp20.../run_experiment.py`), longest option, selective prediction; Figure F1.
+  The other sections are placeholders in the outline's order. The section numbers in part C now match the `.tex`.
+- [ ] Decide on the appendix "When a longer selection interval changes nothing" (not in the outline; keep only if
+  §5 discusses the interval).
+- [ ] Next: §4 Setup (cites the model reports and the tests, which removes most "uncited" warnings), then §5–§8.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
 ---
