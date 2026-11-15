@@ -16,8 +16,8 @@ tokens or `.env`.
   `scripts/figure_data.py` from the results files. Rerun them after any analysis change; never edit them by hand.
 - Purpose: a portfolio piece in arXiv style (one column, no page limit; the user chose to keep the full length).
   Authors: Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University).
-- The June 2026 course version is `paper/course_version_2026_06/`. Keep it unchanged as a record; do not reuse its
-  tables (they mix runs).
+- The June 2026 course version was removed from the tree on 2026-11-15 and is kept at the git tag
+  `pre-cleanup-2026-11` (`paper/course_version_2026_06/`). Do not reuse its tables (they mix runs).
 - Status, outline, table sources and verified citations: `docs/report_checklist.md`. Read it first.
 
 ## Results and terms
@@ -35,15 +35,20 @@ tokens or `.env`.
 - Question sets: the 50-question subset (seed 42) is the **development** set (every layer-contrast choice was made
   on it); the other 767 are the **held-out** set (exp19); exp20 splits all 817 into 417 **exploration** and 400
   **confirmation** questions (seed 20261115). State which set each choice was made on.
-- exp14 "manual" scores were written by Codex (an LLM). Say so wherever they are used, unless a person reviews them.
+- exp14 "manual" scores (at the tag `pre-cleanup-2026-11`) were written by Codex (an LLM). Say so wherever they
+  are used, unless a person reviews them.
 
 ## Layout
 
-- `results/experiments/exp11`–`exp21`: the experiments of the study (see `results/experiments/README.md` for which
-  are in the report). exp1–exp10 and the first sanity runs were removed from the tree on 2026-11-15 and are kept
-  under the tag `exploration-2026-06` (in `results/experiments/exploration/`; their runners find the shared code
-  two levels up). Restore with `git checkout exploration-2026-06 -- results/experiments/exploration`, and do not
-  commit them back.
+- The tree holds only what the study uses: exp11–exp13, exp16, exp19–exp21, the analysis scripts and the report.
+  Removed on 2026-11-15 and kept under tags (restore with `git checkout <tag> -- <path>`, and do not commit it back):
+  - `exploration-2026-06`: exp1–exp10 and the first sanity runs (`results/experiments/exploration/`; their
+    runners find the shared code two levels up);
+  - `pre-cleanup-2026-11`: exp14, exp15, exp17, exp18, `results/figures/`, `scripts/plots/`,
+    `scripts/build_exp14_manual_eval_sheet.py`, `docs/presentation/`, the method notes in `docs/algorithms/`
+    (all but `dola.md` and `greedy.md`) and `paper/course_version_2026_06/`.
+- Code for removed experiments (decoders in `local_evaluator.py`, PAnDa in `src/panda/`) stays: it is small, and
+  the tagged runs used it.
 
 ## Environment
 

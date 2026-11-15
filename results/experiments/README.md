@@ -6,7 +6,7 @@ outputs in `runs/<run_id>/`. The runners import `src/panda` and the shared code 
 
 Results and known issues for every experiment: [`docs/experiment_log.md`](../../docs/experiment_log.md).
 Code names → standard terms: [`docs/glossary.md`](../../docs/glossary.md). All runs: TruthfulQA multiple choice
-(MC1/MC2/MC3) with `Qwen/Qwen2.5-3B-Instruct` unless noted. exp11–exp18 ran on the same 50 questions (seed 42, the
+(MC1/MC2/MC3) with `Qwen/Qwen2.5-3B-Instruct` unless noted. exp11–exp13 ran on the same 50 questions (seed 42, the
 development set).
 
 *Selection interval k*: the premature layer is re-selected every k tokens (k = ∞: once, at the first answer token,
@@ -31,9 +31,14 @@ so once per question).
 
 exp19 repeats exp11–exp13 on all 817 questions; the report uses the exp19 numbers.
 
-## Left out of the report
+## Left out of the report (removed from the tree; tag `pre-cleanup-2026-11`)
 
-| Folder | Question | Why it is left out |
+These four were removed from the tree on 2026-11-15 and are kept at the git tag `pre-cleanup-2026-11`, in
+`results/experiments/`, together with the development plots (`results/figures/`, `scripts/plots/`). Their results
+stay in the experiment log. Restore one with, for example,
+`git checkout pre-cleanup-2026-11 -- results/experiments/exp18_cross_model_transfer` (and do not commit it back).
+
+| Folder at the tag | Question | Why it is left out |
 |---|---|---|
 | `exp14_openended_factuality/` | Open-ended generation, k ∈ {1, 2, 4, 8, ∞} | Correctness labels written by an LLM (Codex), not checked by a person |
 | `exp15_prefix_probe/` | Case study: answer prefixes, k = ∞ vs. k = 1 | Same labeller; open-ended generation is outside the study |

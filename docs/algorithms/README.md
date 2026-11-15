@@ -4,15 +4,13 @@ This folder explains the current decoder implementations in `src/panda/` as they
 
 Files:
 
-- [greedy.md](greedy.md)
-- [dola.md](dola.md)
-- [fixed-alpha-dola.md](fixed-alpha-dola.md)
-- [fanda-derivation.md](fanda-derivation.md)
-- [panda.md](panda.md) (PAnDa: dropped, kept for the record)
+- [greedy.md](greedy.md): the base model's likelihood
+- [dola.md](dola.md): DoLa
 
-`fanda-derivation.md` is a theoretical note on the selection interval of the premature layer for the decoders that share the
-score of per-question DoLa-static in `results/experiments/` (see exp12). Its statements are hypotheses: none of its quantities were
-measured. Terms: [`../glossary.md`](../glossary.md).
+The notes on fixed-weight DoLa, on the selection interval of per-question DoLa-static and on the dropped PAnDa
+method were removed from the tree on 2026-11-15; they are in this folder at the git tag `pre-cleanup-2026-11`. The
+scoring rules of the study are defined in the report (`paper/fanda_report.tex`, Section 3). Terms:
+[`../glossary.md`](../glossary.md).
 
 ## Shared Runtime
 

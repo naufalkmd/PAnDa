@@ -33,7 +33,8 @@ show this clearly: k = 4 and k = ∞ tie on MC1 (0.40), and exp16 did not replic
 
 ## Figure
 
-`results/figures/exp12_state_persistence_hypothesis.svg` (from `scripts/plots/plot_exp12_state_persistence_hypothesis.py`):
+`results/figures/exp12_state_persistence_hypothesis.svg` (from `scripts/plots/plot_exp12_state_persistence_hypothesis.py`;
+both removed from the tree on 2026-11-15 and kept at the git tag `pre-cleanup-2026-11`):
 
 - left panel: `switch_rate` (x) against `selected_layer_match_rate` (y); colour `avg_oracle_jsd_gap`; size MC2;
 - right panel: MC1, MC2 and MC3 for the four intervals.

@@ -75,8 +75,8 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 
 ## Words from older notes → standard terms
 
-The older notes (`docs/algorithms/`, `docs/presentation/`, the experiment READMEs, the June course paper) use
-project words. Replace them in any new text:
+The older notes (the experiment READMEs, and the method notes, presentation and June course paper kept at the git
+tag `pre-cleanup-2026-11`) use project words. Replace them in any new text:
 
 | Older word | Standard term |
 |---|---|

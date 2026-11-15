@@ -93,17 +93,20 @@ the 50 development questions in the current environment changed MC1 on at most 2
 ```text
 PAnDa/
   src/panda/                        Evaluator, decoders, benchmark loaders, older CLI (python -m panda)
-  results/experiments/              One folder per experiment (exp11-exp21): runner, run matrix, README, saved runs
-  results/figures/                  Figures of the development experiments and their data (JSON)
+  results/experiments/              The experiments of the study (exp11-exp13, exp16, exp19-exp21): runner,
+                                    run matrix, README, saved runs
   scripts/                          Analysis scripts, paired tests, table and figure data for the report
-  scripts/plots/                    Plot scripts for results/figures/
-  paper/                            Report source (tables/ and figures/data/ are generated); the June 2026 course
-                                    version is in paper/course_version_2026_06/
-  docs/                             Experiment log, glossary, report checklist, algorithm notes, presentation
+  paper/                            Report source (tables/ and figures/data/ are generated)
+  docs/                             Experiment log, glossary, report checklist, notes on the likelihood and DoLa code
 ```
 
-The early design alternatives (exp1–exp10) and the first sanity runs were removed from the tree and are kept under
-the git tag `exploration-2026-06`; see [`results/experiments/README.md`](results/experiments/README.md).
+Material the study does not use was removed from the tree and is kept under two git tags (see
+[`results/experiments/README.md`](results/experiments/README.md)):
+
+- `exploration-2026-06`: the early design alternatives (exp1–exp10) and the first sanity runs;
+- `pre-cleanup-2026-11`: the left-out experiments (exp14, exp15, exp17, exp18), the development plots
+  (`results/figures/`, `scripts/plots/`), the earlier method notes and presentation, and the June 2026 course report
+  (`paper/course_version_2026_06/`).
 
 Key implementation files:
 

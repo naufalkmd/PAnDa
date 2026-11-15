@@ -3,7 +3,7 @@
 Status and open items for the report. The report is `paper/fanda_report.tex` (figures in `paper/figures/`;
 build with `latexmk -pdf -outdir=build fanda_report.tex` from `paper/`, PDF in `paper/build/`). In the PDF, red
 `[TODO]` marks a missing value and red `[verify]` a statement from an older run. `[x]` done, `[ ]` open.
-The June 2026 course version stays unchanged in `paper/course_version_2026_06/`.
+The June 2026 course version is kept at the git tag `pre-cleanup-2026-11` (`paper/course_version_2026_06/`).
 
 Last updated: 2026-11-15.
 
@@ -228,6 +228,11 @@ Open (no GPU unless noted):
   holds it: annotated tag `exploration-2026-06` (109 files). Appendix C, the experiment log, both READMEs, project
   `CLAUDE.md` and `docs/algorithms/` point to the tag. The tag must be pushed with the branch
   (`git push origin exploration-2026-06`), or the citation in Appendix C leads nowhere.
+- [x] Second cleanup (user's decision, 2026-11-15): annotated tag `pre-cleanup-2026-11` (118 files), then removed
+  exp14, exp15, exp17, exp18, `scripts/build_exp14_manual_eval_sheet.py`, `results/figures/`, `scripts/plots/`,
+  `docs/presentation/`, the method notes in `docs/algorithms/` (kept `dola.md`, `greedy.md`) and
+  `paper/course_version_2026_06/`. The two exp18 `launcher.log` files (git-ignored, not in the tag) were moved to
+  the local `archive/exp18_launcher_logs/`. Push the tag with the branch.
 - [ ] `CITATION.cff`: add Jeong Edon and Muhammad Aliff once their family and given names are confirmed.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
