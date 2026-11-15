@@ -1,0 +1,148 @@
+{
+  "experiment_name": "exp16_mc_persistence_seed_sweep",
+  "run_id": "run_06_seed_101_rerun",
+  "notes": "rerun_of_seed_101_under_the_current_committed_code",
+  "model_name": "Qwen/Qwen2.5-3B-Instruct",
+  "mode": "subset",
+  "seed": 101,
+  "strict_eval": false,
+  "decoder_names": [
+    "fanda_update1",
+    "fanda_update2",
+    "fanda_update4",
+    "fanda_update8",
+    "fanda_frozen"
+  ],
+  "primary_metric": "mc2",
+  "secondary_metrics": [
+    "mc1",
+    "mc3"
+  ],
+  "subset_strategy": "random_seed_subset",
+  "anchor_subset_reference": null,
+  "experiment_question": "across_different_truthfulqa_subsets_is_the_mc_ranking_of_update1_update2_update4_update8_and_frozen_stable",
+  "experiment_note": "one_anchor_subset_matches_exp12_exactly_and_four_additional_runs_use_fresh_seeded_random_subsets_of_equal_size",
+  "refresh_schedule": {
+    "fanda_update1": 1,
+    "fanda_update2": 2,
+    "fanda_update4": 4,
+    "fanda_update8": 8,
+    "fanda_frozen": "first_step_only_then_hold"
+  },
+  "binary_rule": "final_logits_minus_selected_shallow_logits",
+  "evaluation_benchmark": "truthfulqa",
+  "truthfulqa_source": "truthful_qa/multiple_choice",
+  "truthfulqa_sampling": {
+    "usable_row_count": 817,
+    "selected_row_count": 50,
+    "sampling_mode": "seeded_random_subset",
+    "selected_source_indices": [
+      40,
+      76,
+      86,
+      92,
+      119,
+      132,
+      154,
+      160,
+      190,
+      210,
+      216,
+      220,
+      224,
+      235,
+      270,
+      277,
+      282,
+      318,
+      320,
+      336,
+      357,
+      392,
+      403,
+      411,
+      415,
+      422,
+      451,
+      467,
+      486,
+      507,
+      511,
+      522,
+      531,
+      535,
+      574,
+      579,
+      585,
+      594,
+      602,
+      605,
+      607,
+      645,
+      650,
+      667,
+      698,
+      700,
+      705,
+      717,
+      744,
+      755
+    ]
+  },
+  "truthfulqa_limit": 50,
+  "truthfulqa_metrics": [
+    "mc1",
+    "mc2",
+    "mc3"
+  ],
+  "latency_measurement": "wall_clock_seconds_with_cuda_synchronize",
+  "evaluation_seconds": 493.54042909500004,
+  "environment": {
+    "recorded_at_utc": "2026-11-14T11:54:26Z",
+    "git_commit": "7a3d6a090de0431554f4e3c79955b04c75ff19ae",
+    "git_uncommitted_changes": false,
+    "python": "3.12.3",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "packages": {
+      "torch": "2.9.1+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.5",
+      "huggingface_hub": "0.36.2",
+      "accelerate": "1.13.0",
+      "tokenizers": "0.22.2",
+      "safetensors": "0.7.0",
+      "numpy": "2.4.6",
+      "pandas": "3.1.1"
+    },
+    "gpu": {
+      "cuda_available": true,
+      "torch_cuda": "12.8",
+      "cudnn": 91002,
+      "devices": [
+        "NVIDIA GeForce RTX 5070"
+      ]
+    },
+    "model_settings": {
+      "model_name": "Qwen/Qwen2.5-3B-Instruct",
+      "dtype": "torch.bfloat16",
+      "device": "cuda",
+      "use_chat_template": true,
+      "mature_layer_index": 35,
+      "candidate_premature_layers": [
+        0,
+        2,
+        4,
+        6,
+        8
+      ],
+      "layer_selection_temperature_tau": 0.5,
+      "default_update_every": 4,
+      "dola_relative_top": 0.1,
+      "single_pass_teacher_forcing": true
+    },
+    "truthfulqa_file": {
+      "cached_arrow_file": "truthful_qa-validation.arrow",
+      "sha256": "d8416ca73542259ac0a80d012e8c0af42f6f4035bbfe5b4a7f27a0365a744c13"
+    }
+  }
+}
