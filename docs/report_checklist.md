@@ -226,6 +226,12 @@ Open (no GPU unless noted):
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
 - [x] Title (part A), kept 2026-11-15.
+- [x] Refocused after the authors' read (2026-11-15): no development history in the report. Removed Appendix C
+  (development history, Table 12), Appendix D (selection-interval bound), the selection-interval paragraph of §5 and
+  its table (T3), the k-variants sentence of §3, and the project story at the start of §1 (now a neutral sentence on
+  why per-question DoLa-static is the test case for C1). `holtzman2020curious` removed from the bib. Tag
+  `dev-history-2026-11` (on b686fd8) keeps that version, exp16, `docs/algorithms/` and `scripts/run_report_reruns.sh`,
+  which were removed from the tree. Push the tag with the branch.
 - [ ] A final read by the authors.
 - [x] Repository cleanup (2026-11-15): exp1–exp10 and `results/dev/` moved to `results/experiments/exploration/`
   (`dev` → `sanity_runs`; runners use `parents[2]`, all nine `--list` checked; `summarise_runs.py` finds all 32

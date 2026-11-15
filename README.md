@@ -93,26 +93,27 @@ the 50 development questions in the current environment changed MC1 on at most 2
 
 ```text
 truthfulqa-scoring-rules/
-  src/truthfulqa_scoring/                        Evaluator, decoders, benchmark loaders, older CLI (python -m truthfulqa_scoring)
-  results/experiments/              The experiments of the study (exp11-exp13, exp16, exp19-exp21): runner,
-                                    run matrix, README, saved runs
-  scripts/                          Analysis scripts, paired tests, table and figure data for the report
-  paper/                            Report source (tables/ and figures/data/ are generated)
-  docs/                             Experiment log, glossary, report checklist, notes on the likelihood and DoLa code
+  src/truthfulqa_scoring/   Evaluator, decoders, benchmark loaders, older CLI (python -m truthfulqa_scoring)
+  results/experiments/      The experiments (exp19-exp21 in the report; exp11-exp13 read by the analysis):
+                            runner, run matrix, README, saved runs
+  scripts/                  Analysis scripts, paired tests, table and figure data for the report
+  paper/                    Report source (tables/ and figures/data/ are generated)
+  docs/                     Experiment log, glossary, report checklist
 ```
 
-Material the study does not use was removed from the tree and is kept under two git tags (see
+Material the study does not use was removed from the tree and is kept under three git tags (see
 [`results/experiments/README.md`](results/experiments/README.md)):
 
 - `exploration-2026-06`: the early design alternatives (exp1–exp10) and the first sanity runs;
-- `pre-cleanup-2026-11`: the left-out experiments (exp14, exp15, exp17, exp18), the development plots
-  (`results/figures/`, `scripts/plots/`), the earlier method notes and presentation, and the June 2026 course report
-  (`paper/course_version_2026_06/`).
+- `pre-cleanup-2026-11`: the left-out experiments (exp14, exp15, exp17, exp18), the development plots, the earlier
+  method notes and presentation, and the June 2026 course report;
+- `dev-history-2026-11`: exp16, the notes on the older evaluator (`docs/algorithms/`), the rerun script, and the
+  report version with its development-history appendices.
 
 Key implementation files:
 
 - `results/experiments/local_evaluator.py`: the scoring rules of the experiments (DoLa in both configurations,
-  per-question DoLa-static and its selection intervals, the factorial)
+  per-question DoLa-static, the factorial)
 - `results/experiments/exp20_self_evaluation/run_experiment.py`: self-evaluation, every block and both wordings
 - `src/truthfulqa_scoring/decoders/core.py`: premature-layer selection and DoLa scores
 - `src/truthfulqa_scoring/evaluation.py`: MC1 / MC2 / MC3

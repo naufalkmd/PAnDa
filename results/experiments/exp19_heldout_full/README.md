@@ -39,7 +39,7 @@ development set), and PAnDa (about 2× the time of DoLa). These stay as developm
 The model is read from the row's `model_name`. A row that already has results is never overwritten.
 
 ```bash
-bash scripts/run_report_reruns.sh r2      # or: python results/experiments/exp19_heldout_full/run_experiment.py --run-id run_01_qwen25_3b_full
+./.venv/bin/python results/experiments/exp19_heldout_full/run_experiment.py --run-id run_01_qwen25_3b_full
 ```
 
 Each run's metadata records the environment (git commit, package versions, GPU, model precision, candidate

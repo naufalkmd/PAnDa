@@ -47,13 +47,18 @@ tokens or `.env`.
 
 ## Layout
 
-- The tree holds only what the study uses: exp11–exp13, exp16, exp19–exp21, the analysis scripts and the report.
-  Removed on 2026-11-15 and kept under tags (restore with `git checkout <tag> -- <path>`, and do not commit it back):
+- The tree holds only what the study uses: exp19–exp21 (in the report), exp11–exp13 (the analysis reads the
+  development-question list from exp12 and compares with all three in the environment check), the analysis scripts
+  and the report. The report has no development-history section: the development set appears only as the evidence
+  for C1. Removed on 2026-11-15 and kept under tags (restore with `git checkout <tag> -- <path>`, and do not commit
+  it back):
   - `exploration-2026-06`: exp1–exp10 and the first sanity runs (`results/experiments/exploration/`; their
     runners find the shared code two levels up);
   - `pre-cleanup-2026-11`: exp14, exp15, exp17, exp18, `results/figures/`, `scripts/plots/`,
     `scripts/build_exp14_manual_eval_sheet.py`, `docs/presentation/`, the method notes in `docs/algorithms/`
-    (all but `dola.md` and `greedy.md`) and `paper/course_version_2026_06/`.
+    (all but `dola.md` and `greedy.md`) and `paper/course_version_2026_06/`;
+  - `dev-history-2026-11`: exp16, the rest of `docs/algorithms/`, `scripts/run_report_reruns.sh`, and the report
+    with its development-history appendices (C: development history and Table 12; D: the selection-interval bound).
 - Code for removed experiments (decoders in `local_evaluator.py`, PAnDa in `src/truthfulqa_scoring/`) stays: it is small, and
   the tagged runs used it.
 
