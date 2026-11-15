@@ -118,7 +118,7 @@ Key implementation files:
 - `src/truthfulqa_scoring/decoders/core.py`: premature-layer selection and DoLa scores
 - `src/truthfulqa_scoring/evaluation.py`: MC1 / MC2 / MC3
 
-## Authors
+## Author
 
-Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University). The work started as a course project
-(COSE474, spring 2026).
+Muhammad Naufal (Korea University). The work began as a course project for COSE474 (spring 2026) with Jeong Edon
+and Muhammad Aliff.
