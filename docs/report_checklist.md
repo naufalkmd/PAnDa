@@ -210,19 +210,33 @@ All verified 2026-11-14 and written to `paper/references.bib` from the publisher
 - [x] Not carried over: the course version's citations of the Transformer and Qwen2.5 papers as support for the design intuition.
 
 
-New for the empirical framing (2026-11-15), **not yet verified or in `references.bib`** (arXiv ids found during the
-exp20 searches; check each record and what the sentence claims before citing):
-- [ ] Self-evaluation, P(True): Kadavath et al. 2022, arXiv:2207.05221.
-- [ ] Self-evaluation for selection and abstention: Ren et al. 2023, arXiv:2312.09300.
-- [ ] Self-evaluation guided beam search: Xie et al., NeurIPS 2023, arXiv:2305.00633.
-- [ ] Self-alignment for factuality (P(True) picks the MC option; compares with DoLa): Zhang et al. 2024, arXiv:2402.09267.
-- [ ] Truthfulness probe on hidden states: Azaria and Mitchell 2023, arXiv:2304.13734.
-- [ ] Intermediate layers under false demonstrations: Halawi et al., ICLR 2024, arXiv:2307.09476.
-- [ ] MCQA without the question: Balepur et al. 2024, arXiv:2402.12483.
-- [ ] TruthfulQA weaknesses: "Gaming TruthfulQA" (LessWrong post) and the authors' binary-choice version
-  (Alignment Forum post); blog posts, so cite as such or find the archived record.
-- [ ] Hypothesis-only baselines in NLI: Gururangan et al. 2018; Poliak et al. 2018 (look up the ACL Anthology records).
-- [ ] Selective prediction / risk–coverage: look up the standard reference before citing.
+New for the empirical framing, verified 2026-11-15 and appended to `references.bib` (15 entries, from the venue's
+own record where one exists: ACL Anthology .bib, NeurIPS proceedings .bib, PMLR, JMLR, OpenReview search, arXiv API).
+All 28 entries compile with `plainnat` without BibTeX warnings.
+- [x] Self-evaluation, P(True): Kadavath et al. 2022, arXiv only (`kadavath2022language`).
+- [x] Self-evaluation for selective generation and abstention, on TruthfulQA and TL;DR: Ren et al., PMLR 239
+  (ICBINB workshop at NeurIPS 2023) (`ren2023selfevaluation`).
+- [x] Self-evaluation guided beam search: Xie et al., NeurIPS 2023 (`xie2023selfevaluation`; author names as in the
+  NeurIPS record, which differs from arXiv on two of them).
+- [x] Self-alignment for factuality: Zhang et al., ACL 2024 (`zhang2024selfalignment`). **Correction:** they do not use
+  P(True) to choose the MC option. Self-evaluation scores label the model's own responses as DPO training data; their
+  TruthfulQA MC accuracy still compares the answers' conditional probabilities; DoLa is one of their baselines. Cite
+  it as "self-evaluation used to train", the contrast with this report being that we score the option with it.
+- [x] Truthfulness probe on hidden states: Azaria and Mitchell, Findings of EMNLP 2023 (`azaria2023internal`).
+- [x] Intermediate layers under false demonstrations: Halawi et al., ICLR 2024 spotlight (`halawi2024overthinking`).
+- [x] MCQA with choices only: Balepur et al., ACL 2024 (`balepur2024artifacts`).
+- [x] TruthfulQA weaknesses, cited as blog posts: Turner and Kurzeja 2025 (`turner2025gaming`; decision-tree
+  heuristics, 79.6 % in theory; **says nothing about option length**, so do not cite it for C3); Evans, Chua and Lin
+  2025 (`evans2025improved`; MC format may measure test-taking ability; binary-choice version recommended).
+- [x] Hypothesis-only baselines in NLI: Gururangan et al., NAACL 2018 (`gururangan2018annotation`); Poliak et al.,
+  *SEM 2018 (`poliak2018hypothesis`).
+- [x] Selective prediction: El-Yaniv and Wiener, JMLR 2010, which names the risk–coverage trade-off
+  (`elyaniv2010foundations`); Geifman and El-Yaniv, NeurIPS 2017 (`geifman2017selective`).
+- [x] Model reports for the two exp20 models without one yet: Phi-3 report, arXiv 2404.14219 (`abdin2024phi3`);
+  SmolLM2, arXiv 2502.02737 (`benallal2025smollm2`); both linked from the model cards. Gemma 3 1B and Qwen2.5-0.5B/1.5B
+  are covered by the existing Gemma 3 and Qwen2.5 entries.
+- [ ] Still to find, if §6 wants prior work on length: a published result on length bias in multiple-choice or
+  likelihood scoring. None verified yet; without one, C3 is stated as our measurement only.
 
 ---
 
