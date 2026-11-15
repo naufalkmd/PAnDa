@@ -84,8 +84,8 @@ def _load_exp12_anchor_source_indices():
 
 
 def _load_truthfulqa_subset(evaluator_args, run_spec):
-    from panda.benchmarks import load_truthfulqa_rows, load_truthfulqa_rows_from_source_indices
-    from panda.utils import make_sampling_rng, resolve_limit
+    from truthfulqa_scoring.benchmarks import load_truthfulqa_rows, load_truthfulqa_rows_from_source_indices
+    from truthfulqa_scoring.utils import make_sampling_rng, resolve_limit
 
     subset_strategy = (run_spec.get("subset_strategy") or "random_seed_subset").strip()
     requested_limit = resolve_limit(evaluator_args.truthfulqa_limit, evaluator_args.mode, 5)

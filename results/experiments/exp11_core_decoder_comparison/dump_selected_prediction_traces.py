@@ -22,8 +22,8 @@ if str(SRC_ROOT) not in sys.path:
 
 from common import build_evaluator_args, read_run_matrix
 from local_evaluator import ExperimentEvaluator
-from panda.evaluation import summarize_trace
-from panda.prompts import build_truthfulqa_prompt
+from truthfulqa_scoring.evaluation import summarize_trace
+from truthfulqa_scoring.prompts import build_truthfulqa_prompt
 
 
 RUN_MATRIX_PATH = EXPERIMENT_DIR / "run_matrix.csv"

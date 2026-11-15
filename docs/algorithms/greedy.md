@@ -4,9 +4,9 @@
 
 `greedy` is the simplest decoder ihRelevant code:
 
-- `src/panda/evaluator.py:659-662`
-- `src/panda/evaluator.py:731-783`
-- `src/panda/evaluator.py:793-873`
+- `src/truthfulqa_scoring/evaluator.py:659-662`
+- `src/truthfulqa_scoring/evaluator.py:731-783`
+- `src/truthfulqa_scoring/evaluator.py:793-873`
 
 ## Generation Pseudocode
 

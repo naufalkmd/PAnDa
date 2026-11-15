@@ -1,7 +1,7 @@
 # Experiments
 
 Each folder holds one experiment: `run_experiment.py`, `run_matrix.csv` (one row per run), a README, and its saved
-outputs in `runs/<run_id>/`. The runners import `src/panda` and the shared code here (`common.py`,
+outputs in `runs/<run_id>/`. The runners import `src/truthfulqa_scoring` and the shared code here (`common.py`,
 `local_evaluator.py`). Run them from the repository root; a runner never overwrites a finished run.
 
 Results and known issues for every experiment: [`docs/experiment_log.md`](../../docs/experiment_log.md).

@@ -1,7 +1,7 @@
 # Report checklist: empirical study of scoring rules on multiple-choice TruthfulQA
 
-Status and open items for the report. The report is `paper/fanda_report.tex` (figures in `paper/figures/`;
-build with `latexmk -pdf -outdir=build fanda_report.tex` from `paper/`, PDF in `paper/build/`). In the PDF, red
+Status and open items for the report. The report is `paper/report.tex` (figures in `paper/figures/`;
+build with `latexmk -pdf -outdir=build report.tex` from `paper/`, PDF in `paper/build/`). In the PDF, red
 `[TODO]` marks a missing value and red `[verify]` a statement from an older run. `[x]` done, `[ ]` open.
 The June 2026 course version is kept at the git tag `pre-cleanup-2026-11` (`paper/course_version_2026_06/`).
 
@@ -133,7 +133,7 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 | T9, F5 early exit | exp20 `cross_model/early_exit_selection.csv`, `early_exit_by_block.csv` | [x] |
 | T10 question removed | exp20 `cross_model/prior_correction.csv` | [x] |
 | T11 self-evaluation vs likelihood, eight models (§8) | exp20 `cross_model/self_evaluation_vs_likelihood.csv` (exp21 scores) | [x] |
-| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code (`src/panda/prompts.py`, `local_evaluator.py`, exp20 README) and `split.json` | [x] `paper/figures/f1_scoring.tex`, `f2_question_sets.tex` |
+| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code (`src/truthfulqa_scoring/prompts.py`, `local_evaluator.py`, exp20 README) and `split.json` | [x] `paper/figures/f1_scoring.tex`, `f2_question_sets.tex` |
 
 ---
 
@@ -180,7 +180,7 @@ Open (no GPU unless noted):
   that it is not the standard 6-shot TruthfulQA-MC prompt, so absolute scores are not comparable with published ones.
 - [x] Option score: sum of token log-probabilities (no length normalisation). MC1 = best true option above best
   false (MC1 option set); MC2 = normalised probability mass on true options; MC3 = fraction of true options above
-  the best false option (MC2 option set), as in DoLa's evaluation (`src/panda/evaluation.py`).
+  the best false option (MC2 option set), as in DoLa's evaluation (`src/truthfulqa_scoring/evaluation.py`).
 
 ## Draft status
 

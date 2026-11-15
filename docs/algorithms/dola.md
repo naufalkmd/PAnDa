@@ -13,9 +13,9 @@
 
 Relevant code:
 
-- `src/panda/evaluator.py:599-640`
-- `src/panda/evaluator.py:659-668`
-- `src/panda/evaluator.py:731-783`
+- `src/truthfulqa_scoring/evaluator.py:599-640`
+- `src/truthfulqa_scoring/evaluator.py:659-668`
+- `src/truthfulqa_scoring/evaluator.py:731-783`
 
 ## Generation Pseudocode
 

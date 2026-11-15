@@ -39,7 +39,7 @@ for _path in (EXPERIMENTS_ROOT, PROJECT_ROOT / "scripts"):
 from common import collect_environment  # noqa: E402  (also puts src/ on the path)
 from heldout_analysis import DEV_RUN, load_labels  # noqa: E402
 from paired_tests import questions_of  # noqa: E402
-from panda.core import get_base_model  # noqa: E402
+from truthfulqa_scoring.core import get_base_model  # noqa: E402
 
 RUN_MATRIX_PATH = EXPERIMENT_DIR / "run_matrix.csv"
 RUNS_DIR = EXPERIMENT_DIR / "runs"
@@ -183,7 +183,7 @@ def main():
             sys.exit(f"Reply {word!r} is not one token after the chat template: {full[len(base) - 1:]}")
         return full[-1]
 
-    def option_token_count(option):  # as candidate_to_ids in src/panda/decoders/core.py
+    def option_token_count(option):  # as candidate_to_ids in src/truthfulqa_scoring/decoders/core.py
         text = option if option.startswith((" ", "\n")) else " " + option
         return len(tokenizer(text, add_special_tokens=False)["input_ids"])
 

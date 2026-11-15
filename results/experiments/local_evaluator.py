@@ -16,7 +16,7 @@ if str(SRC_ROOT) not in sys.path:
 import torch
 import torch.nn.functional as F
 
-from panda.import_shims import suppress_problematic_optional_dependency_detection
+from truthfulqa_scoring.import_shims import suppress_problematic_optional_dependency_detection
 
 suppress_problematic_optional_dependency_detection()
 
@@ -31,8 +31,8 @@ except ModuleNotFoundError as exc:  # pragma: no cover - depends on local env
         ) from exc
     raise
 
-from panda.core import make_runtime_summary
-from panda.evaluator import Stage4Evaluator
+from truthfulqa_scoring.core import make_runtime_summary
+from truthfulqa_scoring.evaluator import Stage4Evaluator
 
 
 EXP1_DECODER_NAMES = (
@@ -545,7 +545,7 @@ class ExperimentEvaluator(Stage4Evaluator):
         return os.environ.get("PANDA_SINGLE_PASS_TF", "1") != "0"
 
     def _prime_teacher_forcing_cache(self, prompt, choice_text):
-        from panda.core import apply_final_norm, get_base_model
+        from truthfulqa_scoring.core import apply_final_norm, get_base_model
 
         prompt_ids = self.prepare_prompt(prompt)
         option_ids = torch.tensor([self.candidate_to_ids(choice_text)], device=prompt_ids.device)

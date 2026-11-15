@@ -73,7 +73,7 @@ def load_run(run_dir: Path):
 
 
 def load_labels():
-    """labels[question] = (mc1 options, mc1 labels, mc2 options, mc2 labels), as in src/panda/benchmarks.py."""
+    """labels[question] = (mc1 options, mc1 labels, mc2 options, mc2 labels), as in src/truthfulqa_scoring/benchmarks.py."""
     from datasets import load_dataset
 
     labels = {}
@@ -93,7 +93,7 @@ def softmax(values):
 
 
 def mc_metrics(score_of, label_row):
-    """MC1/MC2/MC3 from a function option -> score, as in src/panda/evaluation.py."""
+    """MC1/MC2/MC3 from a function option -> score, as in src/truthfulqa_scoring/evaluation.py."""
     mc1_options, mc1_labels, mc2_options, mc2_labels = label_row
     s1 = [score_of(o) for o in mc1_options]
     true1 = [s for s, l in zip(s1, mc1_labels) if l == 1]
@@ -318,7 +318,7 @@ def main() -> None:
     model_name = json.loads(next(HELDOUT_RUN.glob("*_metadata.json")).read_text(encoding="utf-8"))["model_name"]
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    def token_count(option):  # as candidate_to_ids in src/panda/decoders/core.py (leading space added)
+    def token_count(option):  # as candidate_to_ids in src/truthfulqa_scoring/decoders/core.py (leading space added)
         text = option if option.startswith((" ", "\n")) else " " + option
         return max(1, len(tokenizer(text, add_special_tokens=False)["input_ids"]))
 

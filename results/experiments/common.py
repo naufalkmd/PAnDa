@@ -20,8 +20,8 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from panda.evaluation import assert_eval_sources, build_pairwise_summary, evaluate_truthfulqa
-from panda.utils import make_sampling_rng, resolve_limit
+from truthfulqa_scoring.evaluation import assert_eval_sources, build_pairwise_summary, evaluate_truthfulqa
+from truthfulqa_scoring.utils import make_sampling_rng, resolve_limit
 
 
 SUMMARY_GROUP_COLUMNS = ["benchmark", "metric_name", "decoder", "decoder_label"]
@@ -101,7 +101,7 @@ def collect_environment(evaluator):
     attempt("model_settings", model_settings)
 
     def dataset_file():
-        from panda.benchmarks import _find_truthfulqa_arrow_cache
+        from truthfulqa_scoring.benchmarks import _find_truthfulqa_arrow_cache
 
         path = _find_truthfulqa_arrow_cache()
         if path is None:
@@ -474,7 +474,7 @@ def run_truthfulqa_suite_on_rows(
 
 
 def run_truthfulqa_suite(evaluator, decoder_names, cli_args, artifact_prefix, results_dir, metadata):
-    from panda.benchmarks import load_truthfulqa_rows
+    from truthfulqa_scoring.benchmarks import load_truthfulqa_rows
 
     truthfulqa_limit = resolve_limit(cli_args.truthfulqa_limit, cli_args.mode, 5)
     truthfulqa_rows, truthfulqa_source, truthfulqa_manifest = load_truthfulqa_rows(
