@@ -16,7 +16,9 @@ Last updated: 2026-11-15.
 - [x] arXiv style, `article`, one column, no page limit (aim: 10–12 pages plus appendix).
 - [x] Authors: Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University). [ ] Co-authors review before publishing.
 - [x] Framing (2026-11-15): **empirical study**, not a method paper (outline in part C).
-- [ ] Title: working title in part C.
+- [x] Title (decided 2026-11-15): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and
+  Option Length in Small Language Models". Considered and not taken: "What Does Multiple-Choice TruthfulQA Reward? A
+  Held-Out Study of Scoring Rules in Small Language Models" (shorter, but drops DoLa and self-evaluation).
 - [x] Method name (decided 2026-11-14): **per-question DoLa-static**, built on DoLa's own term DoLa-static; "FAnDa"
   only as the former name. [ ] No "novel", "first" or "state of the art".
 
@@ -49,7 +51,7 @@ standard qualifier). PAnDa was dropped (2026-11-14): it appears only in the one-
 rules studied and is reported with its held-out result. No "we propose", no "novel". The earlier method-paper
 outline is in the git history.
 
-**Working title** (decide before publishing): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast,
+**Title** (decided 2026-11-15, part A): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast,
 Self-Evaluation and Option Length in Small Language Models".
 
 **Challenges** (here: what makes the measurement hard; each result section answers one):
@@ -223,7 +225,8 @@ Open (no GPU unless noted):
   does not exist.
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
-- [ ] Title (part A) and a final read by the authors.
+- [x] Title (part A), kept 2026-11-15.
+- [ ] A final read by the authors.
 - [x] Repository cleanup (2026-11-15): exp1–exp10 and `results/dev/` moved to `results/experiments/exploration/`
   (`dev` → `sanity_runs`; runners use `parents[2]`, all nine `--list` checked; `summarise_runs.py` finds all 32
   runs); README, `results/experiments/README.md`, project `CLAUDE.md`, `pyproject.toml` description and
