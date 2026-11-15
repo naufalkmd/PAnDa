@@ -191,6 +191,10 @@ reference code uses different settings for free generation and for TruthfulQA mu
   and candidate blocks from the second half of the network. DoLa used layers 16, 18, \dots, 30 of the 32-layer
   LLaMA-7B; we transfer them by relative depth to blocks 18, 20, \dots, 34 of \mainmodel{}.
 \end{itemize}
+The two sources differ on the constraint in multiple choice. The DoLa paper states that for TruthfulQA it replaces
+$-\infty$ with $-1000$ in the constraint ``to avoid ruining LM likelihood scores''~\citep{chuang2024dola}, which
+implies the constraint is applied; the released multiple-choice script sets $\alpha = 0$ by default, which keeps
+every token, and its published TruthfulQA commands do not change it. We follow the released script.
 Neither candidate set was tuned for \mainmodel{}. The constraint matters for multiple choice because the option's
 tokens are fixed in advance: an option token outside $\Vhead$ contributes about $-1000$ to the option score
 whatever the contrast says (\cha2, Section~\ref{sec:mislead}).
@@ -256,13 +260,96 @@ the exploration questions; they are then fixed and applied to the confirmation q
 %% ============================================================================================================
 \section{Experimental Setup}
 \label{sec:setup}
-\todo{\S4 per checklist part C: data; the question sets and what each decided (Figure F2); metrics; tests; the eight
-models and the inclusion rule; prompts (not the 6-shot prompt; the likelihood prompt mentions answer options it does
-not list); hardware, run times; environment check}
+\paragraph{Data.}
+We use the multiple-choice version of TruthfulQA, 817 questions with 5,882 distinct answer
+options~\citep{lin2022truthfulqa}. Each question has one set of options with exactly one true answer (on average
+5.04 options), which MC1 uses, and a second set with several true and false answers, which MC2 and MC3 use.
+
+\paragraph{Question sets.}
+Every choice in this study was made on a named subset of the questions, and the main results are reported on
+questions that played no part in it (Figure~\ref{fig:sets}); where a result uses the questions a choice was made on,
+its section says so. The \emph{development set} is 50 questions drawn with seed 42;
+\method{} and all settings of the earlier experiments were chosen on it. The \emph{held-out set} is the other 767
+questions: we scored all 817 questions once with every likelihood and contrast rule and removed the development
+questions at analysis time. For self-evaluation, the 817 questions were split once, with seed 20261115, into 417
+\emph{exploration} questions (the 50 development questions and 367 others) and 400 \emph{confirmation} questions. The
+self-evaluation design, including the early-exit blocks and the abstention thresholds, was chosen on the
+exploration questions and written to a file with its hash before the confirmation questions were scored once. The
+likelihood and DoLa scores of the held-out questions existed before this split, but no self-evaluation score of a
+confirmation question did.
+
+\begin{figure}[t]
+\centering
+\input{figures/f2_question_sets}
+\caption{The question sets, drawn to scale, and what was decided on each. Choices about layer contrast were made on
+the 50 development questions and tested on the 767 held-out questions; choices about self-evaluation were made on
+the 417 exploration questions and tested on the 400 confirmation questions.}
+\label{fig:sets}
+\end{figure}
+
+\paragraph{Metrics.}
+MC1 is 1 if the true option of the first set scores strictly above every false option, so a tie counts as wrong.
+MC2 is the probability mass on the true options of the second set after a softmax over the option scores; with the
+log-likelihood as score, this is the score of the TruthfulQA paper, ``the total normalized likelihood of the true
+answers''~\citep{lin2022truthfulqa}. MC3 is the share of true options that score above the best false option. We
+report all three, as DoLa does~\citep{chuang2024dola}, and use MC1 as the primary metric, because it is the
+decision a user of the scores would make. To separate a rule's preference for true answers from its preference for
+long ones (\cha3), we also report \emph{length-matched pairwise accuracy}: over the pairs of one true and one false
+option of the second set whose token counts differ by at most one, the share of pairs in which the true option
+scores higher (a tie counts one half), averaged over questions. We defined this measure for this study; it is not a
+standard metric.
+
+\paragraph{Statistical tests.}
+Two rules are always compared on the same questions. For each difference we report the mean, a 95\,\% percentile
+interval from a paired bootstrap over questions (10,000 resamples, seed 0)~\citep{bergkirkpatrick2012empirical}
+and, for MC1, the numbers of questions gained and lost with an exact McNemar test~\citep{mcnemar1947note}, a
+choice of tests that follows \citet{dror2018hitchhiker}. Within each table, the bootstrap and McNemar $p$-values
+of all comparisons are adjusted together by the Holm--Bonferroni method; the comparison of self-evaluation with
+likelihood on eight models (Section~\ref{sec:controls}) uses unadjusted intervals, as its protocol fixed in advance.
+For scale: a single MC1 has a 95\,\% interval of about $\pm 0.033$ on the 767 held-out questions and of about $\pm
+0.12$ to $\pm 0.14$ on the 50 development questions (Figure~\ref{fig:heldout}).
+
+\paragraph{Models.}
+The main model is \mainmodel{}~\citep{qwen2024qwen25}, on which all rules were developed and tested. The
+cross-model checks add seven instruction-tuned models chosen by a rule written into their protocol: decoder language models
+of at most 4 billion parameters that run in bfloat16 on one 12\,GB GPU, have a chat template and answer directly,
+because the verdict is read at the first reply token. These are Gemma~3 4B and 1B~\citep{gemmateam2025gemma3},
+Falcon3-3B~\citep{tii2024falcon3}, Qwen2.5-1.5B and 0.5B~\citep{qwen2024qwen25},
+Phi-3.5-mini~\citep{abdin2024phi3} and SmolLM2-1.7B~\citep{benallal2025smollm2}, all in their instruction-tuned
+versions. Llama~3.2 3B was planned and left out, because access to its gated repository was not granted;
+SmolLM2-1.7B took its place. The protocol of the early-exit check was fixed after the first three models
+(\mainmodel{}, Gemma~3 4B, Falcon3-3B) had been scored and before the other five.
+
+\paragraph{Prompts.}
+All prompts use each model's chat template with a single user message. For the likelihood and DoLa scores, the
+user message is the question followed by ``Answer with one of the provided answer options only.'', and the
+option's tokens follow the assistant prefix. The options are not listed in the prompt, so the instruction refers
+to options the model does not see; we kept this prompt for every run so that all likelihood and contrast scores stay
+comparable. The TruthfulQA paper scores options after a fixed question-answering prompt of trivia questions and
+recommends it for comparisons~\citep{lin2022truthfulqa}; because we use a different prompt, our absolute scores are
+not comparable with published ones, and we compare rules only with each other on the same prompt. The
+self-evaluation prompts are given in Section~\ref{sec:rules}.
+
+\paragraph{Implementation.}
+All runs reported here used PyTorch 2.9.1 and Transformers 4.57.6 on one NVIDIA RTX 5070 (12\,GB), with \mainmodel{} in bfloat16,
+the precision of its configuration. The likelihood and contrast scorer processes one option at a time and is limited
+by the CPU: scoring all nine likelihood and contrast rules on the 817 questions took 3.2 hours for \mainmodel{}, and
+the base likelihood alone took 6.5 to 11.5 minutes per model. Self-evaluation scores the options in batches of
+eight and took 66 seconds for the 400 confirmation questions, both wordings and every block included. Each run
+records the code version it ran with. Rerunning the development questions in the current environment reproduced
+the earlier development runs to within two questions per rule on MC1 (Appendix~\ref{app:repro}).
 
 \section{Layer Contrast on Held-Out Questions}
 \label{sec:heldout}
-\todo{\S5: T1, T2, T3, F3 (\cha1)}
+\todo{\S5: T1, T2, T3 (\cha1)}
+
+\begin{figure}[t]
+\centering
+\input{figures/f3_dev_vs_heldout}
+\caption{\todo{caption with \S5: MC1 and MC2 of each rule on the 50 development and 767 held-out questions, with 95\,\%
+bootstrap intervals; what to see}}
+\label{fig:heldout}
+\end{figure}
 
 \section{Why Multiple-Choice Scores Mislead}
 \label{sec:mislead}
@@ -293,7 +380,9 @@ not list); hardware, run times; environment check}
 
 \appendix
 \section{Reproduction}
-\todo{repository, commit, run command, run time}
+\label{app:repro}
+\todo{repository, commit, run command, run time; the development-run reproduction table (0--2 questions changed per
+rule on MC1)}
 
 \section{When a longer selection interval changes nothing}
 \label{app:stability}

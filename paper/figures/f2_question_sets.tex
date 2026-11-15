@@ -18,15 +18,15 @@
   \draw[brace] ($(rest.north west)+(0,3pt)$) -- coordinate[pos=0.5] (bheld) ($(conf.north east)+(0,3pt)$);
   \draw[figgray, line width=0.4pt] ($(bdev)+(0,6pt)$) -- ($(bdev)+(0,2.1em)$);
   \node[note, anchor=south west, inner sep=1pt] at ($(bdev)+(-2pt,2.1em)$)
-    {\textbf{Development} (50, seed 42): exp1--exp18 chose the methods and settings};
+    {\textbf{Development} (50, seed 42): layer-contrast methods and settings chosen};
   \node[note, anchor=south] at ($(bheld)+(0,8pt)$)
-    {\textbf{Held-out} (767): exp19 scored every rule once, on all 817 questions};
+    {\textbf{Held-out} (767): every likelihood and contrast rule scored once};
 
   % below: exploration and confirmation (exp20)
   \draw[brace] ($(rest.south east)+(0,-3pt)$) -- coordinate[pos=0.5] (bexp) ($(dev.south west)+(0,-3pt)$);
   \draw[brace] ($(conf.south east)+(0,-3pt)$) -- coordinate[pos=0.5] (bconf) ($(conf.south west)+(0,-3pt)$);
   \node[note, anchor=north] at ($(bexp)+(0,-8pt)$)
-    {\textbf{Exploration} (417, seed 20261115)\\ exp20 design frozen; cross-model checks;\\ exp21 comparison};
+    {\textbf{Exploration} (417, seed 20261115)\\ self-evaluation design frozen;\\ checks on eight models};
   \node[note, anchor=north] at ($(bconf)+(0,-8pt)$)
-    {\textbf{Confirmation} (400)\\ exp20 tested once (Qwen2.5-3B)};
+    {\textbf{Confirmation} (400)\\ self-evaluation tested once (Qwen2.5-3B)};
 \end{tikzpicture}

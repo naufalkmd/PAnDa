@@ -195,7 +195,17 @@ Open (no GPU unless noted):
   The other sections are placeholders in the outline's order. The section numbers in part C now match the `.tex`.
 - [ ] Decide on the appendix "When a longer selection interval changes nothing" (not in the outline; keep only if
   §5 discusses the interval).
-- [ ] Next: §4 Setup (cites the model reports and the tests, which removes most "uncited" warnings), then §5–§8.
+- [x] §4 Setup drafted (2026-11-15): data, question sets with F2, metrics, tests, models and inclusion rule, prompts,
+  implementation. Facts from run metadata, `requirements.txt`, exp20 `protocol.json`, `development_reproduction.csv`.
+- [x] Checked in the DoLa paper (arXiv 2309.03883v2, §3.2): MC1/MC2/MC3 reported; TruthfulQA run with the default
+  QA prompt; the text says the constraint is used in MC with −1000 in place of −∞, while the released
+  `tfqa_mc_eval.py` defaults to `relative_top = 0.0` (no constraint) and the README commands keep it. §3 states both
+  and that we follow the script. This strengthens C2: the paper's description and its code disagree.
+- [x] Checked in the TruthfulQA paper: its MC score is the normalised likelihood of the true answers (= MC2); the
+  names MC1/MC3 are not in it. §4 attributes only MC2 to it. Bib comments updated.
+- [ ] Uncited entries from the method framing (`holtzman2020curious`, `huang2025efficient`, `guo2025deepseekr1`,
+  `huang2025survey`): cite in the appendix's development history or remove.
+- [ ] Next: §5–§8 with tables T1–T11, then §9–§11, §1 and the abstract.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
 ---

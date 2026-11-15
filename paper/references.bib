@@ -6,7 +6,10 @@
 
 % ICLR 2024 poster (OpenReview Th6NyL07na). Supports: dynamic premature-layer selection by maximum JSD over a
 % candidate set J; buckets of J chosen on a validation set; DoLa-static (one layer chosen on a validation set);
-% the adaptive plausibility constraint with alpha = 0.1, taken from Li et al.
+% the adaptive plausibility constraint with alpha = 0.1, taken from Li et al. Checked 2026-11-15 in arXiv
+% 2309.03883v2, Sec. 3.2: TruthfulQA tested with the default QA prompt; MC1/MC2/MC3 reported; "For alpha in APC, we
+% replace -inf with -1000 to avoid ruining LM likelihood scores" (the released tfqa_mc_eval.py defaults to
+% relative_top = 0.0, i.e. no constraint, and the README commands do not change it).
 @inproceedings{chuang2024dola,
   title     = {{DoLa}: Decoding by Contrasting Layers Improves Factuality in Large Language Models},
   author    = {Chuang, Yung-Sung and Xie, Yujia and Luo, Hongyin and Kim, Yoon and Glass, James and He, Pengcheng},
@@ -40,7 +43,9 @@
 
 % --- Benchmark -----------------------------------------------------------------------------------------
 
-% ACL Anthology 2022.acl-long.229. Supports: TruthfulQA, 817 questions, MC1/MC2 multiple-choice scoring.
+% ACL Anthology 2022.acl-long.229. Supports: TruthfulQA, 817 questions; the multiple-choice score is "the total
+% normalized likelihood of the true answers" (= MC2; the names MC1/MC3 are not in the paper); the default prompt is
+% a question-answering prompt of trivia questions ("QA prompt"), recommended for comparisons (checked 2026-11-15).
 @inproceedings{lin2022truthfulqa,
   title     = {{TruthfulQA}: Measuring How Models Mimic Human Falsehoods},
   author    = {Lin, Stephanie and Hilton, Jacob and Evans, Owain},
