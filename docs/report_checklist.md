@@ -220,9 +220,8 @@ Open (no GPU unless noted):
   traced; all 26 citations resolve.
 - [x] Repository URL in Appendix A (2026-11-15; `reorganise-report` merged into `main` as PR #1). Appendix A names
   the tag `v1.0-report` for the version described.
-- [ ] Create and push the tag `v1.0-report` on the commit with the final report, after the title and the authors'
-  final read (`git tag -a v1.0-report -m ...`, `git push origin v1.0-report`). Until then the tag named in Appendix A
-  does not exist.
+- [x] Tag `v1.0-report` (2026-11-15): on `main` after the citation update, pushed to GitHub. Appendix A cites it.
+  A later change to the report needs a new tag (`v1.1-report`, ...) and the matching line in Appendix A.
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
 - [x] Title (part A), kept 2026-11-15.
@@ -232,7 +231,7 @@ Open (no GPU unless noted):
   why per-question DoLa-static is the test case for C1). `holtzman2020curious` removed from the bib. Tag
   `dev-history-2026-11` (on b686fd8) keeps that version, exp16, `docs/algorithms/` and `scripts/run_report_reruns.sh`,
   which were removed from the tree. Push the tag with the branch.
-- [ ] A final read by the authors.
+- [x] A final read by the first author (2026-11-15), which led to the refocus above.
 - [x] Repository cleanup (2026-11-15): exp1–exp10 and `results/dev/` moved to `results/experiments/exploration/`
   (`dev` → `sanity_runs`; runners use `parents[2]`, all nine `--list` checked; `summarise_runs.py` finds all 32
   runs); README, `results/experiments/README.md`, project `CLAUDE.md`, `pyproject.toml` description and
@@ -246,7 +245,8 @@ Open (no GPU unless noted):
   `docs/presentation/`, the method notes in `docs/algorithms/` (kept `dola.md`, `greedy.md`) and
   `paper/course_version_2026_06/`. The two exp18 `launcher.log` files (git-ignored, not in the tag) were moved to
   the local `archive/exp18_launcher_logs/`. Push the tag with the branch.
-- [ ] `CITATION.cff`: add Jeong Edon and Muhammad Aliff once their family and given names are confirmed.
+- [x] `CITATION.cff` (2026-11-15): Jeong Edon and Muhammad Aliff added with their names as written in the report
+  (not split into family and given names, at the user's request); version `1.0-report`; validated with `cffconvert`.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
 ---
