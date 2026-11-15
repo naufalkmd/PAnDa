@@ -1,16 +1,11 @@
 cff-version: 1.2.0
 message: "If you use this repository, please cite it as below."
 title: "What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and Option Length in Small Language Models"
-version: "1.0-report"
+version: "1.1-report"
 date-released: 2026-11-15
 authors:
   - family-names: "Kamaruddin"
     given-names: "Naufal"
-    affiliation: "Korea University"
-  # The co-authors' names are written as in the report, not split into family and given names.
-  - given-names: "Jeong Edon"
-    affiliation: "Korea University"
-  - given-names: "Muhammad Aliff"
     affiliation: "Korea University"
 repository-code: "https://github.com/naufalkmd/truthfulqa-scoring-rules"
 abstract: >-

@@ -42,7 +42,7 @@
 %% Title decided 2026-11-15 (checklist part A).
 \title{What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and Option Length in Small
 Language Models}
-\author{Muhammad Naufal \quad Jeong Edon \quad Muhammad Aliff\\\small Korea University}
+\author{Muhammad Naufal\\\small Korea University}
 \date{}
 
 \begin{document}
@@ -676,6 +676,10 @@ benchmark, and to larger models. Second, self-evaluation should be tested where 
 answer: open-ended generation, the binary-choice version of TruthfulQA~\citep{evans2025improved}, and short-answer
 question answering.
 
+\section*{Acknowledgements}
+This work began as a course project for COSE474 at Korea University (spring 2026) with Jeong Edon and Muhammad
+Aliff.
+
 \bibliographystyle{plainnat}
 \bibliography{references}
 
@@ -683,7 +687,7 @@ question answering.
 \section{Reproduction}
 \label{app:repro}
 The code, the per-question scores of every run, the analysis scripts and this report's source are in the
-project repository, \url{https://github.com/naufalkmd/truthfulqa-scoring-rules}; the tag \texttt{v1.0-report} marks
+project repository, \url{https://github.com/naufalkmd/truthfulqa-scoring-rules}; the tag \texttt{v1.1-report} marks
 the version described here. Each run directory holds its
 metadata, with the code commit, the model, the seed and the run time. The report is rebuilt from the saved scores
 without a GPU:

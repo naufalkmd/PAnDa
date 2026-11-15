@@ -14,7 +14,9 @@ Last updated: 2026-11-15.
 - [x] Purpose: portfolio piece (public, linked from the repository). Not a course submission, so no course AI rule
   applies; Claude drafts, the authors revise. An AI-use note is optional.
 - [x] arXiv style, `article`, one column, no page limit (aim: 10–12 pages plus appendix).
-- [x] Authors: Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University). [ ] Co-authors review before publishing.
+- [x] Author (2026-11-15, user's decision): Muhammad Naufal (Korea University), sole author from `v1.1-report` on.
+  Jeong Edon and Muhammad Aliff, co-authors up to `v1.0-report`, are credited in the acknowledgements for the
+  COSE474 course project the work began as.
 - [x] Framing (2026-11-15): **empirical study**, not a method paper (outline in part C).
 - [x] Title (decided 2026-11-15): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast, Self-Evaluation and
   Option Length in Small Language Models". Considered and not taken: "What Does Multiple-Choice TruthfulQA Reward? A
@@ -222,6 +224,8 @@ Open (no GPU unless noted):
   the tag `v1.0-report` for the version described.
 - [x] Tag `v1.0-report` (2026-11-15): on `main` after the citation update, pushed to GitHub. Appendix A cites it.
   A later change to the report needs a new tag (`v1.1-report`, ...) and the matching line in Appendix A.
+- [x] `v1.1-report` (2026-11-15): sole author, acknowledgements added; Appendix A and `CITATION.cff` name
+  `v1.1-report`; the GitHub Release `v1.1-report` carries the built PDF.
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
 - [x] Title (part A), kept 2026-11-15.
