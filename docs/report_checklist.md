@@ -1,11 +1,11 @@
-# Report checklist: per-question DoLa-static portfolio report
+# Report checklist: empirical study of scoring rules on multiple-choice TruthfulQA
 
 Status and open items for the report. The report is `paper/fanda_report.tex` (figures in `paper/figures/`;
 build with `latexmk -pdf -outdir=build fanda_report.tex` from `paper/`, PDF in `paper/build/`). In the PDF, red
 `[TODO]` marks a missing value and red `[verify]` a statement from an older run. `[x]` done, `[ ]` open.
 The June 2026 course version stays unchanged in `paper/course_version_2026_06/`.
 
-Last updated: 2026-11-14.
+Last updated: 2026-11-15.
 
 ---
 
@@ -15,8 +15,8 @@ Last updated: 2026-11-14.
   applies; Claude drafts, the authors revise. An AI-use note is optional.
 - [x] arXiv style, `article`, one column, no page limit (aim: 10–12 pages plus appendix).
 - [x] Authors: Muhammad Naufal, Jeong Edon, Muhammad Aliff (Korea University). [ ] Co-authors review before publishing.
-- [ ] Title. Proposal: "Fixing the Premature Layer in DoLa: A Small-Scale Study of Contrastive Layer Decoding on
-  TruthfulQA". It describes what was done, with no claim the data cannot carry. Decide after the reruns.
+- [x] Framing (2026-11-15): **empirical study**, not a method paper (outline in part C).
+- [ ] Title: working title in part C.
 - [x] Method name (decided 2026-11-14): **per-question DoLa-static**, built on DoLa's own term DoLa-static; "FAnDa"
   only as the former name. [ ] No "novel", "first" or "state of the art".
 
@@ -43,35 +43,69 @@ standard qualifier). PAnDa was dropped (2026-11-14): it appears only in the one-
 
 ---
 
-## C. Outline
+## C. Outline (empirical study, decided 2026-11-15)
 
-**Challenges** (the spine: each method choice answers one, each result is labelled with one):
+**Framing.** The contribution is measurements, not a new method. Per-question DoLa-static is one of the scoring
+rules studied and is reported with its held-out result. No "we propose", no "novel". The earlier method-paper
+outline is in the git history.
 
-- **C1. The plausibility constraint can remove the correct answer's tokens.** Fact: DoLa 0.28 → 0.38 MC1 when only
-  the constraint is removed (exp13), the largest single change, but not significant at n = 50 (McNemar p = 0.18).
+**Working title** (decide before publishing): "What Multiple-Choice TruthfulQA Rewards: Layer Contrast,
+Self-Evaluation and Option Length in Small Language Models".
 
-**Development-set tests change the framing** (`experiment_log.md`, paired tests): per-question DoLa-static beats DoLa on MC3
-(p = 0.005) and weakly on MC1 (p = 0.065), but neither per-question DoLa-static nor DoLa beats **greedy decoding** on Qwen2.5-3B.
-Unless R2 shows otherwise, the report's claim is "per-question DoLa-static repairs DoLa's loss against greedy", not "per-question DoLa-static improves
-truthfulness over standard decoding".
-- **C2. Dynamic premature-layer selection changes the contrastive score from token to token.** Fact: with
-  selection at every token, the premature layer changes at 69 % of steps (exp12).
-- **C3. The evidence is small and noisy.** Fact: SE ≈ 0.07 on MC1 with 50 questions; DoLa scores 0.26–0.28 on the
-  same questions across runs; the exp12 ranking did not replicate on a second random subset (exp16, seed 101).
-- **C4. The contrast between layers differs between models.** Fact: per-question DoLa-static leads on Gemma 3 4B and trails greedy on HINT 1.5B (exp18).
+**Challenges** (here: what makes the measurement hard; each result section answers one):
 
-| § | Section | Holds | Source |
-|---|---|---|---|
-| — | Abstract | Task; C1–C4; the four changes; headline result **on the held-out set** with its test; the transfer and open-ended findings, stated at their strength | after reruns |
-| 1 | Introduction | Hallucination and decoding-time methods; C1–C4 with their facts; what the report contributes (plain statements, section pointers) | exp13, exp12, exp16, exp18 |
-| 2 | Related work | Contrastive decoding and the plausibility constraint; DoLa (dynamic and static premature layer); TruthfulQA; truncation baselines; how per-question DoLa-static differs from each | citations, part G |
-| 3 | Method | DoLa recap in DoLa's notation; the four changes, one `\paragraph` each: problem → change → evidence (C1, C2); selection interval k; selection once per question (at the first answer token); PAnDa in brief; a TikZ pipeline figure | code: `src/panda/decoders/core.py`, `local_evaluator.py` |
-| 4 | Experimental setup | TruthfulQA MC (817 questions); the 50-question development subset (seed 42) and what it was used for; fresh subsets (seeds 101–404); the held-out set; MC1/MC2/MC3; paired tests; models and the candidate-layer bucket; hardware; latency | run metadata JSON |
-| 5 | Results | T1 core comparison; T2 2 × 2 factorial + τ; T3 selection interval k across subsets (mean ± sd); T4 transfer; latency | part D |
-| 6 | Analysis | Switching rules that did not work (exp6–10, one compact table); open-ended generation (exp14 automatic overlap; LLM or human scores, scorer stated); one case study from exp15/exp17 | exp6–10, exp14, exp15, exp17 |
-| 7 | Limitations | One benchmark, MC scoring, ≤ 4B models, the development subset, the LLM judge, τ and the fixed layer changed together (unless R3 runs) | — |
-| 8 | Conclusion | What each change contributed, in order of effect; what remains; two next steps | — |
-| A | Appendix | Reproduction: commit, commands, run times, hardware; the full selection-interval table; the exp1–exp10 history | — |
+- **C1. Small development sets mislead.** Per-question DoLa-static − base likelihood, MC1: +0.060 on the 50
+  development questions, −0.034 [−0.060, −0.008] on the 767 held-out questions (exp19).
+- **C2. Settings copied from generation break multiple-choice scoring.** Under DoLa's generation settings the
+  plausibility constraint masks at least one token of every option (100 % of 5,529 held-out options); on the 54.8 %
+  of questions where the true option has more masked tokens, DoLa's MC1 is 0.0 (exp19, mask section).
+- **C3. Option scores follow option length.** DoLa's multiple-choice configuration has a within-question rank
+  correlation of +0.669 with option length; choosing the longest option gives MC1 0.361, DoLa 0.356 (held-out).
+- **C4. The benchmark can be answered without the question.** The self-evaluation verdict with the question
+  removed is at least as accurate as with it on 6 of 8 models (exp20).
+
+**Contributions** (plain statements, each with its section):
+
+1. A held-out re-evaluation (767 questions) of DoLa in two configurations and of per-question DoLa-static, whose
+   design was made on 50 questions: no layer-contrast rule beats the base model's likelihood on MC1 (§5).
+2. Two mechanisms behind multiple-choice gains and losses of layer contrast: token masking by the plausibility
+   constraint and the correlation with option length (§6).
+3. Self-evaluation, P(True), against likelihood and DoLa under a design frozen before 400 confirmation questions:
+   +0.225 MC1 over DoLa, and accuracy 0.900 when answering the 30 % most confident questions (§7).
+4. Controls on eight models: the early-exit reading of the verdict helps on 2 of 8, and the verdict works as well
+   without the question; prior correction by the question-free verdict loses on 7 of 7 (§8).
+5. Checks we recommend for multiple-choice TruthfulQA evaluations: a longest-option baseline, length-matched
+   pairwise accuracy, a question-removed control, and a frozen design tested on held-out questions (§9).
+
+| § | Section | Holds | Pages | Source |
+|---|---|---|---|---|
+| — | Abstract | Setting; C1–C4 as findings with their numbers; the recommendation | 0.3 | below |
+| 1 | Introduction | Decoding-time truthfulness methods and how they are evaluated; C1–C4, each with its fact; contributions list | 1 | as above |
+| 2 | Related work | Contrastive and layer-contrastive decoding; TruthfulQA and its known weaknesses (option heuristics, binary version); partial-input baselines (hypothesis-only NLI, MCQA without the question); self-evaluation and its uses (selection, abstention, beam search, probes); reading intermediate layers; selective prediction. How this report differs from each group | 1.5 | part G |
+| 3 | Scoring rules | One `\paragraph` each: base likelihood (sum, per token); DoLa, generation settings and multiple-choice configuration; per-question DoLa-static (DoLa with four changes, in brief); self-evaluation; early exit of the verdict; the question-removed verdict. Figure F1 | 1.5 | code; exp19/exp20 READMEs |
+| 4 | Experimental setup | TruthfulQA MC (817 questions); the question sets and what each decided (F2); MC1/MC2/MC3 and length-matched pairwise accuracy; tests (paired bootstrap, exact McNemar, Holm); the eight models and the inclusion rule (Llama 3.2 gated, not used); prompts (not the 6-shot prompt: absolute scores not comparable with published ones); hardware, run times, environment check (development questions reproduce the June runs within 2 questions per decoder) | 1.5 | run metadata; `heldout_analysis.py` check/repro |
+| 5 | Layer contrast on held-out questions (C1) | T1 main; T2 factorial; T3 selection interval; F3 development vs held-out | 1.5 | exp19 |
+| 6 | Why multiple-choice scores mislead (C2, C3) | T4 masking; T5 length (rank correlation, longest option, length-matched pairs); contrast-weight sweep chosen on the development set (β = 10) equals DoLa on held-out | 1 | exp19 |
+| 7 | Self-evaluation (frozen design) | T6 scores, T7 paired differences, T8 selective prediction, F4 risk–coverage | 1.5 | exp20 run_02 |
+| 8 | Controls on eight models (C4) | T9 early exit; T10 question removed and prior correction (rejected); the sum, reported only; F5 MC1 by block | 1.5 | exp20 cross_model |
+| 9 | Discussion | What the benchmark measures; the recommended checks; what our results do and do not show about truthfulness | 0.7 | — |
+| 10 | Limitations | One benchmark, multiple choice only; ≤ 4B models; non-standard prompt; likelihood and DoLa on Qwen2.5-3B only; confirmation questions scored for Qwen2.5-3B only; likelihood and DoLa scores seen on all held-out questions before the exp20 split; candidate layers untuned; two wordings | 0.5 | — |
+| 11 | Conclusion and future work | Findings in order of strength; future work: (a) apply the checks to more decoding methods; (b) self-evaluation where the question is needed (open-ended generation, binary-choice TruthfulQA, short-answer QA) | 0.4 | — |
+| A | Appendix | Reproduction (commit, commands, run times); development-set history (exp1–exp13, switching rules, one compact table); selection interval on five random subsets (exp16); MC1 by block for all models and both wordings; prompts verbatim | 3 | exp1–exp16, exp20 |
+
+Left out of the report: PAnDa (dropped method), open-ended generation (exp14/exp15/exp17: labels written by an
+LLM, and out of the study's scope), exp18 (50 questions only, and the Gemma final-norm issue below).
+
+**Figures** (TikZ / pgfplots from the results files, never generated images):
+
+- F1. Three ways to score one option: likelihood of the option tokens; contrast of a mature and a premature layer;
+  the verdict token after "Is the proposed answer true?". TikZ.
+- F2. The question sets: 50 development (exp1–exp18 design), 767 held-out (exp19), 417 exploration / 400
+  confirmation (exp20 design and test), with an arrow from each set to the decisions made on it. TikZ.
+- F3. MC1 per rule on development vs held-out questions, with 95 % intervals. pgfplots, exp19.
+- F4. Risk–coverage curve of self-evaluation on the confirmation questions, with the three frozen thresholds
+  marked. pgfplots; needs the curve written by the analysis (open item).
+- F5. MC1 by block for the eight models, final block = 1.0 depth. pgfplots, `early_exit_by_block.csv`.
 
 ---
 
@@ -81,44 +115,43 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 
 | Report table / figure | Source file(s) | Status |
 |---|---|---|
-| T1 core comparison (dev subset) | `exp11.../run_01_default` | [ ] exp11 has its own DoLa (0.26) and `fanda` (fixed layer); use these, not exp4/exp12 |
-| T1 core comparison (held-out) | new run R2 | [ ] waits for R2 |
-| T2 factorial | `exp13.../run_01_default` (+ R3 for τ) | [ ] the two no-constraint cells are identical by construction: say so |
-| T3 selection interval k | `exp16.../run_01`–`run_05` | [ ] seeds 202/303/404 wait for R1 |
-| T4 transfer | `exp18.../run_01, run_02, run_04` | [ ] all baselines exist; fill the table |
-| Paired tests | `scripts/paired_tests.py` on `*_raw_predictions.csv` (questions matched by text; `--exclude-questions-of` for held-out; `--holm`) | [x] written and run on the development set (results in `experiment_log.md`); [ ] rerun on R1/R2 |
-| Switching rules (appendix) | exp6–exp10 summaries | [ ] |
-| Open-ended | `exp14.../run_01_default_summary.csv` (automatic); `*_manual_eval.csv` (`reviewer = codex`) | [ ] decision R5 |
-| Pipeline figure | TikZ, drawn from the code | [x] drafted in §3 |
-| Evidence for C1 (mask hits) | exp19 `*_raw_predictions.csv`, column `choice_scores` of `dola` / `exp13_*_top` | [ ] count per option how many tokens fell outside V_head (each adds about −1000 to the option score) and how often the correct option has more hits than the best false one. In the 2-question GPU test (2026-11-14) every option under DoLa's generation settings scored between −3004 and −4000, so the ranking mostly counted masked tokens |
-| MC2 saturation | exp19 raw predictions | [ ] contrastive option scores differ by tens of nats, so MC2 is close to 0 or 1 per question; say so when reading MC2 |
+| T1 main: base likelihood, DoLa (two configurations), per-question DoLa-static; development and held-out columns | exp19 `run_01_qwen25_3b_full` via `scripts/heldout_analysis.py` (scores) and `scripts/paired_tests.py --exclude-questions-of ... --holm` | [x] computed; [ ] paired-test CSVs saved only in the scratchpad: rerun with output into the run's `analysis/` |
+| T2 factorial | exp19, decoders `exp13_*`; the two no-constraint cells are identical by construction | [x] computed; [ ] save as above |
+| T3 selection interval | exp19, `fanda_update1/4`, `fanda_frozen` (held-out); exp16 runs 01–06 (appendix) | [x] held-out computed; [ ] exp16 summary for the appendix |
+| F3 development vs held-out | exp19 scores section | [ ] intervals per rule |
+| T4 masking | `heldout_analysis.py`, mask section | [x] |
+| T5 length | `heldout_analysis.py`, length section; length-matched pairwise accuracy | [ ] fold the scratch `length_control.py` into `heldout_analysis.py`, run with `--out-dir` |
+| Contrast-weight sweep | `heldout_analysis.py`, beta section | [x] |
+| T6–T8 self-evaluation | exp20 `run_02_qwen25_3b_confirmation/analysis/*.csv` | [x] |
+| F4 risk–coverage | exp20 confirmation scores | [ ] write the curve to `selective_prediction_curve.csv` in `self_evaluation_analysis.py` (no change to the frozen design) |
+| T9, F5 early exit | exp20 `cross_model/early_exit_selection.csv`, `early_exit_by_block.csv` | [x] |
+| T10 question removed | exp20 `cross_model/prior_correction.csv` | [x] |
+| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code and `split.json` | [ ] |
 
 ---
 
-## E. Reruns (GPU)
+## E. Runs and open items before drafting
 
-On this PC, in WSL (Ubuntu), from the repository root, after `bash scripts/setup_env.sh` (environment from
-`requirements-lock.txt`): `bash scripts/run_report_reruns.sh` runs R1 then R2 (`r1`, `r2` or `r4` as the first
-argument runs one; extra arguments such as `--local-files-only` are passed on). Times are estimated from the June
-runs' per-question speed.
+Done:
+- [x] R1: exp16 seeds 202, 303, 404 and seed 101 under the current code (runs 03–06).
+- [x] R2: exp19 on all 817 questions, Qwen2.5-3B (`run_01_qwen25_3b_full`).
+- [x] exp20: self-evaluation, design frozen on 417 exploration questions (`frozen_design.json`), tested once on
+  400 confirmation questions; cross-model early exit and question-removed control on eight models.
 
-- [ ] **R1 (~35 min): more random 50-question subsets for exp16**: seeds 202, 303, 404, and seed 101 again under the
-  current code (`run_06_seed_101_rerun`).
-- [ ] **R2 (~4.5 h): exp19, held-out evaluation on all 817 questions** with Qwen2.5-3B, one run with greedy, DoLa,
-  per-question DoLa-static, three factorial cells and k = 1, 4 (replaces the earlier plan of full runs of exp11/12/13, ~31 h; see
-  `results/experiments/exp19_heldout_full/README.md` for what was left out and why). Held-out scores = the 767
-  questions outside the development set, matched by question text (`example_idx` is the position in the subset, not
-  the dataset index), with `scripts/paired_tests.py --exclude-questions-of`. The 50 development questions inside
-  this run also check that the new environment reproduces the June scores. This is the most important run.
-- [ ] **R3 (optional, needs a small code change): isolate τ.** Add one decoder to `local_evaluator.py`:
-  premature layer selected once per question and raw-logit difference, but selection by DoLa's divergence at τ = 1.
-  Without it, the report must say that the divergence, τ and the selection interval changed together.
-- [ ] **R4 (optional, ~6 h): exp19 on Gemma 3 4B** (`run_02_gemma3_4b_full`). Run it only if R2 shows a held-out
-  difference worth testing on a second model; Gemma is the model where the development-set gain of per-question DoLa-static was largest
-  (MC2 vs greedy, p = 0.017 unadjusted).
-- [ ] **R5 (decision, no GPU): open-ended correctness labels.** Either the authors review the 250 rows labelled by
-  Codex (the sheet has `review_status` and `reviewer` columns), or the report states that an LLM assigned them.
-  The exp15 prefix sheet (80 rows) has no labels: label it or drop it.
+No longer needed under the empirical framing: R3 (isolating τ: per-question DoLa-static shows no held-out gain to
+attribute), R4 (exp19 on Gemma), R5 (open-ended labels: exp14 is left out).
+
+Open (no GPU unless noted):
+- [ ] Save the held-out paired tests (T1–T3) into `exp19.../run_01_qwen25_3b_full/analysis/`.
+- [ ] Fold `length_control.py` into `scripts/heldout_analysis.py`; run it with `--out-dir`.
+- [ ] Risk–coverage curve for F4 (see part D).
+- [ ] `docs/experiment_log.md`: add the exp19 held-out results and exp20; `docs/glossary.md`: self-evaluation,
+  early exit of the verdict, question-removed control, length-matched pairwise accuracy.
+- [ ] Optional R6 (GPU, about 10 min): base-model likelihood (sum and per token) for the other seven models on
+  the exploration questions. Without it, "self-evaluation beats likelihood" is stated for Qwen2.5-3B only.
+- [ ] exp18 / Gemma: `apply_final_norm` does not find the final norm of `Gemma3ForConditionalGeneration`
+  (transformers 4.57.6), so exp18's Gemma DoLa rows may read premature layers without the norm. exp18 is left out;
+  check before any Gemma DoLa number is used.
 
 ---
 
@@ -148,6 +181,7 @@ runs' per-question speed.
   ½[KL(m‖q_N) + KL(m‖q_j)] (mixture first, checked in the DoLa repository); per-question DoLa-static uses the standard JSD at τ = 0.5; the
   −1000 mask value and its effect on option scores. PAnDa removed from §2/§3 (dropped method).
 - [ ] §2/§3 cite tables `tab:factorial`, `tab:interval`, `tab:main` that the Results section will define.
+- [ ] The §2/§3 draft was written for the method framing: rewrite both for the outline in part C (keep the checked DoLa facts).
 - [ ] Abstract, §1, §4–§8 wait for R1/R2 (§4 Setup can be drafted now except hardware).
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
@@ -173,12 +207,29 @@ All verified 2026-11-14 and written to `paper/references.bib` from the publisher
 - [x] Hallucination survey, ACM TOIS 2025 (`huang2025survey`), optional.
 - [x] Not carried over: the course version's citations of the Transformer and Qwen2.5 papers as support for the design intuition.
 
+
+New for the empirical framing (2026-11-15), **not yet verified or in `references.bib`** (arXiv ids found during the
+exp20 searches; check each record and what the sentence claims before citing):
+- [ ] Self-evaluation, P(True): Kadavath et al. 2022, arXiv:2207.05221.
+- [ ] Self-evaluation for selection and abstention: Ren et al. 2023, arXiv:2312.09300.
+- [ ] Self-evaluation guided beam search: Xie et al., NeurIPS 2023, arXiv:2305.00633.
+- [ ] Self-alignment for factuality (P(True) picks the MC option; compares with DoLa): Zhang et al. 2024, arXiv:2402.09267.
+- [ ] Truthfulness probe on hidden states: Azaria and Mitchell 2023, arXiv:2304.13734.
+- [ ] Intermediate layers under false demonstrations: Halawi et al., ICLR 2024, arXiv:2307.09476.
+- [ ] MCQA without the question: Balepur et al. 2024, arXiv:2402.12483.
+- [ ] TruthfulQA weaknesses: "Gaming TruthfulQA" (LessWrong post) and the authors' binary-choice version
+  (Alignment Forum post); blog posts, so cite as such or find the archived record.
+- [ ] Hypothesis-only baselines in NLI: Gururangan et al. 2018; Poliak et al. 2018 (look up the ACL Anthology records).
+- [ ] Selective prediction / risk–coverage: look up the standard reference before citing.
+
 ---
 
 ## H. Before publishing
 
 Rigor:
-- [ ] Every design choice is said to be made on the 50-question dev subset; headline numbers come from the held-out set (R2).
+- [ ] Every choice states its data: 50 development questions (exp1–exp18), 417 exploration questions (exp20 design);
+  headline numbers come from the 767 held-out (exp19) and 400 confirmation (exp20) questions. Say that the
+  likelihood and DoLa scores were seen on all held-out questions before the exp20 split.
 - [ ] No "significant" without a test; no claim from a difference inside the noise (C3).
 - [ ] Every number matches its source (`report_check.py --sources ../results/experiments`, then by hand).
 - [ ] Open-ended scorer stated (R5).
