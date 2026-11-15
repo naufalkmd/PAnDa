@@ -1,0 +1,9 @@
+panel,slug,label,blocks,final_mc1,base_likelihood_mc1
+1,qwen25_05b,Qwen2.5-0.5B,24,0.2374,0.211
+2,qwen25_15b,Qwen2.5-1.5B,28,0.4005,0.2422
+3,qwen25_3b,Qwen2.5-3B,36,0.5707,0.3261
+4,gemma3_1b,Gemma 3 1B,26,0.295,0.2494
+5,gemma3_4b,Gemma 3 4B,34,0.5731,0.3141
+6,smollm2_17b,SmolLM2-1.7B,24,0.3309,0.247
+7,falcon3_3b,Falcon3-3B,22,0.3669,0.2398
+8,phi35_mini,Phi-3.5-mini,32,0.5875,0.3453

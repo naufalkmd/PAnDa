@@ -1,0 +1,5 @@
+x,rule,mc1_dev,mc1_dev_minus,mc1_dev_plus,mc1_held,mc1_held_minus,mc1_held_plus,mc2_dev,mc2_dev_minus,mc2_dev_plus,mc2_held,mc2_held_minus,mc2_held_plus
+1,Base likelihood,0.34,0.12,0.12,0.3325,0.0326,0.0339,0.5321,0.1323,0.1283,0.5074,0.0328,0.0335
+2,DoLa (MC configuration),0.42,0.14,0.14,0.3559,0.0339,0.0339,0.6748,0.1347,0.1241,0.5661,0.0349,0.0345
+3,DoLa (generation settings),0.28,0.12,0.12,0.2855,0.0326,0.0326,0.5264,0.1371,0.1321,0.4571,0.0331,0.0325
+4,Per-question DoLa-static,0.4,0.14,0.14,0.2986,0.0326,0.0326,0.5574,0.1336,0.1325,0.4941,0.0337,0.0347

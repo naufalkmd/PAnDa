@@ -107,6 +107,12 @@ LLM, and out of the study's scope), exp18 (50 questions only, and the Gemma fina
   marked. pgfplots; needs the curve written by the analysis (open item).
 - F5. MC1 by block for the eight models, final block = 1.0 depth. pgfplots, `early_exit_by_block.csv`.
 
+Status (2026-11-15): all five drawn in `paper/figures/f*.tex`, shared style `paper/figures/figstyle.tex` (loaded in
+the report preamble). Their data are `paper/figures/data/*.csv`, written by `scripts/figure_data.py` from the results
+files (rerun it after any results change; never edit the CSVs by hand). F3 adds 95 % bootstrap intervals of the mean
+(10,000 resamples, seed 0). F4 adds base likelihood and DoLa (MC configuration) on the same 400 questions as
+reference lines; F5 adds each model's base likelihood (exp21). Captions are still to be written with the sections.
+
 ---
 
 ## D. Where the numbers come from
@@ -118,7 +124,7 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 | T1 main: base likelihood, DoLa (two configurations), per-question DoLa-static; development and held-out columns | exp19 `run_01_qwen25_3b_full` via `scripts/heldout_analysis.py` (scores) and `scripts/paired_tests.py --exclude-questions-of ... --holm` | [x] `exp19.../run_01_qwen25_3b_full/analysis/heldout_main.csv`, `scores_by_split.csv` |
 | T2 factorial | exp19, decoders `exp13_*`; the two no-constraint cells are identical by construction | [x] `analysis/heldout_factorial.csv` |
 | T3 selection interval | exp19, `fanda_update1/4`, `fanda_frozen` (held-out); exp16 runs 01–06 (appendix) | [x] `analysis/heldout_interval.csv`; [ ] exp16 summary for the appendix |
-| F3 development vs held-out | exp19 scores section | [ ] intervals per rule |
+| F3 development vs held-out | exp19 per-question scores via `scripts/figure_data.py` → `paper/figures/data/f3_dev_vs_heldout.csv` | [x] with 95 % intervals |
 | T4 masking | `heldout_analysis.py`, mask section | [x] |
 | T5 length | `analysis/length_association.csv`, `length_control.csv` (section 7 of `heldout_analysis.py`) | [x] use the character-length baseline (token counts tie; see the experiment log, issue 9) |
 | Contrast-weight sweep | `heldout_analysis.py`, beta section | [x] |
@@ -127,7 +133,7 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 | T9, F5 early exit | exp20 `cross_model/early_exit_selection.csv`, `early_exit_by_block.csv` | [x] |
 | T10 question removed | exp20 `cross_model/prior_correction.csv` | [x] |
 | T11 self-evaluation vs likelihood, eight models (§8) | exp20 `cross_model/self_evaluation_vs_likelihood.csv` (exp21 scores) | [x] |
-| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code and `split.json` | [ ] |
+| Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code (`src/panda/prompts.py`, `local_evaluator.py`, exp20 README) and `split.json` | [x] `paper/figures/f1_scoring.tex`, `f2_question_sets.tex` |
 
 ---
 

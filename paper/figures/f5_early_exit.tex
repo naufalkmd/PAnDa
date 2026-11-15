@@ -1,0 +1,35 @@
+%% F5. MC1 of the self-evaluation verdict read after each block, eight models, exploration questions (exp20,
+%% wording "Is the proposed answer true?"); depth 1 = the final layer. Dashed: the model's base likelihood on the
+%% same questions (exp21). Data: figures/data/f5_<model>.csv (scripts/figure_data.py); panel order as f5_models.csv.
+\newcommand{\fivepanel}[2]{%
+  \nextgroupplot[title={#2}]
+  \addplot[figgray, dashed, line width=0.8pt, unbounded coords=discard]
+    table[col sep=comma, x=depth, y=base_likelihood_mc1]{\figdata/f5_#1.csv};
+  \addplot[figblue, line width=1pt, mark=*, mark size=0.9pt] table[col sep=comma, x=depth, y=mc1]{\figdata/f5_#1.csv};
+}
+\begin{tikzpicture}
+  \begin{groupplot}[
+    report,
+    group style={group size=4 by 2, horizontal sep=0.35cm, vertical sep=1.25cm,
+                 xlabels at=edge bottom, ylabels at=edge left, yticklabels at=edge left},
+    width=0.29\linewidth, height=3.9cm,
+    xmin=0, xmax=1.02, ymin=0.1, ymax=0.7, xtick={0,0.5,1}, ytick={0.2,0.4,0.6},
+    xlabel={relative depth}, ylabel={MC1},
+  ]
+    \fivepanel{qwen25_05b}{Qwen2.5-0.5B}
+    \fivepanel{qwen25_15b}{Qwen2.5-1.5B}
+    \fivepanel{qwen25_3b}{Qwen2.5-3B}
+    \fivepanel{gemma3_1b}{Gemma 3 1B}
+    \fivepanel{gemma3_4b}{Gemma 3 4B}
+    \fivepanel{smollm2_17b}{SmolLM2-1.7B}
+    \fivepanel{falcon3_3b}{Falcon3-3B}
+    \fivepanel{phi35_mini}{Phi-3.5-mini}
+  \end{groupplot}
+  \begin{scope}[font=\footnotesize]
+    \coordinate (leg) at ($(group c2r2.south)!0.5!(group c3r2.south)+(0,-1.45cm)$);
+    \draw[figblue, line width=1pt] ($(leg)+(-7cm,0)$) -- ++(0.6cm,0)
+      node[right, text=black] {self-evaluation verdict read after the block (1 = final layer)};
+    \draw[figgray, dashed, line width=0.8pt] ($(leg)+(2.9cm,0)$) -- ++(0.6cm,0)
+      node[right, text=black] {base likelihood};
+  \end{scope}
+\end{tikzpicture}
