@@ -1,0 +1,63 @@
+{
+  "frozen_at_utc": "2026-11-14T23:06:50Z",
+  "git_commit": "7a3d6a090de0431554f4e3c79955b04c75ff19ae",
+  "design": {
+    "model": "Qwen/Qwen2.5-3B-Instruct",
+    "method": {
+      "name": "self_evaluation",
+      "option_score": "log-odds of the reply token True against False at the first answer position, final layer, wording is_true (user message in the scores file)",
+      "decision": "the option with the highest score"
+    },
+    "selective_prediction": {
+      "confidence": "difference between the two highest scores among the MC1 options",
+      "rule": "answer when confidence >= threshold, otherwise abstain",
+      "thresholds": "the confidence of the question at rank floor(c * n) of the exploration part, for coverage c in 0.25, 0.5, 0.75"
+    },
+    "primary_metric": "mc1",
+    "early_exit_blocks": [
+      27,
+      30
+    ],
+    "comparisons": [
+      [
+        "self_evaluation",
+        "base_likelihood",
+        "main: method against the standard multiple-choice scoring"
+      ],
+      [
+        "self_evaluation",
+        "base_likelihood_per_token",
+        "main: method against the best likelihood rule of the exploration part"
+      ],
+      [
+        "self_evaluation",
+        "dola_mc",
+        "main: method against DoLa in its multiple-choice configuration"
+      ],
+      [
+        "self_evaluation_early_exit",
+        "self_evaluation",
+        "ablation: reading the verdict by early exit"
+      ],
+      [
+        "self_evaluation_is_correct",
+        "base_likelihood_per_token",
+        "ablation: a second prompt wording"
+      ]
+    ],
+    "tests": "per comparison and metric (mc1, mc2, mc3): 95% paired-bootstrap interval and two-sided p-value (10,000 resamples, seed 0, comparisons in the listed order); for mc1 also the exact McNemar test; Holm adjustment over all p-values of the list",
+    "mc2_note": "MC2 uses the option score in place of the option log-likelihood (softmax over the options)"
+  },
+  "abstention_thresholds": {
+    "0.25": 9.287199999999999,
+    "0.5": 3.7953,
+    "0.75": 1.4657999999999998
+  },
+  "set_on": {
+    "run_id": "run_01_qwen25_3b_exploration",
+    "part": "exploration",
+    "questions": 417,
+    "scores_sha256": "e5fa713445d9bb6283efde9b13fc56f7f9ac4e07e28fd78f81e8b5bf03a2efd7"
+  },
+  "split_sha256": "c1da810f5867fe787d4a1ca58238f62cc6bab16bc785d0195cb57125a30e5b47"
+}

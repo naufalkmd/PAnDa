@@ -1,0 +1,84 @@
+{
+  "experiment_name": "exp20_self_evaluation",
+  "run_id": "run_03_gemma3_4b_exploration",
+  "notes": "cross_model_check_of_early_exit_block_selection_on_the_exploration_questions",
+  "model_name": "google/gemma-3-4b-it",
+  "part": "exploration",
+  "questions": 417,
+  "options": 3021,
+  "forward_passes": 6042,
+  "batch_size": 8,
+  "blocks": 34,
+  "scoring_seconds": 119.52869129180908,
+  "checks": {
+    "is_true": {
+      "reply_token_ids": {
+        "True": 4339,
+        "False": 9277
+      },
+      "final_block_vs_model_logits_mean_abs_difference": 0.1274465811801091,
+      "final_block_vs_model_logits_max_abs_difference": 0.4699819087982178,
+      "mean_probability_mass_on_the_two_reply_tokens": 0.9999999949490933,
+      "min_probability_mass_on_the_two_reply_tokens": 0.9999847412109375
+    },
+    "is_correct": {
+      "reply_token_ids": {
+        "Yes": 10784,
+        "No": 3771
+      },
+      "final_block_vs_model_logits_mean_abs_difference": 0.10652072740998027,
+      "final_block_vs_model_logits_max_abs_difference": 0.4280967712402344,
+      "mean_probability_mass_on_the_two_reply_tokens": 1.0,
+      "min_probability_mass_on_the_two_reply_tokens": 1.0
+    }
+  },
+  "split": {
+    "seed": 20261115,
+    "confirmation_size": 400,
+    "sha256": "c1da810f5867fe787d4a1ca58238f62cc6bab16bc785d0195cb57125a30e5b47"
+  },
+  "frozen_design_sha256": "5f5c2fec6eb8c60025ee0f2a79222aa2b88d89400af43606a3c52805eb977093",
+  "scores_sha256": "b310ef222fe798d6beade4a2aab9e44c3fc04dce86ca04195dfe6a49d7baa11f",
+  "environment": {
+    "recorded_at_utc": "2026-11-14T23:44:16Z",
+    "git_commit": "7a3d6a090de0431554f4e3c79955b04c75ff19ae",
+    "git_uncommitted_changes": true,
+    "python": "3.12.3",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "packages": {
+      "torch": "2.9.1+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.5",
+      "huggingface_hub": "0.36.2",
+      "accelerate": "1.13.0",
+      "tokenizers": "0.22.2",
+      "safetensors": "0.7.0",
+      "numpy": "2.4.6",
+      "pandas": "3.1.1"
+    },
+    "gpu": {
+      "cuda_available": true,
+      "torch_cuda": "12.8",
+      "cudnn": 91002,
+      "devices": [
+        "NVIDIA GeForce RTX 5070"
+      ]
+    },
+    "model_settings": {
+      "model_name": "google/gemma-3-4b-it",
+      "dtype": "torch.bfloat16",
+      "device": "cuda",
+      "use_chat_template": true,
+      "mature_layer_index": null,
+      "candidate_premature_layers": null,
+      "layer_selection_temperature_tau": null,
+      "default_update_every": null,
+      "dola_relative_top": null,
+      "single_pass_teacher_forcing": null
+    },
+    "truthfulqa_file": {
+      "cached_arrow_file": "truthful_qa-validation.arrow",
+      "sha256": "d8416ca73542259ac0a80d012e8c0af42f6f4035bbfe5b4a7f27a0365a744c13"
+    }
+  }
+}

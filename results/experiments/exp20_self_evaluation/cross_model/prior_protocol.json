@@ -1,0 +1,15 @@
+{
+  "data": "the 417 exploration questions of exp20, eight models (the runs with wording_set no_question)",
+  "scores": {
+    "verdict": "final-layer log-odds of the affirmative against the negative reply token, question shown",
+    "question_free": "the same log-odds for the same wording with the question removed from the user message",
+    "corrected": "verdict minus question_free, weight 1, nothing tuned (the tested method)",
+    "sum": "verdict plus question_free (reported, not part of the decision)"
+  },
+  "primary_wording": "is_true",
+  "test": "MC1 of corrected minus MC1 of verdict on the same questions: 95% paired-bootstrap interval (10000 resamples, seed 0 per model and wording) and exact McNemar",
+  "a_model_shows_the_gain_if": "the difference is positive and the interval excludes 0",
+  "a_model_shows_a_loss_if": "the difference is negative and the interval excludes 0",
+  "models_counted": "those whose verdict is above chance at the final layer (MC1 at least the chance level plus two standard errors); the others are reported and not counted",
+  "decision": "prior-corrected self-evaluation is a method candidate only if at least 5 of the counted models show the gain with the primary wording and none shows a loss. A candidate still needs the confirmation questions and a second dataset. Otherwise the result is reported as the control only."
+}
