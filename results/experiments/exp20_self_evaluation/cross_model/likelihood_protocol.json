@@ -1,0 +1,13 @@
+{
+  "data": "the 417 exploration questions of exp20, eight models; exp21 scores all 817 questions, the confirmation questions are not used here because self-evaluation was scored on them for Qwen2.5-3B only",
+  "rules": {
+    "self_evaluation": "final-layer log-odds of True against False, wording is_true (the frozen exp20 method)",
+    "base_likelihood": "sum of the option's token log-probabilities under the base model (exp21, pure_greedy)",
+    "base_likelihood_per_token": "the same sum divided by the option's token count (count from exp20)",
+    "longest_option": "the option's token count"
+  },
+  "test": "MC1 of self_evaluation minus MC1 of each likelihood rule on the same questions: 95% paired-bootstrap interval (10000 resamples, seed 0 per model and comparison) and exact McNemar; MC2 and MC3 differences reported with their intervals",
+  "statement": "self-evaluation is said to beat likelihood scoring on a model if its MC1 difference against both likelihood rules is positive and both intervals exclude 0; the report gives the number of models for which this holds, and names the others",
+  "caveats": "on Qwen2.5-3B the exploration questions are the ones the exp20 design was chosen on (its clean test is the confirmation part); on the other seven models the final-layer method was fixed before their scores existed. Models whose verdict is at chance are reported and flagged.",
+  "reproduction_check": "exp21 run_01 (Qwen2.5-3B) against exp19 pure_greedy on all 817 questions: largest absolute difference of the option scores, and the number of questions whose MC1 differs"
+}

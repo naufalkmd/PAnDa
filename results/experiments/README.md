@@ -24,6 +24,7 @@ Code names → standard terms: [`docs/glossary.md`](../../docs/glossary.md). All
 | `exp18_cross_model_transfer/` | Transfer to Gemma 3 4B, Falcon 3 3B, HINT self-calibrated Qwen 1.5B | `pure_greedy`, `dola`, `fanda` |
 | `exp19_heldout_full/` | **Held-out evaluation on all 817 questions** (main comparison, factorial, k = 1, 4, ∞ in one run) | `pure_greedy`, `dola`, `fanda_frozen`, `exp13_logprob_top`, `_logprob_no_top`, `_logit_top`, `fanda_update1`, `_update4` |
 | `exp20_self_evaluation/` | Self-evaluation score, P(True), per answer option, with selective prediction: design frozen on 417 questions, tested once on the other 400 | no decoder: one forward pass per option (`run_experiment.py` in the folder) |
+| `exp21_likelihood_baselines/` | Base-model likelihood on all 817 questions for the eight exp20 models, to compare with self-evaluation beyond Qwen2.5-3B | `pure_greedy` |
 
 exp11–exp18 ran on the 50-question development set (exp16 adds other random subsets). exp19 has 767 questions that
 no design choice of the layer-contrast decoders was made on. exp20 has its own split: its design was made on 417

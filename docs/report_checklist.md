@@ -87,9 +87,9 @@ Self-Evaluation and Option Length in Small Language Models".
 | 5 | Layer contrast on held-out questions (C1) | T1 main; T2 factorial; T3 selection interval; F3 development vs held-out | 1.5 | exp19 |
 | 6 | Why multiple-choice scores mislead (C2, C3) | T4 masking; T5 length (rank correlation, longest option, length-matched pairs); contrast-weight sweep chosen on the development set (β = 10) equals DoLa on held-out | 1 | exp19 |
 | 7 | Self-evaluation (frozen design) | T6 scores, T7 paired differences, T8 selective prediction, F4 risk–coverage | 1.5 | exp20 run_02 |
-| 8 | Controls on eight models (C4) | T9 early exit; T10 question removed and prior correction (rejected); the sum, reported only; F5 MC1 by block | 1.5 | exp20 cross_model |
+| 8 | Controls on eight models (C4) | T9 early exit; T10 question removed and prior correction (rejected); the sum, reported only; T11 self-evaluation vs base likelihood (5 of 8 models); F5 MC1 by block | 1.5 | exp20 cross_model, exp21 |
 | 9 | Discussion | What the benchmark measures; the recommended checks; what our results do and do not show about truthfulness | 0.7 | — |
-| 10 | Limitations | One benchmark, multiple choice only; ≤ 4B models; non-standard prompt; likelihood and DoLa on Qwen2.5-3B only; confirmation questions scored for Qwen2.5-3B only; likelihood and DoLa scores seen on all held-out questions before the exp20 split; candidate layers untuned; two wordings | 0.5 | — |
+| 10 | Limitations | One benchmark, multiple choice only; ≤ 4B models; non-standard prompt; DoLa on Qwen2.5-3B only (likelihood on all eight, exp21); confirmation questions scored for Qwen2.5-3B only; likelihood and DoLa scores seen on all held-out questions before the exp20 split; candidate layers untuned; two wordings | 0.5 | — |
 | 11 | Conclusion and future work | Findings in order of strength; future work: (a) apply the checks to more decoding methods; (b) self-evaluation where the question is needed (open-ended generation, binary-choice TruthfulQA, short-answer QA) | 0.4 | — |
 | A | Appendix | Reproduction (commit, commands, run times); development-set history (exp1–exp13, switching rules, one compact table); selection interval on five random subsets (exp16); MC1 by block for all models and both wordings; prompts verbatim | 3 | exp1–exp16, exp20 |
 
@@ -115,17 +115,18 @@ Rule: **one run per table.** Never mix rows from different runs (the course vers
 
 | Report table / figure | Source file(s) | Status |
 |---|---|---|
-| T1 main: base likelihood, DoLa (two configurations), per-question DoLa-static; development and held-out columns | exp19 `run_01_qwen25_3b_full` via `scripts/heldout_analysis.py` (scores) and `scripts/paired_tests.py --exclude-questions-of ... --holm` | [x] computed; [ ] paired-test CSVs saved only in the scratchpad: rerun with output into the run's `analysis/` |
-| T2 factorial | exp19, decoders `exp13_*`; the two no-constraint cells are identical by construction | [x] computed; [ ] save as above |
-| T3 selection interval | exp19, `fanda_update1/4`, `fanda_frozen` (held-out); exp16 runs 01–06 (appendix) | [x] held-out computed; [ ] exp16 summary for the appendix |
+| T1 main: base likelihood, DoLa (two configurations), per-question DoLa-static; development and held-out columns | exp19 `run_01_qwen25_3b_full` via `scripts/heldout_analysis.py` (scores) and `scripts/paired_tests.py --exclude-questions-of ... --holm` | [x] `exp19.../run_01_qwen25_3b_full/analysis/heldout_main.csv`, `scores_by_split.csv` |
+| T2 factorial | exp19, decoders `exp13_*`; the two no-constraint cells are identical by construction | [x] `analysis/heldout_factorial.csv` |
+| T3 selection interval | exp19, `fanda_update1/4`, `fanda_frozen` (held-out); exp16 runs 01–06 (appendix) | [x] `analysis/heldout_interval.csv`; [ ] exp16 summary for the appendix |
 | F3 development vs held-out | exp19 scores section | [ ] intervals per rule |
 | T4 masking | `heldout_analysis.py`, mask section | [x] |
-| T5 length | `heldout_analysis.py`, length section; length-matched pairwise accuracy | [ ] fold the scratch `length_control.py` into `heldout_analysis.py`, run with `--out-dir` |
+| T5 length | `analysis/length_association.csv`, `length_control.csv` (section 7 of `heldout_analysis.py`) | [x] use the character-length baseline (token counts tie; see the experiment log, issue 9) |
 | Contrast-weight sweep | `heldout_analysis.py`, beta section | [x] |
 | T6–T8 self-evaluation | exp20 `run_02_qwen25_3b_confirmation/analysis/*.csv` | [x] |
-| F4 risk–coverage | exp20 confirmation scores | [ ] write the curve to `selective_prediction_curve.csv` in `self_evaluation_analysis.py` (no change to the frozen design) |
+| F4 risk–coverage | exp20 `run_02.../analysis/selective_prediction_curve.csv` | [x] |
 | T9, F5 early exit | exp20 `cross_model/early_exit_selection.csv`, `early_exit_by_block.csv` | [x] |
 | T10 question removed | exp20 `cross_model/prior_correction.csv` | [x] |
+| T11 self-evaluation vs likelihood, eight models (§8) | exp20 `cross_model/self_evaluation_vs_likelihood.csv` (exp21 scores) | [x] |
 | Pipeline / scoring figure F1, split figure F2 | TikZ, drawn from the code and `split.json` | [ ] |
 
 ---
@@ -142,13 +143,14 @@ No longer needed under the empirical framing: R3 (isolating τ: per-question DoL
 attribute), R4 (exp19 on Gemma), R5 (open-ended labels: exp14 is left out).
 
 Open (no GPU unless noted):
-- [ ] Save the held-out paired tests (T1–T3) into `exp19.../run_01_qwen25_3b_full/analysis/`.
-- [ ] Fold `length_control.py` into `scripts/heldout_analysis.py`; run it with `--out-dir`.
-- [ ] Risk–coverage curve for F4 (see part D).
-- [ ] `docs/experiment_log.md`: add the exp19 held-out results and exp20; `docs/glossary.md`: self-evaluation,
-  early exit of the verdict, question-removed control, length-matched pairwise accuracy.
-- [ ] Optional R6 (GPU, about 10 min): base-model likelihood (sum and per token) for the other seven models on
-  the exploration questions. Without it, "self-evaluation beats likelihood" is stated for Qwen2.5-3B only.
+- [x] Held-out paired tests saved in `exp19.../run_01_qwen25_3b_full/analysis/`.
+- [x] Length control is section 7 of `scripts/heldout_analysis.py`.
+- [x] Risk–coverage curve for F4.
+- [x] Experiment log (exp19 held-out, exp20, exp21) and glossary updated.
+- [x] R6 = exp21 (2026-11-15, 70 min): base-model likelihood on all 817 questions for the eight exp20 models; compared
+  with self-evaluation by `scripts/self_evaluation_vs_likelihood.py` (protocol fixed before scoring:
+  `exp20.../cross_model/likelihood_protocol.json`). Reproduces exp19 exactly. Self-evaluation beats both likelihood
+  rules on 5 of 8 models; two of the five only just (no multiple-comparison adjustment in the protocol: say so).
 - [ ] exp18 / Gemma: `apply_final_norm` does not find the final norm of `Gemma3ForConditionalGeneration`
   (transformers 4.57.6), so exp18's Gemma DoLa rows may read premature layers without the norm. exp18 is left out;
   check before any Gemma DoLa number is used.

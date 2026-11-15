@@ -10,7 +10,8 @@ each run's `*_summary.csv` under `results/experiments/<exp>/runs/<run>/`. Reprin
 token, k = ∞ means once, at the first token of the answer (`*_frozen`). Per-question DoLa-static is defined in the glossary.
 
 **Data.** Unless noted, every run uses the same 50 questions (seed 42). They served as the development set: the
-method was designed on them and the results were reported on them. There is no held-out set yet.
+method was designed on them and the results were reported on them. The held-out set is the other 767 questions
+(exp19); exp20 splits all 817 into 417 exploration and 400 confirmation questions.
 
 **Noise.** With n = 50 the standard error of MC1 is about 0.065–0.07. DoLa scores 0.26 (exp11) and 0.28 (exp1,
 exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is within run-to-run variation.
@@ -29,7 +30,7 @@ exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is withi
 | exp9 | Contrastive weight set per token by a rule | 0.36/0.561/0.325 < fixed weight 0.40/0.576/0.351 | One sentence |
 | exp10 | Switch gated by an exponential moving average of the divergence | 0.34/0.531/0.307 < contrastive at every step 0.40/0.529/0.353 | One sentence |
 
-## Main experiments (exp11–exp18)
+## Main experiments (exp11–exp21)
 
 | Exp | Question | Result | Source | Report |
 |---|---|---|---|---|
@@ -40,7 +41,40 @@ exp4, exp7, exp8, exp13) on the same questions, so a difference of 0.02 is withi
 | exp15 | Where do the k = ∞ and k = 1 generations first differ (8 selected questions)? | `*_assistant_full_verdict.csv`: 8 judgements by an LLM assistant; prefix sheet (80 rows) **not labelled** | `exp15.../run_01_default` | Case study only, labeller stated |
 | exp16 | Does the ranking over k hold on other random subsets? | Original subset = exp12 (+ k = 8: 0.38/0.561/0.344). **New subset, seed 101:** k = 1: 0.30/0.536/0.273; k = 8: 0.32/0.531/0.315; k = ∞: 0.30/0.520/0.306. The exp12 ranking does **not** replicate. Seeds 202/303/404: **not run** | `exp16.../run_01_anchor_subset`, `run_02_seed_101` | Yes |
 | exp17 | Token-level traces of high- and low-scoring k = 1 open-ended answers | Traces and figure only | `exp17...` | Possibly a figure |
-| exp18 | Transfer to other models (same 50 questions) | Gemma 3 4B: greedy 0.28/0.432/0.248, DoLa 0.28/0.490/0.272, per-question DoLa-static 0.30/0.587/0.284. Falcon 3 3B: greedy 0.26/0.406/0.231, DoLa 0.22/0.442/0.214, per-question DoLa-static 0.26/0.478/0.228. HINT self-calibrated Qwen 1.5B: greedy 0.30/0.428/0.247, DoLa 0.24/0.404/0.208, per-question DoLa-static 0.24/0.413/0.206 | `exp18.../run_0{1,2,4}_*` | Yes, all baselines present |
+| exp18 | Transfer to other models (same 50 questions) | Gemma 3 4B: greedy 0.28/0.432/0.248, DoLa 0.28/0.490/0.272, per-question DoLa-static 0.30/0.587/0.284. Falcon 3 3B: greedy 0.26/0.406/0.231, DoLa 0.22/0.442/0.214, per-question DoLa-static 0.26/0.478/0.228. HINT self-calibrated Qwen 1.5B: greedy 0.30/0.428/0.247, DoLa 0.24/0.404/0.208, per-question DoLa-static 0.24/0.413/0.206 | `exp18.../run_0{1,2,4}_*` | No: 50 questions only, and the Gemma DoLa rows may lack the final norm (issue 8) |
+| exp19 | Held-out evaluation, all 817 questions, one run | See the next section | `exp19.../run_01_qwen25_3b_full` (`analysis/`) | Yes, main tables |
+| exp20 | Self-evaluation, P(True), design frozen on 417 exploration questions, tested on 400 confirmation questions; early exit and question-removed control on eight models | Confirmation (Qwen2.5-3B): 0.623/0.716/0.599 vs base likelihood 0.340/0.513/0.269 and DoLa (MC configuration) 0.398/0.599/0.320; early exit at blocks 27–30 0.685. Early exit gains on 2 of 8 models. With the question removed the verdict is as accurate on 6 of 8 models; prior correction loses on 7 of 7 counted models | `exp20_self_evaluation/README.md` | Yes |
+| exp21 | Base-model likelihood on all 817 questions for the eight exp20 models (same code path as exp19) | Run 01 reproduces exp19 exactly. Self-evaluation beats both likelihood rules (sum and per token) on 5 of 8 models on the 417 exploration questions; not on Qwen2.5-0.5B (verdict at chance), Gemma 3 1B, SmolLM2-1.7B. Two of the five wins (Falcon3-3B, Qwen2.5-1.5B) only just exclude 0 | `exp21_likelihood_baselines` | Yes, with exp20 |
+
+## Held-out results (exp19, 767 questions, 2026-11-15)
+
+Qwen2.5-3B, the 767 questions outside the development set, MC1 / MC2 / MC3. Tests: paired bootstrap (10,000
+resamples, seed 0) and exact McNemar, Holm within each family. Files: `exp19.../run_01_qwen25_3b_full/analysis/`
+(`heldout_main.csv`, `heldout_factorial.csv`, `heldout_interval.csv`, and the `heldout_analysis.py` outputs).
+
+| Rule | Held-out | Development (same run) |
+|---|---|---|
+| Base model likelihood | 0.333 / 0.507 / 0.271 | 0.340 / 0.532 / 0.305 |
+| DoLa, multiple-choice configuration | 0.356 / 0.566 / 0.308 | 0.420 / 0.675 / 0.376 |
+| DoLa, generation settings | 0.285 / 0.457 / 0.232 | 0.280 / 0.526 / 0.273 |
+| Per-question DoLa-static (k = ∞) | 0.299 / 0.494 / 0.267 | 0.400 / 0.557 / 0.358 |
+| k = 1 / k = 4 | 0.295 / 0.501 / 0.266; 0.302 / 0.494 / 0.274 | 0.340 / 0.558 / 0.295; 0.420 / 0.594 / 0.356 |
+| Constraint off (log-probability difference) | 0.295 / 0.503 / 0.265 | 0.360 / 0.518 / 0.322 |
+
+- Per-question DoLa-static − base, MC1: −0.034 [−0.060, −0.008] (39/65; Holm p = 0.156). The development-set gain
+  does not hold. DoLa (MC configuration) − base, MC1 +0.023 [−0.020, +0.068], MC2 +0.059 (Holm p = 0.148).
+  DoLa (generation settings) − base, MC1 −0.047 [−0.078, −0.017] (Holm: bootstrap 0.045, McNemar 0.051).
+- Selection interval: no difference between k = 1, 4 and ∞ on any metric (all Holm p = 1.0).
+- Plausibility constraint in MC scoring: every option has at least one masked token (−1000 each); on the 54.8 % of
+  questions where the true option has more masked tokens, DoLa (generation settings) has MC1 0.0.
+- Length: within-question Spearman correlation of score with character length −0.285 (base), +0.669 (DoLa, MC
+  configuration). Longest option (characters) MC1 0.361; DoLa (MC configuration) − longest option, MC1 −0.005
+  [−0.038, +0.027] (86/90). With option pairs matched for token count (±1), every likelihood and contrast rule
+  separates true from false at 0.46–0.54. A token-count "longest option" loses on ties (MC1 0.283): use characters.
+- Contrast weight β (S_base + β S_contrast), chosen on the development set (β = 10): held-out equal to DoLa (MC
+  configuration), +0.003 MC1.
+- Reproduction: on the 50 development questions, this run's MC1 differs from the June runs by 0–2 questions per
+  decoder (`development_reproduction.csv`).
 
 ## Paired tests on the development set (2026-11-14)
 
@@ -93,6 +127,11 @@ Reading, on the development set only:
    intervals and the 50 dataset indices (`truthfulqa_sampling.selected_source_indices`), but the code cannot be
    checked. Compare its scores, not its latency, and rerun it under the current code before relying on it.
 7. **Open-ended labels are LLM-written** (exp14, exp15).
+8. **Gemma 3 4B final norm.** `apply_final_norm` does not find the final norm of `Gemma3ForConditionalGeneration`
+   (transformers 4.57.6; class structure checked, nothing rerun), so exp18's Gemma DoLa and per-question
+   DoLa-static rows may read premature layers without the norm. exp20 finds the norm itself and is not affected.
+9. **exp20's "longest option (token count)" row** loses on ties (0.325 on the confirmation part); the frozen
+   analysis is left as it is, and the report uses the character-length baseline from exp19.
 
 ## Setup audit (2026-11-14, before the held-out run)
 

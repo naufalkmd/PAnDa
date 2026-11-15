@@ -1,0 +1,9 @@
+run_id,notes,seed,model_name,shallow_bucket
+run_01_qwen25_3b,reproduction_check_against_exp19_pure_greedy,42,Qwen/Qwen2.5-3B-Instruct,
+run_02_gemma3_4b,base_likelihood_all_questions,42,google/gemma-3-4b-it,
+run_03_falcon3_3b,base_likelihood_all_questions,42,tiiuae/Falcon3-3B-Instruct,
+run_04_qwen25_15b,base_likelihood_all_questions,42,Qwen/Qwen2.5-1.5B-Instruct,
+run_05_qwen25_05b,base_likelihood_all_questions,42,Qwen/Qwen2.5-0.5B-Instruct,
+run_06_phi35_mini,base_likelihood_all_questions,42,microsoft/Phi-3.5-mini-instruct,
+run_07_gemma3_1b,base_likelihood_all_questions,42,google/gemma-3-1b-it,
+run_08_smollm2_17b,base_likelihood_all_questions,42,HuggingFaceTB/SmolLM2-1.7B-Instruct,
