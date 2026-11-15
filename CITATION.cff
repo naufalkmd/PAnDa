@@ -6,7 +6,7 @@ authors:
   - family-names: "Kamaruddin"
     given-names: "Naufal"
   # Co-authors of the report, to be added once their family and given names are confirmed: Jeong Edon, Muhammad Aliff.
-repository-code: "https://github.com/naufalkmd/dola-static-per-question"
+repository-code: "https://github.com/naufalkmd/truthfulqa-scoring-rules"
 abstract: >-
   An empirical study of scoring rules on TruthfulQA multiple choice with small instruction-tuned language models:
   the base model's likelihood, DoLa in two configurations, per-question DoLa-static and self-evaluation (P(True)).
