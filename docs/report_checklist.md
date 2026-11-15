@@ -216,7 +216,11 @@ Open (no GPU unless noted):
   so no separate prompt appendix. `huang2025efficient` and `guo2025deepseekr1` removed from the bib (exp18 left
   out); `holtzman2020curious` cited in Appendix C, `huang2025survey` in §1. Check script: 0 FAIL; 136 numbers
   traced; all 26 citations resolve.
-- [ ] Repository URL and final commit in Appendix A (the one remaining `\todo`), once the branch is merged.
+- [x] Repository URL in Appendix A (2026-11-15; `reorganise-report` merged into `main` as PR #1). Appendix A names
+  the tag `v1.0-report` for the version described.
+- [ ] Create and push the tag `v1.0-report` on the commit with the final report, after the title and the authors'
+  final read (`git tag -a v1.0-report -m ...`, `git push origin v1.0-report`). Until then the tag named in Appendix A
+  does not exist.
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
 - [ ] Title (part A) and a final read by the authors.
