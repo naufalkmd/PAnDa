@@ -3,12 +3,15 @@
 Research repository and report: what multiple-choice TruthfulQA rewards, studied with the base model's
 likelihood, DoLa in two configurations, per-question DoLa-static (code name `fanda`, formerly FAnDa; one of the
 studied rules, not a proposed method) and self-evaluation, P(True), on Qwen2.5-3B-Instruct and seven other small
-models. PAnDa, the earlier block-wise method the local folder `PAnDa` is named after, was dropped (2026-11-14): keep
-its decoder code (`src/truthfulqa_scoring/decoders/panda.py`; saved exploration runs use it), but leave it out of
-the report and the README. The package was renamed `panda` → `truthfulqa_scoring` and the report
-`fanda_report.tex` → `report.tex` on 2026-11-15. Do not rename the scoring rules' code names (`fanda_frozen`,
-`panda_switch`, ...), the experiment folders or the `PANDA_SINGLE_PASS_TF` variable: saved runs and docs depend on
-them. Do not rename the local `PAnDa` folder either: `.venv` stores absolute paths.
+models. PAnDa, an earlier block-wise method, was dropped (2026-11-14): keep its decoder code
+(`src/truthfulqa_scoring/decoders/panda.py`; saved exploration runs use it), but leave it out of the report and the
+README. Renamed on 2026-11-15: the package `panda` → `truthfulqa_scoring`, the report `fanda_report.tex` →
+`report.tex`, and the local folder `PAnDa` → `truthfulqa-scoring-rules`. Do not rename the scoring rules' code names
+(`fanda_frozen`, `panda_switch`, ...), the experiment folders or the `PANDA_SINGLE_PASS_TF` variable: saved runs and
+docs depend on them. If the folder is ever moved again, `.venv` must follow: it stores absolute paths (launcher
+scripts in `.venv/bin/`, the `activate` scripts, the editable-install `.pth` and `direct_url.json`); rewrite them
+with `sed` or recreate it with `bash scripts/setup_env.sh`. Saved runs' metadata keep the old path; that is a record
+of where they ran.
 **The GitHub repository is public**: never commit `archive/`, course material, model weights, datasets,
 tokens or `.env`.
 

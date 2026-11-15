@@ -92,7 +92,7 @@ the 50 development questions in the current environment changed MC1 on at most 2
 ## Repository layout
 
 ```text
-PAnDa/
+truthfulqa-scoring-rules/
   src/truthfulqa_scoring/                        Evaluator, decoders, benchmark loaders, older CLI (python -m truthfulqa_scoring)
   results/experiments/              The experiments of the study (exp11-exp13, exp16, exp19-exp21): runner,
                                     run matrix, README, saved runs
