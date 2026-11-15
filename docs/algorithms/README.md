@@ -34,7 +34,7 @@ See `src/panda/utils.py`.
 
 ## Repo-Wide Decoder Defaults
 
-These are the current code defaults, not necessarily the settings used by every historical artifact under `results/experiments/exploration/sanity_runs/stage*/`.
+These are the current code defaults, not necessarily the settings used by every historical artifact under `results/experiments/exploration/sanity_runs/stage*/` (git tag `exploration-2026-06`).
 
 | Setting | Current repo default | Where it comes from |
 | --- | --- | --- |

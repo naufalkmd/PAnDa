@@ -224,6 +224,10 @@ Open (no GPU unless noted):
   (`dev` → `sanity_runs`; runners use `parents[2]`, all nine `--list` checked; `summarise_runs.py` finds all 32
   runs); README, `results/experiments/README.md`, project `CLAUDE.md`, `pyproject.toml` description and
   `CITATION.cff` rewritten for the empirical framing.
+- [x] Exploration folder removed from the tree (user's decision, 2026-11-15) after tagging the last commit that
+  holds it: annotated tag `exploration-2026-06` (109 files). Appendix C, the experiment log, both READMEs, project
+  `CLAUDE.md` and `docs/algorithms/` point to the tag. The tag must be pushed with the branch
+  (`git push origin exploration-2026-06`), or the citation in Appendix C leads nowhere.
 - [ ] `CITATION.cff`: add Jeong Edon and Muhammad Aliff once their family and given names are confirmed.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 

@@ -2,7 +2,7 @@
 
 > **Status:** dropped on 2026-11-14; not part of the results or the report. This note documents the code
 > (`src/panda/decoders/panda.py`) because saved exploration runs (exp5, exp11's `panda_switch`,
-> `results/experiments/exploration/sanity_runs/`) used it. Per-question DoLa-static, one of the scoring rules of the
+> `results/experiments/exploration/sanity_runs/` at the git tag `exploration-2026-06`) used it. Per-question DoLa-static, one of the scoring rules of the
 > study, is described in [`../glossary.md`](../glossary.md).
 
 ## What It Does

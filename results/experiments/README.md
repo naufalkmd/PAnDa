@@ -40,29 +40,38 @@ exp19 repeats exp11–exp13 on all 817 questions; the report uses the exp19 numb
 | `exp17_openended_dola_trace/` | Token-level premature-layer traces of open-ended answers | Open-ended generation is outside the study |
 | `exp18_cross_model_transfer/` | Layer contrast on Gemma 3 4B, Falcon 3 3B, a self-calibrated Qwen 1.5B | 50 questions only; the Gemma DoLa rows may lack the final norm (experiment log, issue 8) |
 
-## Exploration (`exploration/`)
+## Exploration (removed from the tree; tag `exploration-2026-06`)
 
-Design alternatives on the development set that the study does not use, kept for the record. In their saved runs
-(2026-06-03), `fanda` re-selected the premature layer every 4 tokens. `exploration/sanity_runs/` holds the first
-sanity runs of the dropped PAnDa method (historical "stage" names).
+Design alternatives on the development set that the study does not use, and the first sanity runs of the dropped
+PAnDa method. They were removed from the tree on 2026-11-15 and are kept under the git tag `exploration-2026-06`,
+in `results/experiments/exploration/`. Their results are in the experiment log, and the report summarises them in
+Appendix C. In their saved runs (2026-06-03), `fanda` re-selected the premature layer every 4 tokens.
 
-| Folder | Question |
+| Folder at the tag | Question |
 |---|---|
-| `exploration/exp1_contrast_strength/` | Weighting the premature-layer term in DoLa (α = 0.10, 0.50, 0.95) |
-| `exploration/exp2_horizon_arbitration/` | Look-ahead depth when choosing between greedy and contrastive scores |
-| `exploration/exp4_family_baselines/` | Baselines, including raw-logit contrast with α = 0, 0.5, 1 |
-| `exploration/exp5_block_ablation/` | Jacobi blocks on top of contrastive decoding |
-| `exploration/exp6_switch_variants/` | Four rule-based switches between greedy and contrastive scores |
-| `exploration/exp7_switch_vs_fixed_regimes/` | A switch vs. always greedy and always contrastive |
-| `exploration/exp8_oracle_switch_diagnosis/` | Oracle switch (upper bound for any switch rule) |
-| `exploration/exp9_adaptive_lambda_contrast/` | Contrastive weight set per token by a rule |
-| `exploration/exp10_ema_risk_switch/` | Switch gated by an exponential moving average |
+| `exp1_contrast_strength/` | Weighting the premature-layer term in DoLa (α = 0.10, 0.50, 0.95) |
+| `exp2_horizon_arbitration/` | Look-ahead depth when choosing between greedy and contrastive scores |
+| `exp4_family_baselines/` | Baselines, including raw-logit contrast with α = 0, 0.5, 1 |
+| `exp5_block_ablation/` | Jacobi blocks on top of contrastive decoding |
+| `exp6_switch_variants/` | Four rule-based switches between greedy and contrastive scores |
+| `exp7_switch_vs_fixed_regimes/` | A switch vs. always greedy and always contrastive |
+| `exp8_oracle_switch_diagnosis/` | Oracle switch (upper bound for any switch rule) |
+| `exp9_adaptive_lambda_contrast/` | Contrastive weight set per token by a rule |
+| `exp10_ema_risk_switch/` | Switch gated by an exponential moving average |
+| `sanity_runs/` | First sanity runs of PAnDa (historical "stage" names) |
+
+To look at them or rerun them, restore the folder from the tag (and remove it again before committing):
+
+```bash
+git checkout exploration-2026-06 -- results/experiments/exploration
+```
 
 `exp3` does not exist (the number was skipped).
 
 ## Rerunning
 
 - Rebuild the report's analyses, tables and figures without a GPU: see the main [README](../../README.md#rebuild-the-report).
-- Print the scores of every saved run, exploration included: `python scripts/summarise_runs.py`.
+- Print the scores of every saved run: `python scripts/summarise_runs.py` (it also lists the exploration runs while
+  they are restored from the tag).
 - `scripts/run_report_reruns.sh` is how the exp16 subsets and the exp19 held-out run were scored (2026-11-14).
 - `--mode full` alone still uses 50 questions; add `--truthfulqa-limit all` for the full dataset.

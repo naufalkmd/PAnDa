@@ -40,8 +40,10 @@ tokens or `.env`.
 ## Layout
 
 - `results/experiments/exp11`–`exp21`: the experiments of the study (see `results/experiments/README.md` for which
-  are in the report). `results/experiments/exploration/`: exp1–exp10 and the first sanity runs, moved there on
-  2026-11-15; their runners find the shared code two levels up.
+  are in the report). exp1–exp10 and the first sanity runs were removed from the tree on 2026-11-15 and are kept
+  under the tag `exploration-2026-06` (in `results/experiments/exploration/`; their runners find the shared code
+  two levels up). Restore with `git checkout exploration-2026-06 -- results/experiments/exploration`, and do not
+  commit them back.
 
 ## Environment
 

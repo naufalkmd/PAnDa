@@ -94,7 +94,6 @@ the 50 development questions in the current environment changed MC1 on at most 2
 PAnDa/
   src/panda/                        Evaluator, decoders, benchmark loaders, older CLI (python -m panda)
   results/experiments/              One folder per experiment (exp11-exp21): runner, run matrix, README, saved runs
-  results/experiments/exploration/  Early design alternatives (exp1-exp10) and the first sanity runs
   results/figures/                  Figures of the development experiments and their data (JSON)
   scripts/                          Analysis scripts, paired tests, table and figure data for the report
   scripts/plots/                    Plot scripts for results/figures/
@@ -102,6 +101,9 @@ PAnDa/
                                     version is in paper/course_version_2026_06/
   docs/                             Experiment log, glossary, report checklist, algorithm notes, presentation
 ```
+
+The early design alternatives (exp1–exp10) and the first sanity runs were removed from the tree and are kept under
+the git tag `exploration-2026-06`; see [`results/experiments/README.md`](results/experiments/README.md).
 
 Key implementation files:
 

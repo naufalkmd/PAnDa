@@ -3,8 +3,8 @@
 One row per experiment: what it asked, what it found, where the numbers are, and whether the report uses it.
 Terms follow [`glossary.md`](glossary.md); code names appear only in backticks. All runs use
 `Qwen/Qwen2.5-3B-Instruct` on TruthfulQA multiple choice (MC1 / MC2 / MC3) unless noted. Numbers are copied from
-each run's `*_summary.csv` under `results/experiments/<exp>/runs/<run>/` (exp1–exp10 under
-`results/experiments/exploration/<exp>/runs/<run>/` since 2026-11-15). Reprint them with
+each run's `*_summary.csv` under `results/experiments/<exp>/runs/<run>/` (exp1–exp10: under
+`results/experiments/exploration/<exp>/runs/<run>/` at the git tag `exploration-2026-06`). Reprint them with
 `python scripts/summarise_runs.py` before using them in the report.
 
 **Notation.** *Selection interval k*: the premature layer is re-selected every k tokens; k = 1 means at every
