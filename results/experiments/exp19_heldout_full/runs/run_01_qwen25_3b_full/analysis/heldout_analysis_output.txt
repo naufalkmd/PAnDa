@@ -1,0 +1,94 @@
+questions: 817 in the run, 50 development, 767 held-out, 0 without labels
+
+== 1. check: metrics recomputed from the saved option scores vs the saved values
+  largest absolute difference over all decoders, questions and metrics: 0.00e+00; options missing from the saved scores: 0
+
+== 2. mean scores per decoder
+  decoder                     all mc1    all mc2    all mc3    dev mc1    dev mc2    dev mc3   held mc1   held mc2   held mc3
+  pure_greedy                   0.333      0.509      0.273      0.340      0.532      0.305      0.333      0.507      0.271
+  dola_mc_reference             0.360      0.573      0.312      0.420      0.675      0.376      0.356      0.566      0.308
+  dola                          0.285      0.461      0.234      0.280      0.526      0.273      0.285      0.457      0.232
+  fanda_frozen                  0.305      0.498      0.273      0.400      0.557      0.358      0.299      0.494      0.267
+  exp13_logprob_top             0.285      0.461      0.234      0.280      0.526      0.273      0.285      0.457      0.232
+  exp13_logprob_no_top          0.299      0.504      0.269      0.360      0.518      0.322      0.295      0.503      0.265
+  exp13_logit_top               0.283      0.450      0.229      0.300      0.531      0.296      0.282      0.444      0.225
+  fanda_update1                 0.297      0.505      0.268      0.340      0.558      0.295      0.295      0.501      0.266
+  fanda_update4                 0.310      0.500      0.279      0.420      0.594      0.356      0.302      0.494      0.274
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/scores_by_split.csv
+
+== 3. development questions: this run vs the saved June runs (same decoder name, same questions)
+  exp11_core_decoder_comparison      dola                   n= 50  MC1 0.260 -> 0.280 (1 questions changed)  MC2 0.526 -> 0.526  MC3 0.268 -> 0.273
+  exp11_core_decoder_comparison      pure_greedy            n= 50  MC1 0.340 -> 0.340 (0 questions changed)  MC2 0.531 -> 0.532  MC3 0.307 -> 0.305
+  exp12_state_persistence_diagnostic fanda_frozen           n= 50  MC1 0.400 -> 0.400 (0 questions changed)  MC2 0.560 -> 0.557  MC3 0.364 -> 0.358
+  exp12_state_persistence_diagnostic fanda_update1          n= 50  MC1 0.340 -> 0.340 (0 questions changed)  MC2 0.534 -> 0.558  MC3 0.294 -> 0.295
+  exp12_state_persistence_diagnostic fanda_update4          n= 50  MC1 0.400 -> 0.420 (1 questions changed)  MC2 0.576 -> 0.594  MC3 0.351 -> 0.356
+  exp13_logit_filter_factorial       exp13_logit_top        n= 50  MC1 0.300 -> 0.300 (2 questions changed)  MC2 0.520 -> 0.531  MC3 0.300 -> 0.296
+  exp13_logit_filter_factorial       exp13_logprob_no_top   n= 50  MC1 0.380 -> 0.360 (1 questions changed)  MC2 0.527 -> 0.518  MC3 0.329 -> 0.322
+  exp13_logit_filter_factorial       exp13_logprob_top      n= 50  MC1 0.280 -> 0.280 (0 questions changed)  MC2 0.528 -> 0.526  MC3 0.273 -> 0.273
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/development_reproduction.csv
+
+== 4. plausibility constraint in multiple-choice scoring (decoder dola, held-out questions)
+  options: 5529; with at least one masked token: 100.0%; masked tokens per option: mean 4.01, median 4, max 14
+  option score minus -1000 x count (the part not due to the mask): min -84.2, max 0.0
+  true option has more masked tokens      420 questions (54.8%): MC1 DoLa(generation settings) 0.0, base model 0.0952, DoLa(MC configuration) 0.35
+  same count                              207 questions (27.0%): MC1 DoLa(generation settings) 0.3816, base model 0.4734, DoLa(MC configuration) 0.3768
+  true option has fewer masked tokens     140 questions (18.2%): MC1 DoLa(generation settings) 1.0, base model 0.8357, DoLa(MC configuration) 0.3429
+  questions the base model answers correctly and DoLa(generation settings) does not: 90; of these, true option has more masked tokens: 40
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/mask_counts.csv
+
+== 5. option score vs option length in characters (held-out questions, MC2 option set)
+  pure_greedy              mean within-question Spearman correlation -0.285
+  dola_mc_reference        mean within-question Spearman correlation +0.669
+  dola                     mean within-question Spearman correlation -0.442
+  fanda_frozen             mean within-question Spearman correlation -0.410
+  exp13_logprob_top        mean within-question Spearman correlation -0.442
+  exp13_logprob_no_top     mean within-question Spearman correlation -0.409
+  exp13_logit_top          mean within-question Spearman correlation -0.397
+  fanda_update1            mean within-question Spearman correlation -0.406
+  fanda_update4            mean within-question Spearman correlation -0.407
+  baseline, choose the longest option: MC1 0.361, MC3 0.324
+  baseline, choose the shortest option: MC1 0.172, MC3 0.223
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/length_association.csv
+
+== 6. contrast weight: S = S_base + beta * S_contrast (beta = inf: S_contrast alone)
+    beta    dev mc1    dev mc2    dev mc3   held mc1   held mc2   held mc3
+    0.00      0.340      0.532      0.305      0.333      0.507      0.271
+    0.02      0.360      0.527      0.322      0.339      0.512      0.273
+    0.05      0.340      0.525      0.317      0.342      0.515      0.272
+    0.10      0.340      0.527      0.306      0.364      0.521      0.280
+    0.15      0.320      0.527      0.288      0.378      0.519      0.283
+    0.20      0.320      0.537      0.294      0.381      0.519      0.284
+    0.30      0.380      0.572      0.312      0.365      0.505      0.276
+    0.50      0.360      0.594      0.300      0.366      0.526      0.288
+    0.75      0.360      0.572      0.296      0.376      0.554      0.302
+    1.00      0.380      0.582      0.316      0.370      0.556      0.303
+    1.50      0.400      0.623      0.349      0.372      0.560      0.311
+    2.00      0.400      0.628      0.344      0.364      0.564      0.311
+    3.00      0.400      0.642      0.361      0.360      0.566      0.310
+    5.00      0.420      0.660      0.367      0.357      0.567      0.309
+   10.00      0.420      0.680      0.376      0.358      0.566      0.310
+     inf      0.420      0.675      0.376      0.356      0.566      0.308
+  beta selected on the development set: 10.0
+  held-out, beta=10.0 vs pure_greedy        mc1: 0.358 vs 0.333, difference +0.026 [-0.018, +0.069], p=0.256  McNemar 156/136 p=0.266
+  held-out, beta=10.0 vs pure_greedy        mc2: 0.566 vs 0.507, difference +0.058 [+0.013, +0.104], p=0.010
+  held-out, beta=10.0 vs pure_greedy        mc3: 0.310 vs 0.271, difference +0.039 [+0.009, +0.069], p=0.010
+  held-out, beta=10.0 vs dola_mc_reference  mc1: 0.358 vs 0.356, difference +0.003 [-0.005, +0.010], p=0.630  McNemar 6/4 p=0.754
+  held-out, beta=10.0 vs dola_mc_reference  mc2: 0.566 vs 0.566, difference -0.001 [-0.008, +0.007], p=0.907
+  held-out, beta=10.0 vs dola_mc_reference  mc3: 0.310 vs 0.308, difference +0.002 [-0.004, +0.008], p=0.581
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/contrast_weight_sweep.csv
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/contrast_weight_tests.csv
+
+== 7. length control (held-out questions): per-token scores, longest option, length-matched pairs
+  longest option (characters)      MC1 0.361  MC2 0.609  MC3 0.324  length-matched pairs 0.599 (654 questions)  picks the longest MC1 option 85.3%
+  longest option (tokens)          MC1 0.283  MC2 0.552  MC3 0.260  length-matched pairs 0.539 (654 questions)  picks the longest MC1 option 90.5%
+  pure_greedy, sum                 MC1 0.333  MC2 0.507  MC3 0.271  length-matched pairs 0.509 (654 questions)  picks the longest MC1 option 15.5%
+  pure_greedy, per token           MC1 0.390  MC2 0.483  MC3 0.291  length-matched pairs 0.519 (654 questions)  picks the longest MC1 option 41.2%
+  dola_mc_reference, sum           MC1 0.356  MC2 0.566  MC3 0.308  length-matched pairs 0.523 (654 questions)  picks the longest MC1 option 67.8%
+  dola_mc_reference, per token     MC1 0.351  MC2 0.481  MC3 0.294  length-matched pairs 0.536 (654 questions)  picks the longest MC1 option 35.9%
+  dola, sum                        MC1 0.285  MC2 0.457  MC3 0.232  length-matched pairs 0.458 (654 questions)  picks the longest MC1 option 12.4%
+  dola, per token                  MC1 0.335  MC2 0.470  MC3 0.246  length-matched pairs 0.467 (654 questions)  picks the longest MC1 option 35.6%
+  fanda_frozen, sum                MC1 0.299  MC2 0.494  MC3 0.267  length-matched pairs 0.516 (654 questions)  picks the longest MC1 option 12.3%
+  fanda_frozen, per token          MC1 0.343  MC2 0.478  MC3 0.274  length-matched pairs 0.514 (654 questions)  picks the longest MC1 option 33.0%
+  the true MC1 option is among the longest (tokens, ties count) in 40.4% of questions; MC1 options per question: 5.04
+  wrote results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis/length_control.csv
+  MC1, DoLa (MC configuration) minus longest option (characters): -0.005 [-0.038, +0.027], McNemar 86/90 p=0.821

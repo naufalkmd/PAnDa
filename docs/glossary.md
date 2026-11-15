@@ -21,6 +21,11 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 | Candidate layers (bucket) | The set of layers the premature layer is chosen from | Chuang et al., 2024 |
 | Softmax temperature τ | Logits are divided by τ before the softmax | — |
 | Early exit | Applying the output head to an intermediate layer's hidden state | — |
+| Self-evaluation, P(True) | Ask the model whether a proposed answer is true; the score is the probability (here the log-odds) of the reply token `True` against `False` | Kadavath et al., 2022 (to verify) |
+| Partial-input baseline | A model or score that sees only part of the input (here: the option without the question); if it is accurate, the benchmark can be solved without the missing part | Gururangan et al., 2018; Poliak et al., 2018; Balepur et al., 2024 (to verify) |
+| Selective prediction; coverage; risk–coverage curve | Answer only when a confidence reaches a threshold; coverage = share of questions answered; the curve plots accuracy (or error) against coverage | standard reference to verify |
+| Exploration / confirmation split | Design choices made on one part of the data, then tested once on the other part with the design frozen in advance (pre-registration) | — |
+| Length-matched pairwise accuracy | Share of (true, false) option pairs whose token counts differ by at most 1 in which the true option scores higher, averaged over questions. Not a standard name: define it once in the report | defined in this project |
 | Greedy decoding; top-k, nucleus (top-p) truncation | Standard decoding baselines | Holtzman et al., 2020 |
 | Jacobi (parallel) decoding | Refining a block of future tokens in parallel by fixed-point iteration | Santilli et al., 2023 |
 | Teacher forcing, likelihood-based multiple-choice scoring | Each answer option is scored by its token log-likelihood given the question | — |
@@ -54,6 +59,10 @@ plots and figure JSON depend on them. This file maps them to the standard terms.
 | `fixed_alpha_dola{_low,,_high}` | Raw-logit contrastive score z_mature − α · z_premature with α = 0.0, 0.5, 1.0, premature layer re-selected every 4 tokens | α = 0 is greedy decoding; α = 1 equals `fanda_update4` (`src/panda/config.py`) |
 | `matched_alpha_dola_0p{10,50,95}` | DoLa's log-probability score with the premature term weighted by α = 0.10, 0.50, 0.95 | exp1 |
 | `top_k`, `top_p` | Top-k / nucleus truncation of the final-layer distribution, scored by likelihood | |
+| `is_true`, `is_correct` (exp20) | The two self-evaluation prompt wordings: True/False after "Is the proposed answer true?"; Yes/No after "Is this answer correct?" | `is_true` is the frozen method |
+| `verdict`, `no_question` (exp20 `wording_set`) | Self-evaluation with the question shown; the same prompt with the question removed (partial-input baseline) | |
+| `corrected`, `sum` (exp20 prior correction) | Verdict minus / plus the question-free verdict | `corrected` was the tested method (rejected) |
+| exploration / confirmation (exp20 `part`) | The 417 / 400 questions of the exp20 split (`split.json`, seed 20261115) | |
 | `panda`, `panda_switch` | PAnDa (dropped; exploration only) | Not in the report's results |
 | `*_switch*`, `ema_risk_switch` | Rule-based switch between greedy and contrastive scores at each token | EMA = exponential moving average of a divergence |
 | `adaptive_lambda_contrast` | Contrastive score with a per-token weight set by a rule | |

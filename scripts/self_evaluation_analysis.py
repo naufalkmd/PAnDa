@@ -295,6 +295,13 @@ def main() -> None:
         print(f"  {r['kind']:48s} target {r['coverage_target']:.2f}{tau}: answered {r['answered']:3d} "
               f"({r['coverage']:.3f}), accuracy on answered {r['selective_accuracy']:.3f}{ci}")
     write_csv(out_dir, "selective_prediction.csv", rows)
+    # Risk-coverage curve (for the report's figure): answer the k most confident questions, k = 1..n.
+    curve, hits = [], 0
+    for k, i in enumerate(order, start=1):
+        hits += correct[i]
+        curve.append({"answered": k, "coverage": k / len(order), "selective_accuracy": hits / k,
+                      "confidence": confidence[i]})
+    write_csv(out_dir, "selective_prediction_curve.csv", curve)
 
     # 4. the score as a classifier of single options
     ys = [l for q in questions for l in labels[q][3]]

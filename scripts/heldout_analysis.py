@@ -14,6 +14,9 @@ Sections printed (and written as CSV files when --out-dir is given):
   6. beta      contrast-weight sweep S = S_base + beta * S_contrast, with S_base the base model's option
                log-likelihood and S_contrast DoLa's option score in its multiple-choice configuration
                (sum of log q_N - log q_M); beta is selected on the development set only
+  7. control   length control: per-token option scores, the longest option by token count, true-vs-false
+               accuracy over option pairs whose token counts differ by at most 1, and how often a rule picks
+               the longest option
 
 Held-out = the questions of exp19 that are not in the development run (matched by question text).
 """
@@ -307,6 +310,65 @@ def main() -> None:
                   f"difference {row['diff']:+.3f} [{low:+.3f}, {high:+.3f}], p={p_boot:.3f}{text}")
     write_csv(args.out_dir, "contrast_weight_sweep.csv", beta_rows)
     write_csv(args.out_dir, "contrast_weight_tests.csv", test_rows)
+
+    # ---- 7. length control ----------------------------------------------------------------------------------
+    print("\n== 7. length control (held-out questions): per-token scores, longest option, length-matched pairs")
+    from transformers import AutoTokenizer
+
+    model_name = json.loads(next(HELDOUT_RUN.glob("*_metadata.json")).read_text(encoding="utf-8"))["model_name"]
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    def token_count(option):  # as candidate_to_ids in src/panda/decoders/core.py (leading space added)
+        text = option if option.startswith((" ", "\n")) else " " + option
+        return max(1, len(tokenizer(text, add_special_tokens=False)["input_ids"]))
+
+    n_tok = {(q, o): token_count(o) for q in held for o in set(labels[q][0] + labels[q][2])}
+
+    def matched_pairwise(score):
+        """Mean over questions of P(score(true) > score(false)), MC2 option pairs whose token counts differ by <= 1."""
+        per_q = []
+        for q in held:
+            _, _, opts, labs = labels[q]
+            vals = [1.0 if score(q, t) > score(q, f) else 0.5 if score(q, t) == score(q, f) else 0.0
+                    for t, lt in zip(opts, labs) if lt == 1 for f, lf in zip(opts, labs)
+                    if lf == 0 and abs(n_tok[(q, t)] - n_tok[(q, f)]) <= 1]
+            if vals:
+                per_q.append(mean(vals))
+        return mean(per_q), len(per_q)
+
+    def longest(q, opts):
+        return max(opts, key=lambda o: (n_tok[(q, o)], len(o)))
+
+    control_rows = []
+    # Character length is the main length baseline: token counts tie often, and a tie never wins MC1.
+    rules = {"longest option (characters)": lambda q, o: len(o), "longest option (tokens)": lambda q, o: n_tok[(q, o)]}
+    for d in ("pure_greedy", "dola_mc_reference", "dola", "fanda_frozen"):
+        rules[f"{d}, sum"] = lambda q, o, d=d: options[d][q][o]
+        rules[f"{d}, per token"] = lambda q, o, d=d: options[d][q][o] / n_tok[(q, o)]
+    per_rule = {}
+    for name, score in rules.items():
+        res = [mc_metrics(lambda o: score(q, o), labels[q]) for q in held]
+        per_rule[name] = res
+        pairs, n_q = matched_pairwise(score)
+        picks_longest = mean(max(labels[q][0], key=lambda o: score(q, o)) == longest(q, labels[q][0]) for q in held)
+        row = {"rule": name, **{m: round(mean(r[m] for r in res), 4) for m in METRICS},
+               "pairwise_accuracy_length_matched": round(pairs, 4), "questions_with_matched_pairs": n_q,
+               "picks_longest_mc1_option": round(picks_longest, 4)}
+        control_rows.append(row)
+        print(f"  {name:32s} MC1 {row['mc1']:.3f}  MC2 {row['mc2']:.3f}  MC3 {row['mc3']:.3f}  "
+              f"length-matched pairs {pairs:.3f} ({n_q} questions)  picks the longest MC1 option {picks_longest:.1%}")
+    true_longest = mean(n_tok[(q, labels[q][0][labels[q][1].index(1)])] >= max(n_tok[(q, o)] for o in labels[q][0])
+                        for q in held)
+    print(f"  the true MC1 option is among the longest (tokens, ties count) in {true_longest:.1%} of questions; "
+          f"MC1 options per question: {mean(len(labels[q][0]) for q in held):.2f}")
+    write_csv(args.out_dir, "length_control.csv", control_rows)
+    a, b = per_rule["dola_mc_reference, sum"], per_rule["longest option (characters)"]
+    diffs = [x["mc1"] - y["mc1"] for x, y in zip(a, b)]
+    low, high, _ = paired_bootstrap(diffs, args.resamples, random.Random(args.seed))
+    wins = sum(x["mc1"] == 1 and y["mc1"] == 0 for x, y in zip(a, b))
+    losses = sum(x["mc1"] == 0 and y["mc1"] == 1 for x, y in zip(a, b))
+    print(f"  MC1, DoLa (MC configuration) minus longest option (characters): {mean(diffs):+.3f} [{low:+.3f}, {high:+.3f}], "
+          f"McNemar {wins}/{losses} p={exact_mcnemar(wins, losses):.3f}")
 
 
 if __name__ == "__main__":

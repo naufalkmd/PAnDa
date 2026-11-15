@@ -1,0 +1,9 @@
+june_run,decoder,n,june_mc1,now_mc1,june_mc2,now_mc2,june_mc3,now_mc3,mc1_flips
+exp11_core_decoder_comparison,dola,50,0.26,0.28,0.5264,0.5264,0.268,0.273,1
+exp11_core_decoder_comparison,pure_greedy,50,0.34,0.34,0.5307,0.5321,0.307,0.3053,0
+exp12_state_persistence_diagnostics,fanda_frozen,50,0.4,0.4,0.5602,0.5574,0.3643,0.3577,0
+exp12_state_persistence_diagnostics,fanda_update1,50,0.34,0.34,0.5344,0.5581,0.2937,0.2947,0
+exp12_state_persistence_diagnostics,fanda_update4,50,0.4,0.42,0.5758,0.5938,0.351,0.356,1
+exp13_logit_filter_factorial,exp13_logit_top,50,0.3,0.3,0.52,0.5315,0.2997,0.2963,2
+exp13_logit_filter_factorial,exp13_logprob_no_top,50,0.38,0.36,0.5274,0.5183,0.3287,0.322,1
+exp13_logit_filter_factorial,exp13_logprob_top,50,0.28,0.28,0.5278,0.5264,0.273,0.273,0
