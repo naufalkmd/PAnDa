@@ -220,6 +220,11 @@ Open (no GPU unless noted):
 - [x] Length: body runs to p. 16 (references from p. 16, appendix pp. 19–21). Kept at this length (user's decision,
   2026-11-15); the 10–12 page target in part C no longer applies.
 - [ ] Title (part A) and a final read by the authors.
+- [x] Repository cleanup (2026-11-15): exp1–exp10 and `results/dev/` moved to `results/experiments/exploration/`
+  (`dev` → `sanity_runs`; runners use `parents[2]`, all nine `--list` checked; `summarise_runs.py` finds all 32
+  runs); README, `results/experiments/README.md`, project `CLAUDE.md`, `pyproject.toml` description and
+  `CITATION.cff` rewritten for the empirical framing.
+- [ ] `CITATION.cff`: add Jeong Edon and Muhammad Aliff once their family and given names are confirmed.
 - [ ] Why exp11 DoLa (0.26) differs from exp4/exp13 DoLa (0.28) on the same questions: code change or nondeterminism? Check with `git log -p` on the DoLa path.
 
 ---

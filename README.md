@@ -1,26 +1,36 @@
-# Per-question DoLa-static: contrastive layer decoding with a premature layer chosen per question
+# What multiple-choice TruthfulQA rewards: layer contrast, self-evaluation and option length
 
-Research code for **per-question DoLa-static**, a variant of DoLa (decoding by contrasting layers, Chuang et al.,
-2024), evaluated on TruthfulQA multiple choice. DoLa-static is DoLa's own name for its variant with one fixed
-premature layer chosen on a validation set; here the fixed layer is chosen separately for each question.
-The method was called FAnDa in the June 2026 course version; code identifiers still use `fanda`.
+Code, saved runs and report of an empirical study of scoring rules on TruthfulQA multiple choice (MC1 / MC2 /
+MC3) with small instruction-tuned language models (Qwen2.5-3B-Instruct and seven others of 0.5 to 4 billion
+parameters). The rules are the base model's likelihood, DoLa (decoding by contrasting layers, Chuang et al., 2024)
+in two configurations, per-question DoLa-static (a DoLa variant we developed), and self-evaluation, P(True)
+(Kadavath et al., 2022).
 
-It differs from DoLa in four settings:
+The report is `paper/fanda_report.tex`. Every number in it is read from the saved runs in `results/experiments/`
+by the scripts under [Rebuild the report](#rebuild-the-report).
 
-- no adaptive plausibility constraint (DoLa's "relative-top" filter);
-- the raw-logit difference `z_mature − z_premature` instead of the log-probability difference;
-- the premature layer is chosen by Jensen–Shannon divergence at temperature 0.5 (DoLa uses 1);
-- the premature layer is chosen **once per question** (at the first answer token, where every answer option has
-  the same input) and then kept fixed, instead of being re-selected at every token.
+## Findings
 
-**History.** The repository and the Python package (`panda`) are named after PAnDa, an earlier block-wise
-variant that was dropped. Its code stays because saved exploration runs used it (see
-[`docs/algorithms/panda.md`](docs/algorithms/panda.md)); it is not part of the results.
+- **Small development sets mislead.** Per-question DoLa-static led the base likelihood by +0.06 MC1 on the 50
+  questions it was developed on and trails it by −0.034 [−0.060, −0.008] on the other 767 questions. No
+  layer-contrast rule beats the likelihood on the held-out questions.
+- **Settings copied from generation break multiple-choice scoring.** Under DoLa's generation settings, the adaptive
+  plausibility constraint masks tokens of every option, and the number of masked tokens alone decides MC1 on 73 %
+  of the held-out questions. DoLa's paper and its released multiple-choice script differ on whether the constraint
+  is used.
+- **Scores follow option length.** DoLa's multiple-choice configuration cannot be told apart from choosing the
+  longest option (MC1 0.356 vs 0.361). On true and false options of nearly equal length, every likelihood and
+  contrast rule is close to chance.
+- **Self-evaluation wins, but judges statements.** Under a design frozen before 400 confirmation questions,
+  self-evaluation reaches MC1 0.623 against 0.340 for the likelihood and 0.398 for DoLa, and it beats the likelihood
+  on 5 of 8 models. With the question removed from the prompt it is as accurate on 6 of 8 models.
 
-**Status.** This is a development-stage research repository, not a benchmark package. Most results come
-from one 50-question TruthfulQA subset, which was also used to develop the method. See
-[`docs/experiment_log.md`](docs/experiment_log.md) for every experiment, its result and its known issues.
-Code names are explained in [`docs/glossary.md`](docs/glossary.md).
+Every experiment, its result and the known issues: [`docs/experiment_log.md`](docs/experiment_log.md). Code names →
+standard terms: [`docs/glossary.md`](docs/glossary.md).
+
+**Names.** The repository and the Python package (`panda`) are named after PAnDa, an earlier block-wise decoding
+method that was dropped; its code stays because saved exploration runs used it. Per-question DoLa-static was called
+FAnDa in the June 2026 course version, and code identifiers still use `fanda`.
 
 ## Install
 
@@ -37,74 +47,69 @@ and rewrites the lock file. Keep `huggingface_hub` below 1.0: newer versions rej
 
 For gated models (Gemma 3), or models not cached locally, export `HF_TOKEN` (or `HUGGINGFACE_HUB_TOKEN`).
 
-**Reproducibility.** Scoring is deterministic given the model weights: there is no sampling, and the question
-subsets come from fixed seeds (42 for the development set). Each answer option is scored with one forward pass
-(single-pass teacher forcing); on the worst-case option of a test it matched a float32 reference within 0.003
-nats, whereas the earlier one-pass-per-token scoring in bf16 was off by up to 2.7 nats (`PANDA_SINGLE_PASS_TF=0`
-restores it). Each run's metadata records the git commit, package
-versions, GPU, model precision, candidate layers and the SHA-256 of the TruthfulQA file used (`environment` in
-`*_metadata.json`). Different GPUs or library versions can still change the last digits of a score, and
-occasionally a close ranking between two answer options.
+## Rebuild the report
+
+These steps read the saved per-question scores; no GPU is needed. Run them from the repository root (the analysis
+scripts need `datasets` for the TruthfulQA labels):
+
+```bash
+PY="env HF_HUB_OFFLINE=1 ./.venv/bin/python"
+$PY scripts/heldout_analysis.py --out-dir results/experiments/exp19_heldout_full/runs/run_01_qwen25_3b_full/analysis
+$PY scripts/self_evaluation_analysis.py exploration     # exp20: writes frozen_design.json only if it is missing
+$PY scripts/self_evaluation_analysis.py confirmation    # stops if the design differs from frozen_design.json
+$PY scripts/self_evaluation_layers.py                   # early exit on eight models
+$PY scripts/self_evaluation_prior.py                    # question-removed control
+$PY scripts/self_evaluation_vs_likelihood.py            # self-evaluation vs likelihood on eight models (exp21)
+python scripts/report_tables.py                         # writes paper/tables/*.tex
+python scripts/figure_data.py                           # writes paper/figures/data/*.csv
+cd paper && latexmk -pdf -outdir=build fanda_report.tex # writes paper/build/fanda_report.pdf
+```
+
+`scripts/paired_tests.py` runs the paired bootstrap and the exact McNemar test between any two rules of a run.
 
 ## Run an experiment
 
 Each experiment in `results/experiments/expN_*/` has a `run_experiment.py`, a `run_matrix.csv` (one row per
-run), a README, and its saved outputs in `runs/`. For example, the layer re-selection sweep:
+run), a README, and its saved outputs in `runs/<run_id>/`. A runner never overwrites a finished run. For example,
+the base-model likelihood of one model on all 817 questions:
 
 ```bash
-./.venv/bin/python results/experiments/exp16_mc_persistence_seed_sweep/run_experiment.py \
-  --model-name Qwen/Qwen2.5-3B-Instruct \
-  --mode subset \
-  --truthfulqa-limit 50
+./.venv/bin/python results/experiments/exp21_likelihood_baselines/run_experiment.py --run-id run_02_gemma3_4b --local-files-only
 ```
 
-Print the scores of every saved run:
+Print the scores of every saved run: `python scripts/summarise_runs.py`.
 
-```bash
-python scripts/summarise_runs.py
-```
-
-## Older evaluator CLI
-
-The experiments above use the runners in `results/experiments/`. The package also has an older general evaluator
-(`python -m panda`, TruthfulQA multiple choice) with the decoders `greedy`, `dola`, `fixed_alpha_dola_low`,
-`fixed_alpha_dola`, `fixed_alpha_dola_high` and `panda`. It is not used for the results; `--mode sanity` /
-`subset` / `full` choose the question subset, `--model-name` the model, `--local-files-only` disables downloads.
-
-## Figures
-
-Plot scripts live in `scripts/plots/` and write to `results/figures/`. Run them from the repository root, for example:
-
-```bash
-python scripts/plots/plot_exp13_logit_filter_factorial.py
-```
+**Reproducibility.** Scoring is deterministic given the model weights: there is no sampling, and the question sets
+come from fixed seeds (42 for the 50 development questions, 20261115 for the exploration/confirmation split).
+Each answer option is scored with one forward pass (single-pass teacher forcing); on the worst-case option of a
+test it matched a float32 reference within 0.003 nats, whereas the earlier one-pass-per-token scoring in bf16 was
+off by up to 2.7 nats (`PANDA_SINGLE_PASS_TF=0` restores it). Each run's metadata records the git commit, package
+versions, GPU, model precision and the SHA-256 of the TruthfulQA file used. Different GPUs or library versions can
+still change the last digits of a score, and occasionally a close ranking between two answer options; rerunning
+the 50 development questions in the current environment changed MC1 on at most 2 questions per rule.
 
 ## Repository layout
 
 ```text
 PAnDa/
-  src/panda/            Evaluator, decoders, benchmark loaders, CLI
-  results/experiments/  One folder per experiment: runner, run matrix, README, saved runs
-  results/figures/      Generated figures and their data (JSON)
-  results/dev/          Early sanity runs of the dropped PAnDa method (historical "stage" names)
-  scripts/              Run wrappers and scripts/summarise_runs.py
-  scripts/plots/        Figure scripts
-  paper/                Report source; paper/course_version_2026_06/ is the June 2026 course version
-  docs/                 Algorithm notes, glossary, experiment log, presentation
+  src/panda/                        Evaluator, decoders, benchmark loaders, older CLI (python -m panda)
+  results/experiments/              One folder per experiment (exp11-exp21): runner, run matrix, README, saved runs
+  results/experiments/exploration/  Early design alternatives (exp1-exp10) and the first sanity runs
+  results/figures/                  Figures of the development experiments and their data (JSON)
+  scripts/                          Analysis scripts, paired tests, table and figure data for the report
+  scripts/plots/                    Plot scripts for results/figures/
+  paper/                            Report source (tables/ and figures/data/ are generated); the June 2026 course
+                                    version is in paper/course_version_2026_06/
+  docs/                             Experiment log, glossary, report checklist, algorithm notes, presentation
 ```
 
 Key implementation files:
 
-- `src/panda/decoders/core.py`: premature-layer selection, DoLa scores, contrastive scores
-- `results/experiments/local_evaluator.py`: the experiment decoders (per-question DoLa-static and its selection-interval variants, the factorial, rule-based switches)
-- `src/panda/evaluation.py`: MC1/MC2/MC3 scoring and summaries
-
-## Reproducibility notes
-
-- Fixed seeds: the default subset is seed 42; exp16 adds fresh subsets with seeds 101–404.
-- Exact reproduction depends on model availability, the Hugging Face dataset version and the GPU. Official DoLa
-  scores 0.26–0.28 MC1 on the same 50 questions across runs.
-- The saved runs are compact artifacts (summaries, raw predictions, metadata), not every exploratory run.
+- `results/experiments/local_evaluator.py`: the scoring rules of the experiments (DoLa in both configurations,
+  per-question DoLa-static and its selection intervals, the factorial)
+- `results/experiments/exp20_self_evaluation/run_experiment.py`: self-evaluation, every block and both wordings
+- `src/panda/decoders/core.py`: premature-layer selection and DoLa scores
+- `src/panda/evaluation.py`: MC1 / MC2 / MC3
 
 ## Authors
 

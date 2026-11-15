@@ -13,7 +13,8 @@ from pathlib import Path
 
 def main() -> None:
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "results/experiments")
-    for summary in sorted(root.glob("exp*/runs/*/*_summary.csv")):
+    summaries = list(root.glob("exp*/runs/*/*_summary.csv")) + list(root.glob("exploration/exp*/runs/*/*_summary.csv"))
+    for summary in sorted(summaries, key=lambda s: s.parts[-4:]):
         if "pairwise" in summary.name:
             continue
         rows = list(csv.DictReader(summary.open(encoding="utf-8")))

@@ -184,8 +184,8 @@ MC1, wording `is_true`, final layer, chance level 0.226:
   the decision and is reported only.
 
 That multiple-choice TruthfulQA can be answered above chance without the question is known for heuristics that
-compare the options; the dataset's authors recommend a binary-choice version for that reason. Those sources are
-not yet in the report's bibliography.
+compare the options; the dataset's authors recommend a binary-choice version for that reason. Both are cited in the
+report (`turner2025gaming`, `evans2025improved` in `paper/references.bib`).
 
 ## Limits
 

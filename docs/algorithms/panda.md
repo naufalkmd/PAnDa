@@ -1,8 +1,9 @@
 # PAnDa (dropped)
 
 > **Status:** dropped on 2026-11-14; not part of the results or the report. This note documents the code
-> (`src/panda/decoders/panda.py`) because saved exploration runs (exp5, exp11's `panda_switch`, `results/dev/`)
-> used it. The project's method is per-question DoLa-static: see [`../glossary.md`](../glossary.md).
+> (`src/panda/decoders/panda.py`) because saved exploration runs (exp5, exp11's `panda_switch`,
+> `results/experiments/exploration/sanity_runs/`) used it. Per-question DoLa-static, one of the scoring rules of the
+> study, is described in [`../glossary.md`](../glossary.md).
 
 ## What It Does
 
